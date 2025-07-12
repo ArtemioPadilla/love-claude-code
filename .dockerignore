@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+docs/
+*.md
+
+# Development
+.env
+.env.local
+.env.*.local
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+*.test.ts
+*.spec.ts
+__tests__/
+test/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+*.swp
+*.swo
+*~
+
+# Logs
+logs/
+*.log
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# AWS CDK
+cdk.out/
+.cdk.staging/
+
+# Misc
+.eslintcache
+.cache/

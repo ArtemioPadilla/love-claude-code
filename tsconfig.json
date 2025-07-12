@@ -1,0 +1,69 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "removeComments": true,
+    "allowJs": true,
+    "incremental": true,
+    "tsBuildInfoFile": ".tsbuildinfo",
+    "outDir": "./dist",
+    "rootDir": "./",
+    "baseUrl": ".",
+    "paths": {
+      "@frontend/*": ["frontend/src/*"],
+      "@backend/*": ["backend/src/*"],
+      "@shared/*": ["packages/shared/src/*"],
+      "@types/*": ["packages/types/src/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./packages/types"],
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+  },
+  "include": [
+    "frontend/**/*",
+    "backend/**/*",
+    "packages/**/*",
+    "infrastructure/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    ".next",
+    "cdk.out",
+    "**/*.spec.ts",
+    "**/*.test.ts"
+  ],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"],
+    "transpileOnly": true,
+    "files": true,
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  },
+  "references": [
+    { "path": "./frontend" },
+    { "path": "./backend" },
+    { "path": "./infrastructure" },
+    { "path": "./packages/shared" },
+    { "path": "./packages/types" }
+  ]
+}
