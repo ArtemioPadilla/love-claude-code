@@ -1,0 +1,16 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read/write their own files
+    match /users/{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Allow project members to read/write project files
+    match /projects/{projectId}/{allPaths=**} {
+      allow read, write: if request.auth != null && 
+        firestore.exists(/databases/(default)/documents/projects/$(projectId)) &&
+        request.auth.uid in firestore.get(/databases/(default)/documents/projects/$(projectId)).data.members;
+    }
+  }
+}

@@ -1,0 +1,200 @@
+id: firebase-l2-realtime-chat
+level: L2
+metadata:
+  name: Realtime Chat Pattern
+  description: Complete realtime chat application with Firebase
+  version: 1.0.0
+  author: Love Claude Code
+  category: communication
+  tags:
+    - firebase
+    - chat
+    - realtime
+    - firestore
+    - pattern
+    - messaging
+  documentation: |
+    ## Overview
+    This L2 pattern provides a complete realtime chat application using Firebase services.
+    
+    ## Architecture
+    - Firestore for realtime message storage
+    - Cloud Storage for file uploads
+    - Cloud Functions for message processing
+    - Firebase Auth for user authentication
+    - Security rules for access control
+    
+    ## Features
+    - Realtime message synchronization
+    - User presence tracking
+    - Typing indicators
+    - File upload support
+    - Message encryption
+    - Push notifications
+    - Message search and filtering
+    - Channel/room support
+    - Direct messaging
+    - Message reactions
+    
+    ## Use Cases
+    - Team collaboration tools
+    - Customer support chat
+    - Social messaging apps
+    - Gaming chat systems
+    
+  examples:
+    - name: Basic Chat App
+      code: |
+        const chat = new RealtimeChat("my-chat", {
+          appName: "team-chat",
+          enableAuth: true,
+          authProviders: ["google", "github"],
+          enableFileUploads: true,
+          maxFileSizeMb: 10,
+          enablePresence: true,
+          enableTypingIndicators: true
+        });
+    - name: Secure Chat with Encryption
+      code: |
+        const chat = new RealtimeChat("secure-chat", {
+          appName: "private-messenger",
+          enableAuth: true,
+          authProviders: ["email"],
+          enableEncryption: true,
+          enableFileUploads: true,
+          maxFileSizeMb: 5,
+          enablePushNotifications: true,
+          messageRetentionDays: 30
+        });
+
+providers:
+  - firebase
+
+inputs:
+  appName:
+    type: string
+    description: Application name
+    required: true
+  enableAuth:
+    type: boolean
+    description: Enable user authentication
+    required: false
+    default: true
+  authProviders:
+    type: array
+    description: Authentication providers to enable
+    required: false
+    default: ["email"]
+  enableFileUploads:
+    type: boolean
+    description: Enable file uploads
+    required: false
+    default: false
+  maxFileSizeMb:
+    type: number
+    description: Maximum file size in MB
+    required: false
+    default: 10
+  enableEncryption:
+    type: boolean
+    description: Enable message encryption
+    required: false
+    default: false
+  enablePresence:
+    type: boolean
+    description: Enable user presence tracking
+    required: false
+    default: false
+  enableTypingIndicators:
+    type: boolean
+    description: Enable typing indicators
+    required: false
+    default: false
+  enablePushNotifications:
+    type: boolean
+    description: Enable push notifications
+    required: false
+    default: false
+  messageRetentionDays:
+    type: number
+    description: Message retention period in days
+    required: false
+    default: 90
+  customDomain:
+    type: string
+    description: Custom domain for hosting
+    required: false
+  labels:
+    type: object
+    description: Resource labels
+    required: false
+
+outputs:
+  appUrl:
+    type: string
+    description: The application URL
+  databaseName:
+    type: string
+    description: Firestore database name
+  functions:
+    type: array
+    description: List of Cloud Function names
+
+components:
+  - firebase-l1-firestore-database
+  - firebase-l1-cloud-storage
+  - firebase-l1-cloud-function
+
+security:
+  - type: authentication
+    description: Firebase Authentication for user management
+    severity: low
+    mitigation: Multiple auth providers supported with built-in security
+  - type: access-control
+    description: Firestore security rules for data access
+    severity: low
+    mitigation: Granular security rules based on user authentication
+  - type: encryption
+    description: Optional end-to-end encryption
+    severity: medium
+    mitigation: Enable encryption for sensitive conversations
+  - type: data-retention
+    description: Automatic message cleanup
+    severity: low
+    mitigation: Configurable retention period with automatic deletion
+
+costs:
+  - provider: firebase
+    baseCost: 0
+    usage:
+      firestoreReads:
+        cost: 0.06
+        unit: 100k reads
+      firestoreWrites:
+        cost: 0.18
+        unit: 100k writes
+      firestoreStorage:
+        cost: 0.18
+        unit: GB-month
+      cloudStorage:
+        cost: 0.026
+        unit: GB-month
+      cloudFunctions:
+        cost: 0.40
+        unit: million invocations
+      realtimeConnections:
+        cost: 0.01
+        unit: 1k simultaneous connections
+
+patterns:
+  - name: Channel-based Chat
+    description: Multiple chat rooms with member management
+  - name: Direct Messaging
+    description: Private 1-on-1 conversations
+  - name: Group Chat
+    description: Multi-user conversations with admin controls
+
+implementation:
+  type: pulumi
+  source: "@love-claude-code/patterns/L2/RealtimeChat"
+  runtime: nodejs

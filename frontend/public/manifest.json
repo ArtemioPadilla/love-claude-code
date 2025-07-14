@@ -1,0 +1,19 @@
+{
+  "name": "Love Claude Code",
+  "short_name": "Love Claude",
+  "description": "AI-powered development platform that transforms conversations into code",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0F0F0F",
+  "theme_color": "#8B5CF6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["developer", "productivity", "utilities"]
+}

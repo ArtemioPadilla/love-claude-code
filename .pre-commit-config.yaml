@@ -1,0 +1,43 @@
+repos:
+  # Secret detection
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.4.0
+    hooks:
+      - id: detect-secrets
+        args: ['--baseline', '.secrets.baseline']
+        exclude: '^(package-lock\.json|.*\.lock)$'
+  
+  # Gitleaks for additional secret scanning
+  - repo: https://github.com/zricethezav/gitleaks
+    rev: v8.18.0
+    hooks:
+      - id: gitleaks
+  
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-case-conflict
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+  
+  # Check for common security issues
+  - repo: local
+    hooks:
+      - id: check-env-files
+        name: Check for .env files
+        entry: bash -c 'if git diff --cached --name-only | grep -E "^\.env($|\.)" | grep -v "\.example$"; then echo "Error: Attempting to commit .env file!"; exit 1; fi'
+        language: system
+        pass_filenames: false
+      
+      - id: check-hardcoded-secrets
+        name: Check for hardcoded secrets
+        entry: bash -c 'if git diff --cached --name-only -z | xargs -0 grep -l -E "(password|secret|key|token)\s*[:=]\s*[\"'\''`][^\"'\''`]+" -- ":(exclude)*.example" ":(exclude)*.md" ":(exclude)SECURITY.md"; then echo "Error: Possible hardcoded secret found!"; exit 1; fi || exit 0'
+        language: system
+        pass_filenames: false

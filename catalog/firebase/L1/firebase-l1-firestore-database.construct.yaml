@@ -1,0 +1,141 @@
+id: firebase-l1-firestore-database
+level: L1
+metadata:
+  name: Firebase Firestore Database
+  description: Secure Firestore database with security rules and indexes
+  version: 1.0.0
+  author: Love Claude Code
+  category: database
+  tags:
+    - firebase
+    - firestore
+    - database
+    - nosql
+    - realtime
+  documentation: |
+    ## Overview
+    This L1 construct provides a Firebase Firestore database with security best practices.
+    
+    ## Features
+    - Native Firestore mode
+    - Security rules configuration
+    - Index management
+    - Point-in-time recovery
+    - Automatic encryption at rest
+    
+    ## Security
+    - Fine-grained security rules
+    - Google-managed encryption
+    - Point-in-time recovery enabled
+    - Audit logging support
+    
+  examples:
+    - name: Basic Firestore Database
+      code: |
+        const db = new FirestoreDatabase("my-db", {
+          locationId: "us-central",
+          type: "FIRESTORE_NATIVE"
+        });
+    - name: Firestore with Custom Rules
+      code: |
+        const db = new FirestoreDatabase("my-db", {
+          locationId: "us-central",
+          securityRules: `
+            rules_version = '2';
+            service cloud.firestore {
+              match /databases/{database}/documents {
+                match /users/{userId} {
+                  allow read, write: if request.auth.uid == userId;
+                }
+              }
+            }
+          `,
+          indexes: [{
+            collectionGroup: "posts",
+            fields: [
+              { fieldPath: "author", order: "ASCENDING" },
+              { fieldPath: "timestamp", order: "DESCENDING" }
+            ]
+          }]
+        });
+
+providers:
+  - firebase
+
+inputs:
+  databaseId:
+    type: string
+    description: Database ID (use "(default)" for the default database)
+    required: false
+    default: "(default)"
+  locationId:
+    type: string
+    description: Location ID for the database
+    required: true
+  type:
+    type: string
+    description: Database type (FIRESTORE_NATIVE or DATASTORE_MODE)
+    required: false
+    default: FIRESTORE_NATIVE
+  concurrencyMode:
+    type: string
+    description: Concurrency mode
+    required: false
+    default: OPTIMISTIC
+  pointInTimeRecoveryEnablement:
+    type: string
+    description: Point in time recovery setting
+    required: false
+    default: POINT_IN_TIME_RECOVERY_ENABLED
+  securityRules:
+    type: string
+    description: Security rules content
+    required: false
+  indexes:
+    type: array
+    description: Firestore indexes configuration
+    required: false
+
+outputs:
+  databaseName:
+    type: string
+    description: The name of the database
+  project:
+    type: string
+    description: The GCP project ID
+
+security:
+  - type: access-control
+    description: Security rules enforced at database level
+    severity: low
+    mitigation: Implement granular security rules based on authentication
+  - type: encryption
+    description: Data encrypted at rest by default
+    severity: low
+    mitigation: Google-managed encryption keys are used automatically
+  - type: backup
+    description: Point-in-time recovery enabled
+    severity: low
+    mitigation: Automatic backups with configurable retention
+
+costs:
+  - provider: firebase
+    baseCost: 0
+    usage:
+      storage:
+        cost: 0.18
+        unit: GB-month
+      reads:
+        cost: 0.06
+        unit: 100k reads
+      writes:
+        cost: 0.18
+        unit: 100k writes
+      deletes:
+        cost: 0.02
+        unit: 100k deletes
+
+implementation:
+  type: pulumi
+  source: "@love-claude-code/providers/firebase/L1/FirestoreDatabase"
+  runtime: nodejs

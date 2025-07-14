@@ -1,0 +1,139 @@
+id: aws-l1-s3-bucket
+level: L1
+metadata:
+  name: AWS S3 Bucket
+  description: Secure S3 bucket with encryption, versioning, and access controls
+  version: 1.0.0
+  author: Love Claude Code
+  category: storage
+  tags:
+    - aws
+    - s3
+    - storage
+    - object-storage
+    - secure-by-default
+  documentation: |
+    ## Overview
+    This L1 construct provides a secure AWS S3 bucket with best practices applied by default.
+    
+    ## Features
+    - Server-side encryption (AES256 or KMS)
+    - Versioning support
+    - Public access blocking
+    - Access logging
+    - Lifecycle rules
+    - Secure ACL configuration
+    
+    ## Security
+    - Encryption at rest enabled by default
+    - Public access blocked by default
+    - Private ACL applied
+    - Optional KMS key support
+    
+  examples:
+    - name: Basic S3 Bucket
+      code: |
+        const bucket = new S3Bucket("my-bucket", {
+          bucketName: "my-secure-bucket",
+          enableVersioning: true,
+          enableEncryption: true
+        });
+    - name: S3 Bucket with KMS
+      code: |
+        const bucket = new S3Bucket("my-bucket", {
+          bucketName: "my-kms-bucket",
+          enableEncryption: true,
+          kmsKeyArn: kmsKey.arn,
+          enableLogging: true,
+          loggingTargetBucket: logBucket.id
+        });
+
+providers:
+  - aws
+
+inputs:
+  bucketName:
+    type: string
+    description: The name of the bucket
+    required: false
+  enableVersioning:
+    type: boolean
+    description: Enable versioning for the bucket
+    required: false
+    default: false
+  enableEncryption:
+    type: boolean
+    description: Enable server-side encryption
+    required: false
+    default: true
+  kmsKeyArn:
+    type: string
+    description: KMS key ARN for encryption (if not provided, uses AWS managed key)
+    required: false
+  blockPublicAccess:
+    type: boolean
+    description: Enable public access block
+    required: false
+    default: true
+  enableLogging:
+    type: boolean
+    description: Enable access logging
+    required: false
+    default: false
+  loggingTargetBucket:
+    type: string
+    description: Target bucket for access logs
+    required: false
+  lifecycleRules:
+    type: array
+    description: Lifecycle rules for the bucket
+    required: false
+  tags:
+    type: object
+    description: Tags to apply to the bucket
+    required: false
+
+outputs:
+  bucketArn:
+    type: string
+    description: The ARN of the bucket
+  bucketName:
+    type: string
+    description: The name of the bucket
+
+dependencies:
+  - "@pulumi/aws"
+  - "@love-claude-code/core"
+
+security:
+  - type: encryption
+    description: Server-side encryption enabled by default
+    severity: low
+    mitigation: Encryption is automatically applied using AWS managed keys or customer KMS keys
+  - type: access-control
+    description: Public access blocked by default
+    severity: low
+    mitigation: Public access block is enabled by default, use IAM policies for access
+  - type: audit
+    description: Optional access logging
+    severity: medium
+    mitigation: Enable access logging for compliance and security monitoring
+
+costs:
+  - provider: aws
+    baseCost: 0
+    usage:
+      storage:
+        cost: 0.023
+        unit: GB-month
+      requests:
+        cost: 0.0004
+        unit: 1000 requests
+      transfer:
+        cost: 0.09
+        unit: GB
+
+implementation:
+  type: pulumi
+  source: "@love-claude-code/providers/aws/L1/S3Bucket"
+  runtime: nodejs

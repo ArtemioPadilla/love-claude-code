@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "love-claude-code-ui": {
+      "command": "node",
+      "args": ["/path/to/your/love-claude-code/mcp-server/dist/index.js"],
+      "env": {
+        "NODE_ENV": "development",
+        "MCP_UI_TARGET_URL": "http://localhost:3000",
+        "MCP_UI_HEADLESS": "false"
+      }
+    },
+    "love-claude-code-providers": {
+      "command": "npx",
+      "args": ["tsx", "/path/to/your/love-claude-code/backend/src/mcp/provider-server.ts"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

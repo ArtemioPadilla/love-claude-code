@@ -1,0 +1,190 @@
+id: aws-l2-serverless-api
+level: L2
+metadata:
+  name: Serverless API Pattern
+  description: Complete serverless API with Lambda, API Gateway, and DynamoDB
+  version: 1.0.0
+  author: Love Claude Code
+  category: api
+  tags:
+    - aws
+    - serverless
+    - api
+    - lambda
+    - apigateway
+    - pattern
+    - rest
+  documentation: |
+    ## Overview
+    This L2 pattern provides a complete serverless REST API implementation using AWS services.
+    
+    ## Architecture
+    - API Gateway HTTP API for routing
+    - Lambda functions for business logic
+    - DynamoDB tables for data storage
+    - CloudWatch for logging and monitoring
+    - Optional JWT authentication
+    - Optional custom domain support
+    
+    ## Features
+    - Automatic CORS configuration
+    - Request/response logging
+    - X-Ray tracing support
+    - Rate limiting
+    - Dead letter queues
+    - Multiple authentication methods
+    - Database integration
+    
+    ## Use Cases
+    - RESTful microservices
+    - Mobile app backends
+    - SaaS application APIs
+    - Webhook endpoints
+    
+  examples:
+    - name: Basic API
+      code: |
+        const api = new ServerlessAPI("my-api", {
+          apiName: "user-service",
+          description: "User management API",
+          routes: [{
+            path: "/users",
+            method: "GET",
+            handler: {
+              code: new pulumi.asset.FileArchive("./handlers"),
+              handler: "users.list"
+            }
+          }, {
+            path: "/users",
+            method: "POST",
+            handler: {
+              code: new pulumi.asset.FileArchive("./handlers"),
+              handler: "users.create"
+            },
+            auth: { type: "jwt" }
+          }],
+          enableLogging: true,
+          enableTracing: true
+        });
+    - name: API with Database
+      code: |
+        const api = new ServerlessAPI("my-api", {
+          apiName: "product-api",
+          routes: [...],
+          database: {
+            enabled: true,
+            tables: [{
+              name: "products",
+              partitionKey: { name: "id", type: "S" },
+              sortKey: { name: "category", type: "S" },
+              globalSecondaryIndexes: [{
+                name: "category-index",
+                partitionKey: { name: "category", type: "S" },
+                sortKey: { name: "price", type: "N" }
+              }]
+            }]
+          },
+          rateLimiting: {
+            burstLimit: 5000,
+            rateLimit: 2000
+          }
+        });
+
+providers:
+  - aws
+
+inputs:
+  apiName:
+    type: string
+    description: API name
+    required: true
+  description:
+    type: string
+    description: API description
+    required: false
+  routes:
+    type: array
+    description: API route configurations
+    required: true
+  enableLogging:
+    type: boolean
+    description: Enable request/response logging
+    required: false
+    default: false
+  enableTracing:
+    type: boolean
+    description: Enable X-Ray tracing
+    required: false
+    default: false
+  rateLimiting:
+    type: object
+    description: Rate limiting configuration
+    required: false
+  customDomain:
+    type: object
+    description: Custom domain configuration
+    required: false
+  database:
+    type: object
+    description: Database configuration
+    required: false
+  tags:
+    type: object
+    description: Resource tags
+    required: false
+
+outputs:
+  apiUrl:
+    type: string
+    description: The API endpoint URL
+  functions:
+    type: array
+    description: List of Lambda function names
+  tables:
+    type: array
+    description: List of DynamoDB table names
+
+components:
+  - aws-l1-lambda-function
+  - aws-l1-dynamodb-table
+  - aws.apigatewayv2
+  - aws.cloudwatch
+
+security:
+  - type: authentication
+    description: Optional JWT or API key authentication
+    severity: medium
+    mitigation: Configure appropriate authentication method for your use case
+  - type: rate-limiting
+    description: API throttling to prevent abuse
+    severity: low
+    mitigation: Rate limiting is configurable per stage
+  - type: encryption
+    description: Data encrypted in transit and at rest
+    severity: low
+    mitigation: HTTPS enforced, DynamoDB encryption enabled
+
+costs:
+  - provider: aws
+    baseCost: 0
+    usage:
+      apiRequests:
+        cost: 1.00
+        unit: million requests
+      lambdaInvocations:
+        cost: 0.20
+        unit: million invocations
+      lambdaCompute:
+        cost: 0.0000166667
+        unit: GB-second
+      dynamodbReads:
+        cost: 0.25
+        unit: million RCU
+      dynamodbWrites:
+        cost: 1.25
+        unit: million WCU
+
+implementation:
+  type: pulumi
+  source: "@love-claude-code/patterns/L2/ServerlessAPI"
+  runtime: nodejs

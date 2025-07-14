@@ -1,0 +1,215 @@
+id: aws-l3-saas-platform
+level: L3
+metadata:
+  name: SaaS Platform Application
+  description: Complete multi-tenant SaaS platform with billing and analytics
+  version: 1.0.0
+  author: Love Claude Code
+  category: application
+  tags:
+    - aws
+    - saas
+    - multi-tenant
+    - platform
+    - application
+    - enterprise
+  documentation: |
+    ## Overview
+    This L3 application provides a complete SaaS platform with multi-tenancy, subscription billing, and analytics.
+    
+    ## Architecture
+    - Multi-tenant data isolation
+    - Subscription and billing management
+    - User authentication and authorization
+    - Analytics and reporting
+    - Admin dashboard
+    - Customer portal
+    - API for integrations
+    
+    ## Features
+    - **Multi-tenancy**: Shared, schema, or database isolation
+    - **Billing**: Subscription management with usage tracking
+    - **Analytics**: Real-time metrics and reporting
+    - **Notifications**: Email and webhook notifications
+    - **Audit Trail**: Complete activity logging
+    - **Backup**: Automated daily backups
+    - **Monitoring**: CloudWatch dashboards and alarms
+    
+    ## Use Cases
+    - B2B SaaS applications
+    - Enterprise software platforms
+    - Multi-tenant marketplaces
+    - Subscription-based services
+    
+    ## Deployment
+    The platform includes:
+    - API Gateway + Lambda for backend
+    - DynamoDB for data storage
+    - S3 + CloudFront for static assets
+    - EventBridge for scheduled tasks
+    - SNS/SQS for async processing
+    
+  examples:
+    - name: Basic SaaS Platform
+      code: |
+        const platform = new SaaSPlatform("my-saas", {
+          platformName: "My SaaS Platform",
+          domain: "myplatform.com",
+          certificateArn: certificate.arn,
+          features: {
+            multiTenancy: true,
+            billing: true,
+            analytics: true,
+            notifications: true
+          },
+          auth: {
+            providers: ["email", "google"],
+            mfaRequired: true
+          },
+          tenantIsolation: "schema"
+        });
+    - name: Enterprise Platform
+      code: |
+        const platform = new SaaSPlatform("enterprise-platform", {
+          platformName: "Enterprise Platform",
+          domain: "enterprise.com",
+          certificateArn: certificate.arn,
+          features: {
+            multiTenancy: true,
+            billing: true,
+            analytics: true,
+            notifications: true,
+            audit: true,
+            backup: true
+          },
+          auth: {
+            providers: ["email", "saml"],
+            mfaRequired: true,
+            sessionDurationMinutes: 480
+          },
+          tenantIsolation: "database",
+          apiRateLimits: {
+            free: { requests: 1000, period: "hour" },
+            basic: { requests: 10000, period: "hour" },
+            premium: { requests: 100000, period: "hour" }
+          },
+          monitoring: {
+            enableDashboard: true,
+            alertEmail: "ops@enterprise.com"
+          }
+        });
+
+providers:
+  - aws
+
+inputs:
+  platformName:
+    type: string
+    description: Platform name
+    required: true
+  domain:
+    type: string
+    description: Platform domain
+    required: true
+  certificateArn:
+    type: string
+    description: SSL certificate ARN
+    required: true
+  features:
+    type: object
+    description: Features to enable
+    required: true
+  auth:
+    type: object
+    description: Authentication configuration
+    required: true
+  tenantIsolation:
+    type: string
+    description: Tenant isolation level
+    required: false
+    default: shared
+  apiRateLimits:
+    type: object
+    description: API rate limits per plan
+    required: false
+  email:
+    type: object
+    description: Email configuration
+    required: false
+  monitoring:
+    type: object
+    description: Monitoring configuration
+    required: false
+  tags:
+    type: object
+    description: Resource tags
+    required: false
+
+outputs:
+  apiUrl:
+    type: string
+    description: API endpoint URL
+  websiteUrl:
+    type: string
+    description: Main website URL
+  adminUrl:
+    type: string
+    description: Admin panel URL
+
+components:
+  - aws-l2-serverless-api
+  - aws-l2-static-website
+  - aws-l2-event-driven-pipeline
+  - aws-l1-dynamodb-table
+  - aws-l1-lambda-function
+
+security:
+  - type: authentication
+    description: Multi-factor authentication with various providers
+    severity: low
+    mitigation: JWT tokens with configurable session duration
+  - type: multi-tenancy
+    description: Tenant data isolation
+    severity: low
+    mitigation: Configurable isolation levels with proper access controls
+  - type: encryption
+    description: Data encrypted at rest and in transit
+    severity: low
+    mitigation: AWS encryption services used throughout
+  - type: audit
+    description: Complete audit trail of all actions
+    severity: low
+    mitigation: Immutable audit logs with retention policies
+
+costs:
+  - provider: aws
+    baseCost: 0
+    usage:
+      api:
+        cost: 3.50
+        unit: million requests
+      compute:
+        cost: 0.20
+        unit: million Lambda invocations
+      database:
+        cost: 0.25
+        unit: million read/write requests
+      storage:
+        cost: 0.023
+        unit: GB-month
+      cdn:
+        cost: 0.085
+        unit: GB transfer
+
+patterns:
+  - name: Multi-tenant Architecture
+    description: Flexible tenant isolation strategies
+  - name: Event-driven Billing
+    description: Automated billing pipeline with retry logic
+  - name: Serverless Backend
+    description: Auto-scaling API with Lambda functions
+
+implementation:
+  type: pulumi
+  source: "@love-claude-code/applications/L3/SaaSPlatform"
+  runtime: nodejs

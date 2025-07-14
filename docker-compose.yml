@@ -26,11 +26,18 @@ services:
     volumes:
       - ./backend:/app/backend
       - /app/backend/node_modules
+      - local-data:/data
     ports:
       - "8000:8000"
+      - "8001:8001"
     environment:
       - NODE_ENV=development
-      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/loveclaudecode
+      - PROVIDER_TYPE=${PROVIDER_TYPE:-local}
+      - API_PORT=8000
+      - REALTIME_PORT=8001
+      - JWT_SECRET=${JWT_SECRET}
+      - LOCAL_DATA_PATH=/data
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-loveclaudecode}
       - REDIS_URL=redis://redis:6379
     depends_on:
       - postgres
@@ -43,9 +50,9 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=loveclaudecode
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-loveclaudecode}
     ports:
       - "5432:5432"
     healthcheck:
@@ -73,9 +80,9 @@ services:
     image: localstack/localstack:latest
     ports:
       - "4566:4566"
-      - "4571:4571"
+      - "4510-4559:4510-4559"
     environment:
-      - SERVICES=lambda,s3,dynamodb,secretsmanager,cloudformation
+      - SERVICES=s3,dynamodb,lambda,cognito,appsync,secretsmanager
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - LAMBDA_EXECUTOR=docker
@@ -83,16 +90,36 @@ services:
     volumes:
       - localstack_data:/tmp/localstack
       - /var/run/docker.sock:/var/run/docker.sock
+    profiles:
+      - aws
+
+  # Firebase Emulator Suite
+  firebase-emulator:
+    image: andreysenov/firebase-tools:latest
+    ports:
+      - "9099:9099"   # Auth
+      - "8080:8080"   # Firestore
+      - "9199:9199"   # Storage
+      - "5001:5001"   # Functions
+      - "4000:4000"   # Emulator UI
+    volumes:
+      - firebase-data:/opt/firebase/data
+      - ./firebase.json:/opt/firebase/firebase.json:ro
+    command: firebase emulators:start --only auth,firestore,storage,functions --project demo-project
+    profiles:
+      - firebase
 
   # Adminer for database management (development only)
   adminer:
     image: adminer:latest
     ports:
-      - "8080:8080"
+      - "8090:8080"
     environment:
       - ADMINER_DEFAULT_SERVER=postgres
     depends_on:
       - postgres
+    profiles:
+      - tools
 
   # Nginx reverse proxy (optional, for production-like setup)
   nginx:
@@ -112,6 +139,8 @@ volumes:
   postgres_data:
   redis_data:
   localstack_data:
+  local-data:
+  firebase-data:
 
 networks:
   default:

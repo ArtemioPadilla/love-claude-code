@@ -1,0 +1,253 @@
+version: '3.8'
+
+# This file contains the complete provider infrastructure setup
+# Use with: docker-compose -f docker-compose.providers.yml up
+
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_API_URL=http://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+
+  # Backend service with all providers
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - BACKEND_PROVIDER=${BACKEND_PROVIDER:-local}
+      - JWT_SECRET=${JWT_SECRET}
+      - REDIS_URL=redis://redis:6379
+      # Local provider
+      - LOCAL_DB_PATH=/app/data/db
+      - LOCAL_STORAGE_PATH=/app/data/storage
+      # AWS provider
+      - AWS_REGION=us-east-1
+      - AWS_USE_LOCALSTACK=true
+      - LOCALSTACK_ENDPOINT=http://localstack:4566
+      # Firebase provider  
+      - FIREBASE_USE_EMULATOR=true
+      - FIREBASE_EMULATOR_HOST=firebase-emulator
+      - FIREBASE_PROJECT_ID=love-claude-dev
+      # SMTP for notifications
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - SMTP_SECURE=false
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend-data:/app/data
+    depends_on:
+      - redis
+      - postgres
+      - localstack
+      - firebase-emulator
+      - mailhog
+
+  # Redis for caching (all providers)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+
+  # PostgreSQL for local provider
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-lovecloud}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB:-lovecloud_dev}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/postgres:/docker-entrypoint-initdb.d
+
+  # LocalStack for AWS provider
+  localstack:
+    image: localstack/localstack:latest
+    ports:
+      - "4566:4566"              # LocalStack Gateway
+      - "4510-4559:4510-4559"    # External services
+    environment:
+      - SERVICES=s3,dynamodb,lambda,cognito,sns,ses,apigateway,cloudwatch,logs,sts,iam,secretsmanager,eventbridge
+      - DEBUG=1
+      - DATA_DIR=/tmp/localstack/data
+      - LAMBDA_EXECUTOR=docker-reuse
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - AWS_DEFAULT_REGION=us-east-1
+      - PERSISTENCE=1
+    volumes:
+      - localstack-data:/tmp/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./scripts/localstack:/docker-entrypoint-initaws.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Firebase Emulator Suite
+  firebase-emulator:
+    build:
+      context: ./docker
+      dockerfile: firebase-emulator.Dockerfile
+    ports:
+      - "9099:9099"   # Auth
+      - "8088:8080"   # Firestore (avoid conflict with backend)
+      - "9000:9000"   # Realtime Database
+      - "9199:9199"   # Storage
+      - "5001:5001"   # Functions
+      - "8085:8085"   # Pub/Sub
+      - "4000:4000"   # Emulator Suite UI
+    environment:
+      - FIREBASE_PROJECT_ID=love-claude-dev
+      - GCP_PROJECT=love-claude-dev
+      - FIREBASE_AUTH_EMULATOR_HOST=0.0.0.0:9099
+      - FIRESTORE_EMULATOR_HOST=0.0.0.0:8080
+      - FIREBASE_DATABASE_EMULATOR_HOST=0.0.0.0:9000
+      - FIREBASE_STORAGE_EMULATOR_HOST=0.0.0.0:9199
+      - FUNCTIONS_EMULATOR_HOST=0.0.0.0:5001
+      - PUBSUB_EMULATOR_HOST=0.0.0.0:8085
+    volumes:
+      - firebase-data:/opt/firebase/data
+      - ./firebase.json:/opt/firebase/firebase.json
+      - ./.firebaserc:/opt/firebase/.firebaserc
+    command: firebase emulators:start --project love-claude-dev
+
+  # MinIO for S3-compatible local storage
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9001:9001"   # MinIO Console
+      - "9002:9000"   # MinIO API
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ROOT_USER}
+      - MINIO_ROOT_PASSWORD=${MINIO_ROOT_PASSWORD}
+      - MINIO_DEFAULT_BUCKETS=love-claude-storage
+    volumes:
+      - minio-data:/data
+    command: server /data --console-address ":9001"
+
+  # Mailhog for email testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+
+  # Monitoring: Prometheus
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+
+  # Monitoring: Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=redis-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+
+  # Development tools: Adminer
+  adminer:
+    image: adminer:latest
+    ports:
+      - "8090:8080"
+    environment:
+      - ADMINER_DEFAULT_SERVER=postgres
+      - ADMINER_DESIGN=pepa-linha
+    depends_on:
+      - postgres
+
+  # Development tools: Redis Commander
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    ports:
+      - "8091:8081"
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    depends_on:
+      - redis
+
+  # Kubernetes in Docker (kind) for testing deployments
+  kind:
+    build:
+      context: ./docker
+      dockerfile: kind.Dockerfile
+    privileged: true
+    ports:
+      - "6443:6443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./k8s:/manifests
+      - kind-data:/var/lib/docker
+    environment:
+      - KIND_EXPERIMENTAL_PROVIDER=docker
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - frontend
+      - backend
+    profiles:
+      - proxy
+
+volumes:
+  backend-data:
+  redis-data:
+  postgres-data:
+  localstack-data:
+  firebase-data:
+  minio-data:
+  prometheus-data:
+  grafana-data:
+  kind-data:
+
+networks:
+  default:
+    name: love-claude-network
+    driver: bridge

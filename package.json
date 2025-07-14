@@ -21,13 +21,17 @@
     "frontend",
     "backend",
     "infrastructure",
+    "mcp-server",
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\"",
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run mcp-ui:dev\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
     "dev:infra": "cd infrastructure && npm run dev",
+    "mcp-ui:build": "cd mcp-server && npm run build",
+    "mcp-ui:dev": "cd mcp-server && npm run dev",
+    "mcp-ui:start": "cd mcp-server && npm run start",
     "build": "npm run build:frontend && npm run build:backend",
     "build:frontend": "cd frontend && npm run build",
     "build:backend": "cd backend && npm run build",

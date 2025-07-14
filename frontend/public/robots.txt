@@ -1,0 +1,21 @@
+# Love Claude Code robots.txt
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://love-claude-code.dev/sitemap.xml
+
+# Crawl-delay (optional, in seconds)
+Crawl-delay: 1
+
+# Disallow sensitive areas
+Disallow: /api/
+Disallow: /admin/
+Disallow: /.well-known/
+Disallow: /private/
+
+# Allow search engines to index everything else
+Allow: /docs/
+Allow: /blog/
+Allow: /features/

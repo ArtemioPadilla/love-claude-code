@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "{{projectName}}": {
+      "command": "node",
+      "args": ["mcp/dist/server.js"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    }
+  }
+}

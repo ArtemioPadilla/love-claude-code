@@ -12,6 +12,7 @@ lerna-debug.log*
 .env.development.local
 .env.test.local
 .env.production.local
+.env.docker
 
 # Production builds
 dist/
@@ -98,6 +99,16 @@ temp/
 *.crt
 *.csr
 
+# Security - Never commit these!
+.secrets
+.secrets.baseline
+*.secret
+*_secret*
+*_private*
+secrets/
+credentials/
+.credentials/
+
 # Package files
 *.7z
 *.dmg
@@ -175,3 +186,6 @@ $RECYCLE.BIN/
 .directory
 .Trash-*
 .nfs*
+
+# Claude local settings
+.claude/settings.local.json
