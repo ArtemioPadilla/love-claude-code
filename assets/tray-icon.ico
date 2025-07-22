@@ -1,0 +1,6 @@
+# Placeholder for Windows tray icon
+This is a placeholder file. The actual tray icon should be:
+- ICO format
+- Include 16x16 and 32x32 sizes
+- Transparent background
+- Windows-compatible icon format

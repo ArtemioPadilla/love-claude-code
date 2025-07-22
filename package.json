@@ -6,6 +6,7 @@
   "license": "MIT",
   "private": true,
   "homepage": "https://love-claude-code.dev",
+  "main": "electron/main.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/love-claude-code/love-claude-code.git"
@@ -28,6 +29,10 @@
     "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:backend\" \"npm run mcp-ui:dev\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
+    "electron": "electron .",
+    "electron:dev": "concurrently \"npm run dev:frontend\" \"wait-on http://localhost:3000 && NODE_ENV=development electron .\"",
+    "electron:build": "npm run build:frontend && electron-builder",
+    "electron:dist": "electron-builder --publish=never",
     "dev:infra": "cd infrastructure && npm run dev",
     "mcp-ui:build": "cd mcp-server && npm run build",
     "mcp-ui:dev": "cd mcp-server && npm run dev",
@@ -97,12 +102,16 @@
     "@commitlint/cli": "^18.4.3",
     "@commitlint/config-conventional": "^18.4.3",
     "@playwright/test": "^1.40.1",
+    "@types/electron": "^1.4.38",
     "@types/jest": "^29.5.11",
-    "@types/node": "^20.10.5",
+    "@types/node": "^20.19.9",
     "@typescript-eslint/eslint-plugin": "^6.15.0",
     "@typescript-eslint/parser": "^6.15.0",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "electron-reloader": "^1.2.3",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-import": "^2.29.1",
@@ -118,7 +127,16 @@
     "snyk": "^1.1266.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.8.3",
+    "wait-on": "^7.2.0"
+  },
+  "dependencies": {
+    "archiver": "^6.0.1",
+    "electron-log": "^5.0.1",
+    "electron-store": "^8.1.0",
+    "electron-updater": "^6.1.7",
+    "extract-zip": "^2.0.1",
+    "keytar": "^7.9.0"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -144,5 +162,40 @@
     "typescript",
     "aws",
     "serverless"
-  ]
+  ],
+  "build": {
+    "appId": "com.loveclaudecode.app",
+    "productName": "Love Claude Code",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "!electron/tsconfig.json",
+      "!electron/tsconfig.register.json",
+      "!**/*.map"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "electron/entitlements.mac.plist",
+      "entitlementsInherit": "electron/entitlements.mac.plist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png",
+      "category": "Development"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
 }

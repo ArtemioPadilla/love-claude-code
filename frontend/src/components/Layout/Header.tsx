@@ -23,6 +23,11 @@ import { useUserPreferencesStore } from '@stores/userPreferencesStore'
 import { useProjectStore } from '@stores/projectStore'
 import { useState, useRef, useEffect } from 'react'
 import NavigationBar from './NavigationBar'
+import ConnectionStatus from '../UI/ConnectionStatus'
+import ClaudeConnectionStatus from '../UI/ClaudeConnectionStatus'
+import { OfflineIndicator } from '../UI/OfflineIndicator'
+import { OAuthStatus } from '../OAuth/OAuthStatus'
+import { GitStatus } from '../Git/GitStatus'
 
 interface HeaderProps {
   onMenuClick?: () => void
@@ -249,6 +254,31 @@ export function Header({ onMenuClick, onSettingsClick, onHelpClick }: HeaderProp
             </motion.div>
           </div>
         </motion.button>
+        
+        {/* Connection Status */}
+        <ConnectionStatus />
+        
+        <div className="w-px h-6 bg-border/50 mx-1" />
+        
+        {/* Claude Connection Status */}
+        <ClaudeConnectionStatus />
+        
+        <div className="w-px h-6 bg-border/50 mx-1" />
+        
+        {/* OAuth Status (for Electron) */}
+        <OAuthStatus />
+        
+        <div className="w-px h-6 bg-border/50 mx-1" />
+        
+        {/* Git Status (for Electron) */}
+        <GitStatus />
+        
+        <div className="w-px h-6 bg-border/50 mx-1" />
+        
+        {/* Offline/Local Mode Indicator */}
+        <OfflineIndicator />
+        
+        <div className="w-px h-6 bg-border/50 mx-1" />
         
         {/* Other Actions */}
         <motion.button

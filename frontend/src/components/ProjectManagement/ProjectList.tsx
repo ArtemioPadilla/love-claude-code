@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion'
-import { FiPlus, FiSearch, FiFolder } from 'react-icons/fi'
+import { FiPlus, FiSearch, FiFolder, FiUpload } from 'react-icons/fi'
 import { useState } from 'react'
 import { ProjectCard } from './ProjectCard'
+import { ProjectImport } from './ProjectImport'
 import type { Project } from '@stores/projectStore'
+import { isElectron } from '@utils/electronDetection'
 
 interface ProjectListProps {
   projects: Project[]
@@ -20,6 +22,7 @@ export function ProjectList({
   onDeleteProject 
 }: ProjectListProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [showImportModal, setShowImportModal] = useState(false)
   
   const filteredProjects = projects.filter(project =>
     project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -56,6 +59,18 @@ export function ProjectList({
           <FiPlus size={18} />
           New Project
         </motion.button>
+        
+        {isElectron() && (
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => setShowImportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 transition-all"
+          >
+            <FiUpload size={18} />
+            Import
+          </motion.button>
+        )}
       </div>
       
       {/* Project Grid */}
@@ -107,6 +122,14 @@ export function ProjectList({
             </motion.div>
           ))}
         </div>
+      )}
+      
+      {/* Import Modal */}
+      {isElectron() && (
+        <ProjectImport
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+        />
       )}
     </div>
   )

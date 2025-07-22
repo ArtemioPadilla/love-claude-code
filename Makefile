@@ -411,6 +411,52 @@ logs: ## Show application logs
 	fi
 
 #=============================================================================
+# Electron Desktop App
+#=============================================================================
+
+.PHONY: electron electron-install electron-dev electron-build electron-dist electron-pack-mac electron-pack-win electron-pack-linux
+
+electron-install: ## Install Electron dependencies
+	@printf "$(CYAN)Installing Electron dependencies...$(RESET)\n"
+	@npm install electron electron-builder electron-reloader --save-dev
+	@printf "$(GREEN)✓ Electron dependencies installed!$(RESET)\n"
+
+electron-dev: ## Start Electron app in development mode
+	@printf "$(CYAN)Starting Electron app...$(RESET)\n"
+	@if [ ! -f electron/main.js ]; then \
+		printf "$(RED)Error: Electron main.js not found$(RESET)\n"; \
+		exit 1; \
+	fi
+	@npm run electron:dev
+
+electron: electron-dev ## Alias for electron-dev
+
+electron-build: build-frontend ## Build Electron app for distribution
+	@printf "$(CYAN)Building Electron app...$(RESET)\n"
+	@npm run electron:build
+	@printf "$(GREEN)✓ Electron app built successfully!$(RESET)\n"
+
+electron-dist: build-frontend ## Build and package Electron app for all platforms
+	@printf "$(CYAN)Building Electron distributables...$(RESET)\n"
+	@npm run electron:dist
+	@printf "$(GREEN)✓ Electron distributables created in dist/$(RESET)\n"
+
+electron-pack-mac: build-frontend ## Package Electron app for macOS only
+	@printf "$(CYAN)Packaging for macOS...$(RESET)\n"
+	@npm run electron:dist -- --mac
+	@printf "$(GREEN)✓ macOS package created!$(RESET)\n"
+
+electron-pack-win: build-frontend ## Package Electron app for Windows only
+	@printf "$(CYAN)Packaging for Windows...$(RESET)\n"
+	@npm run electron:dist -- --win
+	@printf "$(GREEN)✓ Windows package created!$(RESET)\n"
+
+electron-pack-linux: build-frontend ## Package Electron app for Linux only
+	@printf "$(CYAN)Packaging for Linux...$(RESET)\n"
+	@npm run electron:dist -- --linux
+	@printf "$(GREEN)✓ Linux package created!$(RESET)\n"
+
+#=============================================================================
 # Advanced
 #=============================================================================
 

@@ -10,6 +10,7 @@ interface UserPreferences {
   tabSize: number
   autoSave: boolean
   autoSaveDelay: number
+  hasCompletedOnboarding: boolean
 }
 
 interface UserPreferencesState {
@@ -30,6 +31,7 @@ const defaultPreferences: UserPreferences = {
   tabSize: 2,
   autoSave: true,
   autoSaveDelay: 1000,
+  hasCompletedOnboarding: false,
 }
 
 export const useUserPreferencesStore = create<UserPreferencesState>()(

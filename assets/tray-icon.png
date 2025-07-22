@@ -1,0 +1,6 @@
+# Placeholder for tray icon
+This is a placeholder file. The actual tray icon should be:
+- PNG format
+- 22x22 or 24x24 pixels for Linux
+- Transparent background
+- Simple monochrome design for best visibility

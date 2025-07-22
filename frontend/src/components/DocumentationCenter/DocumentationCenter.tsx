@@ -17,6 +17,7 @@ import DeploymentGuide from './sections/DeploymentGuide'
 import Troubleshooting from './sections/Troubleshooting'
 import MultiCloudArchitecture from './sections/MultiCloudArchitecture'
 import SecurityBestPractices from './sections/SecurityBestPractices'
+import { DesktopAppGuide } from './DesktopAppGuide'
 import Footer from '../Layout/Footer'
 
 interface DocSection {
@@ -39,6 +40,12 @@ const DocumentationCenter: React.FC = () => {
       title: 'Getting Started',
       icon: <Rocket className="w-5 h-5" />,
       content: <GettingStarted />
+    },
+    {
+      id: 'desktop-app',
+      title: 'Desktop App',
+      icon: <Package className="w-5 h-5" />,
+      content: <DesktopAppGuide />
     },
     {
       id: 'architecture',

@@ -6,10 +6,8 @@ import {
 } from 'react-resizable-panels'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FiChevronLeft,
   FiChevronRight,
   FiTerminal,
-  FiMessageSquare,
   FiCode
 } from 'react-icons/fi'
 
@@ -27,11 +25,17 @@ import LandingPage from './components/LandingPage/LandingPage'
 import DocumentationCenter from './components/DocumentationCenter/DocumentationCenter'
 import Roadmap from './components/Roadmap/Roadmap'
 import ConstructCatalog from './constructs/catalog/ConstructCatalog'
+import ErrorBoundary from './components/UI/ErrorBoundary'
+import { OAuthCallback } from './components/Auth/OAuthCallback'
+import { AuthDebugPanel } from './components/Debug/AuthDebugPanel'
+import { OnboardingFlow } from './components/Onboarding'
+import { UpdateNotification } from './components/UpdateNotification/UpdateNotification'
 import { useUserPreferencesStore } from './stores/userPreferencesStore'
 import { useProjectStore } from './stores/projectStore'
 import { useNavigationStore } from './components/Navigation'
 import { fileApiService, type FileNode } from './services/fileApi'
 import { analytics } from './services/analytics'
+import { isElectron } from './utils/electronDetection'
 
 function App() {
   const { preferences } = useUserPreferencesStore()
@@ -50,40 +54,63 @@ function App() {
   useEffect(() => {
     analytics.trackPageView(`/${navView}`)
   }, [navView])
+  
+  // Check for OAuth callback
+  useEffect(() => {
+    if (window.location.pathname === '/oauth/callback') {
+      const { navigate } = useNavigationStore.getState()
+      navigate('oauth-callback')
+    }
+  }, [])
 
   // Load file tree on mount
   useEffect(() => {
+    let cancelled = false
+    
     const loadFiles = async () => {
+      if (cancelled) return
+      
       try {
         setIsLoadingFiles(true)
         const tree = await fileApiService.getFileTree()
-        setFiles(tree)
+        if (!cancelled) {
+          setFiles(tree)
+        }
       } catch (error) {
-        console.error('Failed to load files:', error)
-        // Keep the hardcoded files as fallback
-        setFiles([
-          {
-            id: '1',
-            name: 'src',
-            type: 'folder',
-            path: '/src',
-            children: [
-              {
-                id: '2',
-                name: 'App.tsx',
-                type: 'file',
-                path: '/src/App.tsx',
-                extension: 'tsx'
-              }
-            ]
-          }
-        ])
+        if (!cancelled) {
+          console.error('Failed to load files:', error)
+          // Keep the hardcoded files as fallback
+          setFiles([
+            {
+              id: '1',
+              name: 'src',
+              type: 'folder',
+              path: '/src',
+              children: [
+                {
+                  id: '2',
+                  name: 'App.tsx',
+                  type: 'file',
+                  path: '/src/App.tsx',
+                  extension: 'tsx'
+                }
+              ]
+            }
+          ])
+        }
       } finally {
-        setIsLoadingFiles(false)
+        if (!cancelled) {
+          setIsLoadingFiles(false)
+        }
       }
     }
     
     loadFiles()
+    
+    // Cleanup function to prevent double execution
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleFileSelect = useCallback(async (path: string) => {
@@ -115,24 +142,65 @@ function App() {
 
   // Handle navigation based on current view
   if (navView === 'landing') {
-    return <LandingPage />
+    return (
+      <ErrorBoundary>
+        <LandingPage />
+      </ErrorBoundary>
+    )
   }
   
   if (navView === 'docs' || navView === 'docs-section') {
-    return <DocumentationCenter />
+    return (
+      <ErrorBoundary>
+        <DocumentationCenter />
+      </ErrorBoundary>
+    )
   }
   
   if (navView === 'roadmap') {
-    return <Roadmap />
+    return (
+      <ErrorBoundary>
+        <Roadmap />
+      </ErrorBoundary>
+    )
   }
   
   if (navView === 'constructs') {
-    return <ConstructCatalog />
+    return (
+      <ErrorBoundary>
+        <ConstructCatalog />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'oauth-callback') {
+    return (
+      <ErrorBoundary>
+        <OAuthCallback />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'onboarding') {
+    return (
+      <ErrorBoundary>
+        <OnboardingFlow />
+      </ErrorBoundary>
+    )
   }
   
   // Show project management screen if currentView is 'projects'
   if (currentView === 'projects' || navView === 'projects') {
-    return <ProjectManagement />
+    return (
+      <ErrorBoundary>
+        <ProjectManagement />
+      </ErrorBoundary>
+    )
+  }
+  
+  // Show editor when a project is selected
+  if (navView === 'project') {
+    // Continue to the main editor interface below
   }
 
   return (
@@ -142,8 +210,12 @@ function App() {
         onHelpClick={() => setShowDocumentation(true)}
       />
       
+      {/* Update Notification for Desktop App */}
+      {isElectron() && <UpdateNotification />}
+      
       <div className="flex-1 overflow-hidden">
-        <PanelGroup direction="horizontal" className="h-full">
+        <ErrorBoundary>
+          <PanelGroup direction="horizontal" className="h-full">
           {/* Chat Panel - Always visible on the left */}
           <Panel defaultSize={preferences.advancedMode ? 20 : 25} minSize={10} maxSize={35}>
             <Chat className="h-full" />
@@ -166,6 +238,7 @@ function App() {
                       selectedFile={selectedFile}
                       onFileSelect={handleFileSelect}
                       onClose={() => setShowExplorer(false)}
+                      isLoading={isLoadingFiles}
                     />
                   </div>
                 </Panel>
@@ -233,6 +306,7 @@ function App() {
             <Preview />
           </Panel>
         </PanelGroup>
+        </ErrorBoundary>
       </div>
       
       {/* Floating buttons for hidden panels */}
@@ -275,6 +349,9 @@ function App() {
       
       {/* Documentation Modal */}
       <Documentation isOpen={showDocumentation} onClose={() => setShowDocumentation(false)} />
+      
+      {/* Auth Debug Panel - Only show in development */}
+      {import.meta.env.DEV && <AuthDebugPanel />}
     </div>
   )
 }

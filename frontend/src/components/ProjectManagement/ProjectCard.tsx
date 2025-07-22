@@ -1,7 +1,9 @@
 import { motion } from 'framer-motion'
-import { FiFolder, FiClock, FiTrash2, FiEdit3, FiMoreVertical } from 'react-icons/fi'
+import { FiFolder, FiClock, FiTrash2, FiEdit3, FiMoreVertical, FiDownload } from 'react-icons/fi'
 import { useState } from 'react'
 import type { Project } from '@stores/projectStore'
+import { ProjectExport } from './ProjectExport'
+import { isElectron } from '@utils/electronDetection'
 
 interface ProjectCardProps {
   project: Project
@@ -12,6 +14,7 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const [showExportModal, setShowExportModal] = useState(false)
   
   const formatDate = (date: Date) => {
     if (typeof date === 'string') date = new Date(date)
@@ -66,6 +69,19 @@ export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardPr
                 <FiEdit3 size={14} />
                 Edit
               </button>
+              {isElectron() && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowExportModal(true)
+                    setShowMenu(false)
+                  }}
+                  className="flex items-center gap-2 px-3 py-2 hover:bg-accent/50 transition-all w-full text-left text-sm"
+                >
+                  <FiDownload size={14} />
+                  Export
+                </button>
+              )}
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -100,6 +116,15 @@ export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardPr
           }
         </span>
       </div>
+      
+      {/* Export Modal */}
+      {isElectron() && (
+        <ProjectExport
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          projectId={project.id}
+        />
+      )}
     </motion.div>
   )
 }

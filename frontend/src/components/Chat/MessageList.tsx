@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import clsx from 'clsx'
 import { motion, AnimatePresence } from 'framer-motion'
 import { FiCpu, FiUser, FiCopy, FiCheck, FiCode } from 'react-icons/fi'
+import { WifiOff, HardDrive } from 'lucide-react'
+import { isElectron } from '@utils/electronDetection'
 
 interface Message {
   id: string
@@ -19,6 +21,8 @@ interface MessageListProps {
 export function MessageList({ messages, isLoading, isCompact = false }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const isElectronMode = isElectron()
 
   useEffect(() => {
     // Auto-scroll to bottom on new messages
@@ -26,6 +30,19 @@ export function MessageList({ messages, isLoading, isCompact = false }: MessageL
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, isLoading])
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', {
@@ -70,6 +87,31 @@ export function MessageList({ messages, isLoading, isCompact = false }: MessageL
             I'm here to help you build amazing things. Ask me anything about
             coding, debugging, or software architecture!
           </p>
+          
+          {/* Offline/Local Mode Notice */}
+          {(isElectronMode || !isOnline) && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`mt-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${
+                isElectronMode 
+                  ? 'bg-green-500/20 text-green-600 dark:text-green-400' 
+                  : 'bg-orange-500/20 text-orange-600 dark:text-orange-400'
+              } ${isCompact ? 'text-xs' : 'text-sm'} font-medium`}
+            >
+              {isElectronMode ? (
+                <>
+                  <HardDrive className="w-3 h-3" />
+                  <span>Running locally with Claude CLI</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-3 h-3" />
+                  <span>Offline mode - Limited functionality</span>
+                </>
+              )}
+            </motion.div>
+          )}
         </motion.div>
       )}
       

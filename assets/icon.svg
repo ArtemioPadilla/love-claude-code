@@ -1,0 +1,42 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="512" height="512" rx="64" fill="#1e3c72"/>
+  
+  <!-- Gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e3c72;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#2a5298;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Apply gradient to background -->
+  <rect width="512" height="512" rx="64" fill="url(#bgGradient)"/>
+  
+  <!-- Heart shape with code brackets -->
+  <g transform="translate(256, 256)">
+    <!-- Heart -->
+    <path d="M -120,-60 C -120,-100 -80,-140 -40,-140 C 0,-140 0,-100 0,-80 C 0,-100 0,-140 40,-140 C 80,-140 120,-100 120,-60 C 120,-20 80,20 0,100 C -80,20 -120,-20 -120,-60 Z" 
+          fill="#fff" opacity="0.95"/>
+    
+    <!-- Code brackets -->
+    <text x="-60" y="20" font-family="'SF Mono', 'Monaco', monospace" font-size="96" font-weight="bold" fill="#1e3c72">&lt;/&gt;</text>
+  </g>
+  
+  <!-- Subtle glow effect -->
+  <defs>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Apply glow to heart -->
+  <g transform="translate(256, 256)" filter="url(#glow)">
+    <path d="M -120,-60 C -120,-100 -80,-140 -40,-140 C 0,-140 0,-100 0,-80 C 0,-100 0,-140 40,-140 C 80,-140 120,-100 120,-60 C 120,-20 80,20 0,100 C -80,20 -120,-20 -120,-60 Z" 
+          fill="none" stroke="#fff" stroke-width="2" opacity="0.3"/>
+  </g>
+</svg>

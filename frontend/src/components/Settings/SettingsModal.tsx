@@ -1,11 +1,13 @@
 import { motion, AnimatePresence } from 'framer-motion'
-import { FiX, FiUser, FiCode, FiShield, FiCloud, FiTerminal } from 'react-icons/fi'
+import { FiX, FiUser, FiCode, FiShield, FiCloud, FiTerminal, FiBell } from 'react-icons/fi'
 import { useState } from 'react'
 import { GeneralSettings } from './GeneralSettings'
 import { AISettings } from './AISettings'
 import { ProviderSettings } from './ProviderSettings'
 import { SecuritySettings } from './SecuritySettings'
 import { MCPTester } from './MCPTester'
+import { NotificationSettings } from './NotificationSettings'
+import { isElectron } from '@utils/electronDetection'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -18,6 +20,7 @@ const tabs = [
   { id: 'providers', label: 'Providers', icon: FiCloud },
   { id: 'security', label: 'Security', icon: FiShield },
   { id: 'mcp', label: 'MCP Test', icon: FiTerminal },
+  ...(isElectron() ? [{ id: 'notifications', label: 'Notifications', icon: FiBell }] : []),
 ]
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
@@ -90,6 +93,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 {activeTab === 'providers' && <ProviderSettings />}
                 {activeTab === 'security' && <SecuritySettings />}
                 {activeTab === 'mcp' && <MCPTester />}
+                {activeTab === 'notifications' && isElectron() && <NotificationSettings />}
               </div>
             </div>
             

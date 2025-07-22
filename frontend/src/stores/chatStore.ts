@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { api } from '@services/api'
 import { useEditorStore } from './editorStore'
 import { useSettingsStore } from './settingsStore'
+import { isElectron, checkOAuthStatus } from '@utils/electronDetection'
 
 interface Message {
   id: string
@@ -14,11 +15,13 @@ interface ChatState {
   messages: Message[]
   isLoading: boolean
   streamingContent: string
+  oauthStatus: { exists: boolean; path?: string } | null
   
   // Actions
   sendMessage: (content: string) => Promise<void>
   clearChat: () => void
   stopStreaming: () => void
+  checkOAuthStatus: () => Promise<void>
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -33,6 +36,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   ],
   isLoading: false,
   streamingContent: '',
+  oauthStatus: null,
 
   // Actions
   sendMessage: async (content) => {
@@ -40,12 +44,42 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { files, activeFileId } = useEditorStore.getState()
     const { settings } = useSettingsStore.getState()
     
-    // Check if API key is configured
-    if (!settings.ai?.apiKey) {
+    // Check authentication
+    const authMethod = settings.ai?.authMethod || 'api-key'
+    
+    // In Electron, check for OAuth token from Claude CLI
+    if (isElectron() && authMethod === 'claude-cli') {
+      const oauthStatus = await checkOAuthStatus()
+      set({ oauthStatus })
+      
+      if (!oauthStatus.exists) {
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: '⚠️ Claude CLI OAuth token not found. Please run `claude setup-token` to authenticate with Claude Max. You can do this from Settings → AI → Claude CLI OAuth.',
+          timestamp: new Date(),
+        }
+        set({ messages: [...messages, errorMessage] })
+        return
+      }
+    }
+    
+    if (authMethod === 'api-key' && !settings.ai?.apiKey) {
       const errorMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
         content: '⚠️ Please configure your API key in Settings to use the AI assistant. Click the settings icon in the header to get started.',
+        timestamp: new Date(),
+      }
+      set({ messages: [...messages, errorMessage] })
+      return
+    }
+    
+    if (authMethod === 'oauth-max' && !settings.ai?.oauthCredentials) {
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: '⚠️ Please sign in with your Claude Max account in Settings to use the AI assistant. Click the settings icon in the header to get started.',
         timestamp: new Date(),
       }
       set({ messages: [...messages, errorMessage] })
@@ -125,9 +159,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
           messages: [...state.messages, assistantMessage]
         }))
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to send message:', error)
-      assistantMessage.content = 'I apologize, but I encountered an error. Please try again.'
+      
+      // Parse error response for better messages
+      let errorMessage = 'I apologize, but I encountered an error. '
+      
+      if (error.response?.data?.message) {
+        errorMessage = `❌ ${error.response.data.message}`
+      } else if (error.response?.status === 401) {
+        errorMessage = '❌ Authentication failed. Please check your API key or OAuth credentials in Settings.'
+      } else if (error.response?.status === 403) {
+        errorMessage = '❌ Access denied. Please check your API permissions.'
+      } else if (error.response?.status === 429) {
+        errorMessage = '❌ Rate limit exceeded. Please wait a moment and try again.'
+      } else if (error.response?.status === 500) {
+        errorMessage = '❌ Server error. The Claude API may be experiencing issues. Please try again later.'
+      } else if (error.message) {
+        errorMessage = `❌ ${error.message}`
+      } else {
+        errorMessage += 'Please check your settings and try again.'
+      }
+      
+      assistantMessage.content = errorMessage
       set(state => ({
         messages: [...state.messages, assistantMessage],
         isLoading: false,
@@ -152,5 +206,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
   stopStreaming: () => {
     // In a real implementation, this would cancel the ongoing request
     set({ isLoading: false })
+  },
+  
+  checkOAuthStatus: async () => {
+    if (!isElectron()) return
+    
+    try {
+      const status = await checkOAuthStatus()
+      set({ oauthStatus: status })
+    } catch (error) {
+      console.error('Failed to check OAuth status:', error)
+      set({ oauthStatus: { exists: false } })
+    }
   },
 }))

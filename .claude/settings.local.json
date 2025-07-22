@@ -3,7 +3,9 @@
     "allow": [
       "Bash(cp:*)",
       "Bash(npm install:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": []
   },

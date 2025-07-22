@@ -1,11 +1,20 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { ArrowRight, Code2, Zap, Cloud, Shield, Sparkles, ChevronRight, Check, Terminal, Globe, Layers, Users, Package } from 'lucide-react'
 import { useNavigate } from '../Navigation'
 import Footer from '../Layout/Footer'
+import { useUserPreferencesStore } from '@stores/userPreferencesStore'
 
 const LandingPage: React.FC = () => {
   const navigate = useNavigate()
+  const { preferences } = useUserPreferencesStore()
+  
+  useEffect(() => {
+    // If user hasn't completed onboarding, redirect to onboarding
+    if (!preferences.hasCompletedOnboarding) {
+      navigate('onboarding')
+    }
+  }, [preferences.hasCompletedOnboarding, navigate])
 
   const features = [
     {

@@ -1,11 +1,18 @@
 import rateLimit from 'express-rate-limit'
 
+// More lenient rate limits for development
+const isDevelopment = process.env.NODE_ENV !== 'production'
+
 export const rateLimiter = rateLimit({
   windowMs: (parseInt(process.env.RATE_LIMIT_WINDOW || '15') * 60 * 1000), // 15 minutes default
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || '100'), // 100 requests default
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS || (isDevelopment ? '1000' : '100')), // 1000 in dev, 100 in prod
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: isDevelopment ? (req) => {
+    // Skip file routes and OAuth endpoints in development
+    return req.path.includes('/files') || req.path.includes('/oauth')
+  } : undefined,
 })
 
 // Stricter rate limiter for Claude API endpoints

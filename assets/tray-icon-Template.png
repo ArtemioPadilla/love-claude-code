@@ -1,0 +1,14 @@
+# Placeholder for tray icon
+This is a placeholder file. To generate actual tray icons, use the following command:
+
+```bash
+# Generate tray icon from SVG
+convert -background none -resize 16x16 icon.svg tray-icon-Template.png
+convert -background none -resize 32x32 icon.svg tray-icon-Template@2x.png
+```
+
+The tray icon should be:
+- 16x16 pixels for standard displays
+- 32x32 pixels for Retina displays (@2x)
+- Black and white only for macOS (the "Template" suffix enables this)
+- Transparent background

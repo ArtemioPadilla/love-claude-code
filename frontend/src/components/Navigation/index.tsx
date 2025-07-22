@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-type View = 'landing' | 'projects' | 'project' | 'docs' | 'docs-section' | 'features' | 'providers' | 'roadmap' | 'privacy' | 'terms' | 'constructs'
+type View = 'landing' | 'projects' | 'project' | 'docs' | 'docs-section' | 'features' | 'providers' | 'roadmap' | 'privacy' | 'terms' | 'constructs' | 'oauth-callback' | 'onboarding'
 
 interface NavigationState {
   currentView: View

@@ -1,3 +1,5 @@
+import { AuthMethod, AuthCredentials } from './auth'
+
 export type ProviderType = 'local' | 'firebase' | 'aws'
 
 export interface Settings {
@@ -7,7 +9,13 @@ export interface Settings {
     autoSave: boolean
   }
   ai: {
+    authMethod: AuthMethod
     apiKey?: string
+    oauthCredentials?: {
+      accessToken: string
+      refreshToken: string
+      expiresAt: number
+    }
     model: string
     temperature: number
     maxTokens: number

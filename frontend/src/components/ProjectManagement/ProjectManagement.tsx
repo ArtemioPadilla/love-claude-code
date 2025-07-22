@@ -7,6 +7,7 @@ import { TemplateSelector } from './TemplateSelector'
 import { useProjectStore } from '@stores/projectStore'
 import { ProjectTemplate } from '../../templates/projectTemplates'
 import Footer from '../Layout/Footer'
+import { useNavigate } from '../Navigation'
 
 interface CreateProjectModalProps {
   isOpen: boolean
@@ -61,10 +62,10 @@ function CreateProjectModal({ isOpen, onClose, onCreate }: CreateProjectModalPro
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-md"
+        className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between p-6 border-b border-border">
+        <div className="flex items-center justify-between p-6 border-b border-border flex-shrink-0">
           <h2 className="text-xl font-semibold">Create New Project</h2>
           <motion.button
             whileHover={{ scale: 1.05 }}
@@ -76,7 +77,7 @@ function CreateProjectModal({ isOpen, onClose, onCreate }: CreateProjectModalPro
           </motion.button>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-6">
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto flex-1">
           <div className="mb-4">
             <label htmlFor="project-name" className="block text-sm font-medium mb-2">
               Project Name
@@ -181,6 +182,7 @@ export function ProjectManagement() {
     setCurrentProject,
     setCurrentView 
   } = useProjectStore()
+  const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingProject, setEditingProject] = useState<string | null>(null)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
@@ -194,12 +196,12 @@ export function ProjectManagement() {
       template: template || undefined 
     })
     setCurrentProject(id)
-    setCurrentView('editor')
+    navigate('project', { id })
   }
   
   const handleOpenProject = (id: string) => {
     setCurrentProject(id)
-    setCurrentView('editor')
+    navigate('project', { id })
   }
   
   const handleEditProject = (id: string) => {

@@ -3,12 +3,12 @@ import { z } from 'zod'
 import { validateRequest } from '../../middleware/validation.js'
 import { claudeRateLimiter } from '../../middleware/rateLimiter.js'
 import { claudeService } from '../../services/claude.js'
-import { authenticateToken } from './auth.js'
+import { authenticateFlexible } from '../../middleware/authMiddleware.js'
 
 export const claudeRouter = Router()
 
 // Apply authentication and Claude-specific rate limiting
-claudeRouter.use(authenticateToken)
+claudeRouter.use(authenticateFlexible)
 claudeRouter.use(claudeRateLimiter)
 
 // Validation schemas
@@ -27,14 +27,16 @@ const chatSchema = z.object({
       projectId: z.string().uuid().optional(),
     }).optional(),
     stream: z.boolean().optional().default(true),
+    authMethod: z.enum(['api-key', 'oauth-max']).optional(),
   }),
 })
 
 // Chat endpoint
 claudeRouter.post('/chat', validateRequest(chatSchema), async (req: any, res, next) => {
   try {
-    const { messages, context, stream } = req.body
+    const { messages, context, stream, authMethod } = req.body
     const userId = req.userId // From auth middleware
+    const oauthToken = req.oauthToken // OAuth token if using OAuth
 
     if (stream) {
       // Set up SSE headers for streaming
@@ -53,13 +55,16 @@ claudeRouter.post('/chat', validateRequest(chatSchema), async (req: any, res, ne
           (chunk: string) => {
             res.write(`data: {"type":"content","content":${JSON.stringify(chunk)}}\n\n`)
           },
-          userId
+          userId,
+          oauthToken
         )
         
         res.write('data: {"type":"done"}\n\n')
         res.end()
       } catch (error: any) {
-        res.write(`data: {"type":"error","error":${JSON.stringify(error.message)}}\n\n`)
+        console.error('Streaming error in route:', error)
+        const errorMessage = error.message || 'Unknown error occurred'
+        res.write(`data: {"type":"error","error":${JSON.stringify(errorMessage)}}\n\n`)
         res.end()
       }
 
@@ -69,7 +74,7 @@ claudeRouter.post('/chat', validateRequest(chatSchema), async (req: any, res, ne
       })
     } else {
       // Non-streaming response
-      const response = await claudeService.chat(messages, context, userId)
+      const response = await claudeService.chat(messages, context, userId, oauthToken)
       res.json({ response })
     }
   } catch (error) {

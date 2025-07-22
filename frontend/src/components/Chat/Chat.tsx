@@ -9,10 +9,18 @@ import {
   FiMinimize2,
   FiTrash2,
   FiDownload,
-  FiCpu
+  FiCpu,
+  FiTerminal,
+  FiMessageSquare
 } from 'react-icons/fi'
 import { MessageList } from './MessageList'
 import { useChatStore } from '@stores/chatStore'
+import { AuthTestButton } from './AuthTestButton'
+import { ClaudeTerminal } from './ClaudeTerminal'
+import { ClaudeSetupWizard } from '@components/Setup/ClaudeSetupWizard'
+import { useSettingsStore } from '@stores/settingsStore'
+import { isElectron } from '@utils/electronDetection'
+import { WifiOff, HardDrive } from 'lucide-react'
 
 interface ChatProps {
   className?: string
@@ -20,14 +28,42 @@ interface ChatProps {
 
 export function Chat({ className = '' }: ChatProps) {
   const { messages, isLoading, sendMessage, clearChat } = useChatStore()
+  const { settings } = useSettingsStore()
   const [input, setInput] = useState('')
   const [isExpanded, setIsExpanded] = useState(false)
   const [showActions, setShowActions] = useState(false)
   const [isCompact, setIsCompact] = useState(false)
   const [isVeryNarrow, setIsVeryNarrow] = useState(false)
   const [containerWidth, setContainerWidth] = useState(0)
+  const [showSetupWizard, setShowSetupWizard] = useState(false)
+  const [mode, setMode] = useState<'chat' | 'terminal'>(
+    settings.ai?.authMethod === 'claude-code-cli' ? 'terminal' : 'chat'
+  )
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    // Check if we need to show setup wizard
+    if (isElectron() && mode === 'terminal') {
+      // Check Claude CLI status when in Electron
+      checkClaudeStatus()
+    }
+  }, [mode])
+
+  const checkClaudeStatus = async () => {
+    if (!isElectron()) return
+    
+    try {
+      const electronAPI = (window as any).electronAPI
+      const status = await electronAPI.claude.checkCLI()
+      
+      if (!status.installed || !status.authenticated) {
+        setShowSetupWizard(true)
+      }
+    } catch (error) {
+      console.error('Failed to check Claude status:', error)
+    }
+  }
 
   useEffect(() => {
     // Auto-resize textarea
@@ -80,6 +116,97 @@ export function Chat({ className = '' }: ChatProps) {
     return "What can I help you with?"
   }
 
+  // Show terminal mode if selected
+  if (mode === 'terminal') {
+    return (
+      <motion.div 
+        ref={containerRef}
+        className={`
+          flex flex-col h-full
+          ${isExpanded ? 'fixed inset-4 z-50' : ''}
+          ${className}
+        `}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        {/* Terminal Header with Mode Toggle */}
+        <div className={`${isCompact ? 'h-12' : 'h-14'} flex items-center justify-between ${isCompact ? 'px-2' : 'px-4'} border-b border-border/50 bg-gradient-subtle rounded-t-lg`}>
+          <div className={`flex items-center ${isCompact ? 'space-x-2' : 'space-x-3'}`}>
+            <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
+              <motion.button
+                onClick={() => setMode('chat')}
+                className={`
+                  flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                  ${mode === 'chat' 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                  }
+                `}
+                whileHover={{ scale: mode === 'chat' ? 1 : 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FiMessageSquare size={isCompact ? 14 : 16} />
+                {!isCompact && <span className="text-sm font-medium">Chat</span>}
+              </motion.button>
+              <motion.button
+                onClick={() => setMode('terminal')}
+                className={`
+                  flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                  ${mode === 'terminal' 
+                    ? 'bg-background text-foreground shadow-sm' 
+                    : 'text-muted-foreground hover:text-foreground'
+                  }
+                `}
+                whileHover={{ scale: mode === 'terminal' ? 1 : 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <FiTerminal size={isCompact ? 14 : 16} />
+                {!isCompact && <span className="text-sm font-medium">Terminal</span>}
+              </motion.button>
+            </div>
+          </div>
+          <div className={`flex items-center ${isCompact ? 'gap-0' : 'gap-1'}`}>
+            <motion.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsExpanded(!isExpanded)}
+              className={`${isCompact ? 'p-1.5' : 'p-2'} rounded-md hover:bg-accent/50 transition-all text-muted-foreground hover:text-foreground`}
+              title={isExpanded ? "Minimize" : "Maximize"}
+            >
+              {isExpanded ? <FiMinimize2 size={isCompact ? 14 : 16} /> : <FiMaximize2 size={isCompact ? 14 : 16} />}
+            </motion.button>
+          </div>
+        </div>
+        
+        {/* Terminal Component or Setup Wizard */}
+        <div className="flex-1 overflow-hidden">
+          {showSetupWizard && isElectron() ? (
+            <div className="h-full overflow-y-auto bg-background">
+              <ClaudeSetupWizard />
+              <div className="p-4 text-center">
+                <button
+                  onClick={() => {
+                    setShowSetupWizard(false)
+                    checkClaudeStatus()
+                  }}
+                  className="text-sm text-muted-foreground hover:text-foreground underline"
+                >
+                  Skip setup and try anyway
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ClaudeTerminal 
+              isExpanded={isExpanded}
+              className="h-full"
+            />
+          )}
+        </div>
+      </motion.div>
+    )
+  }
+
   return (
     <motion.div 
       ref={containerRef}
@@ -92,22 +219,59 @@ export function Chat({ className = '' }: ChatProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
     >
-      {/* Chat Header */}
+      {/* Chat Header with Mode Toggle */}
       <div className={`${isCompact ? 'h-12' : 'h-14'} flex items-center justify-between ${isCompact ? 'px-2' : 'px-4'} border-b border-border/50 bg-gradient-subtle`}>
         <div className={`flex items-center ${isCompact ? 'space-x-2' : 'space-x-3'}`}>
-          <motion.div 
-            className={`${isCompact ? 'w-8 h-8' : 'w-10 h-10'} rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-glow flex-shrink-0`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FiCpu className="text-primary-foreground" size={isCompact ? 16 : 20} />
-          </motion.div>
-          <div className="min-w-0">
-            <h2 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold gradient-text truncate`}>
-              {isCompact ? 'AI' : 'AI Assistant'}
-            </h2>
-            {!isCompact && (
-              <span className="text-xs text-muted-foreground">Your coding companion</span>
+          {/* Mode Toggle */}
+          <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1">
+            <motion.button
+              onClick={() => setMode('chat')}
+              className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                ${mode === 'chat' 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+                }
+              `}
+              whileHover={{ scale: mode === 'chat' ? 1 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <FiMessageSquare size={isCompact ? 14 : 16} />
+              {!isCompact && <span className="text-sm font-medium">Chat</span>}
+            </motion.button>
+            <motion.button
+              onClick={() => setMode('terminal')}
+              className={`
+                flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
+                ${mode === 'terminal' 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+                }
+              `}
+              whileHover={{ scale: mode === 'terminal' ? 1 : 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              title={settings.ai?.authMethod === 'claude-code-cli' ? 'Recommended for CLI users' : undefined}
+            >
+              <FiTerminal size={isCompact ? 14 : 16} />
+              {!isCompact && <span className="text-sm font-medium">Terminal</span>}
+            </motion.button>
+          </div>
+          
+          {/* AI Info */}
+          <div className="flex items-center gap-2">
+            <motion.div 
+              className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'} rounded-full bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-glow flex-shrink-0`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FiCpu className="text-primary-foreground" size={isCompact ? 12 : 16} />
+            </motion.div>
+            {!isVeryNarrow && (
+              <div className="min-w-0">
+                <h2 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold gradient-text truncate`}>
+                  {isCompact ? 'AI' : 'AI Assistant'}
+                </h2>
+              </div>
             )}
           </div>
         </div>
@@ -156,6 +320,7 @@ export function Chat({ className = '' }: ChatProps) {
               <FiDownload size={14} />
               Export
             </button>
+            <AuthTestButton />
           </div>
         </motion.div>
       )}

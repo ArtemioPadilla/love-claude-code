@@ -16,6 +16,7 @@ import { ConstructExplorer } from './ConstructExplorer'
 import { ConstructDetails } from './ConstructDetails'
 import { useConstructStore } from '../../stores/constructStore'
 import Footer from '../../components/Layout/Footer'
+import NavigationBar from '../../components/Layout/NavigationBar'
 
 /**
  * Main construct catalog component
@@ -127,6 +128,14 @@ const ConstructCatalog: React.FC = () => {
     <div className="min-h-screen bg-gray-900 text-white">
       {/* Header */}
       <header className="border-b border-gray-800 sticky top-0 z-20 bg-gray-900/80 backdrop-blur-sm">
+        {/* Navigation Bar */}
+        <div className="border-b border-gray-800">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <NavigationBar />
+          </div>
+        </div>
+        
+        {/* Construct Catalog Header */}
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -175,7 +184,7 @@ const ConstructCatalog: React.FC = () => {
         </div>
       </header>
       
-      <div className="flex h-[calc(100vh-80px)]">
+      <div className="flex h-[calc(100vh-140px)]">
         {/* Filters Sidebar */}
         <AnimatePresence>
           {showFilters && (

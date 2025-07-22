@@ -19,6 +19,19 @@ business_plan.md
 
 ## 🆕 Recent Updates (January 2025)
 
+### 🖥️ Electron Desktop App
+- **Desktop Application**: Full offline development with Electron desktop app
+- **Claude Max Integration**: Native OAuth authentication for Claude Max subscribers
+- **Claude CLI Integration**: Use Claude Code CLI for terminal-based AI assistance
+- **Local Development**: Complete offline mode with local file storage
+- **OS Integration**: Native menus, keyboard shortcuts, and OS keychain for credentials
+- **Git Integration**: Built-in Git support with visual status and commit interface
+- **Project Import/Export**: Export projects as .lcc archives for sharing and backup
+- **File Watching**: Real-time file change detection and sync
+- **Advanced Search**: Find files by name, content, or modification time
+- **Offline Indicators**: Visual feedback for offline/local mode status
+- **Onboarding Flow**: Step-by-step setup wizard for new users
+
 ### 🎨 Complete Website Overhaul
 - **Beautiful Landing Page**: New landing page with hero section, feature showcase, and provider comparison
 - **Documentation Center**: Full documentation website with sidebar navigation, search, and interactive examples
@@ -64,6 +77,7 @@ We believe the future of software development is conversational. Why struggle wi
 
 ### 🤖 **AI-First Development**
 - **Conversational Coding**: Describe features in plain English, get production code
+- **Dual Authentication**: Use Claude with API keys or Claude Max subscription
 - **Model Context Protocol (MCP)**: Enable Claude to interact with your apps through custom tools
 - **Intelligent Context**: Claude understands your entire codebase and project history
 - **Real-time Streaming**: Watch your code generate live as you type
@@ -86,6 +100,20 @@ We believe the future of software development is conversational. Why struggle wi
 - **SOC2 Compliance**: Enterprise-grade security from day one
 - **Private Claude Instances**: Dedicated AI for your organization
 - **Audit Logging**: Complete activity tracking and compliance reporting
+
+### 🖥️ **Desktop App Features**
+- **Claude Max OAuth**: Native authentication for Claude Max subscribers
+- **Offline Development**: Full functionality without internet connection
+- **Git Integration**: Visual Git status, commit, branch, and merge operations
+- **Project Export/Import**: Share projects as .lcc archives
+- **File Watching**: Real-time sync with external editor changes
+- **Advanced Search**: Find files by name, content, or modification time
+- **Native Menus**: OS-integrated menus and keyboard shortcuts
+- **Auto Updates**: Automatic update checking with visual progress
+- **System Tray**: Minimize to tray with quick project access
+- **Native Notifications**: System notifications for important events
+- **Multiple Windows**: Open multiple projects simultaneously
+- **Badge Counter**: Unread notification count (macOS)
 
 ---
 
@@ -127,6 +155,45 @@ Experience our new landing page with smooth animations, feature showcases, and p
 
 ---
 
+## 🖥️ Desktop App (Electron)
+
+Love Claude Code is available as a native desktop application, providing the ultimate development experience for Claude Max subscribers and offline development enthusiasts.
+
+### Desktop App Benefits
+- **🔐 Claude Max OAuth**: Seamless authentication with your Claude Max subscription
+- **💾 Local Everything**: All data stored locally - no cloud required
+- **🚀 Better Performance**: Native app performance without browser overhead
+- **🔌 Offline Mode**: Full functionality without internet connection
+- **🖼️ Multiple Windows**: Work on multiple projects simultaneously
+- **⌨️ Native Shortcuts**: OS-integrated keyboard shortcuts and menus
+
+### Claude CLI Integration
+The desktop app integrates directly with Claude CLI, allowing you to:
+```bash
+# Use Claude in your terminal
+claude "create a React component for user authentication"
+
+# The desktop app automatically detects and uses your Claude CLI OAuth token
+# No separate API key configuration needed!
+```
+
+### Project Import/Export
+Share your projects easily with the new import/export feature:
+- Export projects as `.lcc` archives
+- Include/exclude node_modules, Git history, and hidden files
+- Create project templates for reuse
+- Import projects from colleagues or the community
+
+### Git Integration
+Full Git support built into the desktop app:
+- Visual Git status in the header
+- One-click commit with file selection
+- Branch management and switching
+- Diff viewer for changes
+- Automated commit messages by Claude
+
+---
+
 ## 🏃‍♂️ Quick Start
 
 ### Prerequisites
@@ -140,6 +207,39 @@ Before getting started, please review our [Security Policy](./SECURITY.md) for b
 
 ### 1. Clone and Install
 
+#### Option A: Desktop App (Recommended for Claude Max users)
+```bash
+# Download the desktop app from releases
+# https://github.com/love-claude-code/love-claude-code/releases
+
+# Or build from source:
+git clone https://github.com/love-claude-code/love-claude-code.git
+cd love-claude-code
+npm install
+make electron-build  # or npm run electron:build
+
+# Run the desktop app in development:
+make electron-dev  # or npm run electron:dev
+
+# Build for distribution:
+make electron-dist  # Creates installers for all platforms
+
+# Platform-specific builds:
+make electron-pack-mac    # macOS only
+make electron-pack-win    # Windows only  
+make electron-pack-linux  # Linux only
+
+# The desktop app includes:
+# - Full offline development
+# - Claude Max OAuth integration
+# - Claude CLI integration  
+# - Built-in Git support
+# - Project import/export
+# - OS-native features
+# - No server required
+```
+
+#### Option B: Web Development
 ```bash
 git clone https://github.com/love-claude-code/love-claude-code.git
 cd love-claude-code
@@ -183,7 +283,9 @@ docker-compose -f docker-compose.providers.yml up
 1. Open [http://localhost:3000](http://localhost:3000)
 2. Sign up with your email (stored locally)
 3. Go to Settings → AI Settings
-4. Add your Anthropic API key
+4. Choose your authentication method:
+   - **API Key**: Add your Anthropic API key (pay-per-use)
+   - **Claude Max**: Sign in with your Claude.ai account ($200/month subscription)
 5. Select your preferred backend provider
 
 ### 4. Create Your First Project
@@ -514,6 +616,12 @@ love-claude-code/
 npm run dev                    # Start all services
 npm run dev:frontend          # Frontend only (port 3000)
 npm run dev:backend           # Backend only (port 8000)
+
+# Electron Desktop App
+npm run electron              # Run desktop app
+npm run electron:dev          # Development mode with hot reload
+npm run electron:build        # Build desktop app for distribution
+npm run electron:dist         # Create installer packages
 
 # Testing
 npm run test                  # Run all tests

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { api } from '@services/api'
+import { isElectron } from '@utils/electronDetection'
 import type { Settings } from '../types/settings'
 
 interface SettingsState {
@@ -25,6 +26,7 @@ export const useSettingsStore = create<SettingsState>()(
           autoSave: true,
         },
         ai: {
+          authMethod: 'api-key',
           apiKey: '',
           model: 'claude-3-5-sonnet-20241022',
           temperature: 0.7,
@@ -43,13 +45,18 @@ export const useSettingsStore = create<SettingsState>()(
 
       loadSettings: async () => {
         set({ isLoading: true, error: null })
+        
         try {
-          // Try to load from API first
+          // api.getSettings now handles Electron check internally
           const response = await api.getSettings()
-          set({ settings: response, isLoading: false })
+          if (response && Object.keys(response).length > 0) {
+            set({ settings: { ...get().settings, ...response }, isLoading: false })
+          } else {
+            set({ isLoading: false })
+          }
         } catch (error) {
           // Fall back to local storage
-          console.log('Using local settings')
+          console.log('Using local settings:', error)
           set({ isLoading: false })
         }
       },
@@ -59,16 +66,18 @@ export const useSettingsStore = create<SettingsState>()(
         const newSettings = { ...settings, ...updates }
         
         set({ isLoading: true, error: null })
+        
         try {
-          // Save to API
+          // api.saveSettings now handles Electron check internally
           await api.saveSettings(newSettings)
           set({ settings: newSettings, isLoading: false })
-        } catch (error) {
+        } catch (error: any) {
+          console.log('Settings save error:', error.message)
           // Still update local storage even if API fails
           set({ 
             settings: newSettings, 
             isLoading: false,
-            error: 'Failed to save to server, settings saved locally'
+            error: isElectron() ? null : error.message // Don't show error for Electron local saves
           })
         }
       },
@@ -87,6 +96,7 @@ export const useSettingsStore = create<SettingsState>()(
               autoSave: true,
             },
             ai: {
+              authMethod: 'api-key',
               apiKey: '',
               model: 'claude-3-5-sonnet-20241022',
               temperature: 0.7,
