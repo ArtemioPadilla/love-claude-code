@@ -15,6 +15,17 @@ export interface Project {
     theme?: string
     language?: string
   }
+  // Construct-specific fields
+  isConstructProject?: boolean
+  constructLevel?: string
+  constructMetadata?: {
+    level: string
+    phase: 'specification' | 'testing' | 'implementation' | 'certification'
+    specificationComplete: boolean
+    testsGenerated: boolean
+    implementationComplete: boolean
+    certificationStatus?: 'pending' | 'in-progress' | 'approved' | 'rejected'
+  }
 }
 
 interface ProjectState {

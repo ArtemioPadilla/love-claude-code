@@ -1,0 +1,490 @@
+id: platform-l1-integrated-terminal
+name: Integrated Terminal
+level: L1
+version: 1.0.0
+description: Secure terminal with command history, ANSI colors, themes, and enhanced features. Built upon L0 TerminalPrimitive with production-ready capabilities.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 75
+    builtWith: 
+      - platform-l0-terminal-primitive
+
+categories:
+  - ui
+  - terminal
+  - shell
+  - command-line
+
+tags:
+  - terminal
+  - shell
+  - console
+  - command-history
+  - ansi
+  - themes
+  - autocomplete
+  - L1
+  - enhanced
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  initialLines:
+    type: string[]
+    description: Initial terminal content
+    required: false
+    default: ["Welcome to Integrated Terminal v1.0", ""]
+    example: ["$ npm start", "Server running on port 3000"]
+    
+  maxLines:
+    type: number
+    description: Maximum lines in buffer
+    required: false
+    default: 5000
+    example: 10000
+    
+  maxHistory:
+    type: number
+    description: Maximum command history entries
+    required: false
+    default: 100
+    example: 500
+    
+  prompt:
+    type: string
+    description: Terminal prompt format with variables
+    required: false
+    default: "${user}@${host}:${cwd}$ "
+    example: "[${user}@${host} ${cwd}]% "
+    
+  theme:
+    type: string
+    description: Terminal theme
+    required: false
+    default: dark
+    validation:
+      enum: [dark, light, solarized, monokai]
+    example: solarized
+    
+  enableAnsiColors:
+    type: boolean
+    description: Enable ANSI color code support
+    required: false
+    default: true
+    example: true
+    
+  enableAutoComplete:
+    type: boolean
+    description: Enable command auto-completion
+    required: false
+    default: true
+    example: true
+    
+  enableCommandHistory:
+    type: boolean
+    description: Enable command history
+    required: false
+    default: true
+    example: true
+    
+  fontSize:
+    type: number
+    description: Terminal font size
+    required: false
+    default: 14
+    example: 16
+    
+  fontFamily:
+    type: string
+    description: Terminal font family
+    required: false
+    default: Consolas, Monaco, "Courier New", monospace
+    example: "Fira Code", monospace
+    
+  shellType:
+    type: string
+    description: Shell type to emulate
+    required: false
+    default: bash
+    validation:
+      enum: [bash, zsh, powershell, cmd]
+    example: zsh
+    
+  onCommand:
+    type: function
+    description: Command execution handler
+    required: false
+    example: async (command, args, env) => ({ success: true, output: "Done" })
+
+outputs:
+  lines:
+    type: TerminalLine[]
+    description: Current terminal lines with metadata
+    
+  currentDirectory:
+    type: string
+    description: Current working directory
+    
+  commandHistory:
+    type: string[]
+    description: Command history
+    
+  environment:
+    type: object
+    description: Environment variables
+    
+  isExecuting:
+    type: boolean
+    description: Whether a command is executing
+    
+  lastCommand:
+    type: CommandInfo
+    description: Information about last executed command
+
+types:
+  TerminalLine:
+    description: Terminal line with formatting
+    properties:
+      id:
+        type: string
+        description: Unique line ID
+      content:
+        type: ParsedText[]
+        description: Parsed text with styles
+      type:
+        type: string
+        enum: [command, output, error, info, warning]
+        description: Line type
+      timestamp:
+        type: Date
+        description: When line was added
+        
+  ParsedText:
+    description: Text segment with styling
+    properties:
+      text:
+        type: string
+        description: Text content
+      style:
+        type: TextStyle
+        description: Applied styles
+        
+  TextStyle:
+    description: Text styling options
+    properties:
+      color:
+        type: string
+        description: Text color
+      backgroundColor:
+        type: string
+        description: Background color
+      bold:
+        type: boolean
+        description: Bold text
+      italic:
+        type: boolean
+        description: Italic text
+      underline:
+        type: boolean
+        description: Underlined text
+        
+  CommandInfo:
+    description: Command execution information
+    properties:
+      command:
+        type: string
+        description: Command name
+      args:
+        type: string[]
+        description: Command arguments
+      timestamp:
+        type: Date
+        description: Execution time
+      success:
+        type: boolean
+        description: Whether command succeeded
+      error:
+        type: string
+        description: Error message if failed
+        
+  CommandResult:
+    description: Command execution result
+    properties:
+      success:
+        type: boolean
+        description: Whether command succeeded
+      output:
+        type: string
+        description: Command output
+      environment:
+        type: object
+        description: Updated environment variables
+      directory:
+        type: string
+        description: New working directory
+
+implementation:
+  ui: frontend/src/constructs/L1/ui/IntegratedTerminal.tsx
+  
+dependencies:
+  - platform-l0-terminal-primitive
+  - dompurify
+
+security:
+  - aspect: Command Injection Prevention
+    description: Sanitizes and validates commands before execution
+    severity: critical
+    implementation: Command parsing and validation
+    recommendations:
+      - Validate all command inputs
+      - Implement command whitelisting
+      - Escape special characters
+      - Limit command privileges
+      
+  - aspect: XSS Protection
+    description: Sanitizes output to prevent XSS attacks
+    severity: high
+    implementation: DOMPurify for output sanitization
+    recommendations:
+      - Sanitize all terminal output
+      - Escape HTML entities
+      - Validate ANSI escape sequences
+      
+  - aspect: Environment Isolation
+    description: Isolated environment variables
+    severity: medium
+    implementation: Sandboxed environment context
+    recommendations:
+      - Never expose sensitive env vars
+      - Implement env var whitelisting
+      - Audit env var access
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Command execution costs depend on backend
+    - Consider rate limiting for expensive operations
+
+c4:
+  type: Component
+  technology: React + Terminal Emulation
+  external: false
+  position:
+    x: 500
+    y: 300
+
+examples:
+  - title: Basic Terminal
+    description: Simple integrated terminal
+    language: typescript
+    code: |
+      import { IntegratedTerminal } from '@/constructs/L1/ui/IntegratedTerminal'
+      
+      const terminal = new IntegratedTerminal()
+      await terminal.initialize({
+        theme: 'dark',
+        onCommand: async (command, args) => {
+          // Execute command on backend
+          const result = await api.executeCommand(command, args)
+          return {
+            success: result.exitCode === 0,
+            output: result.output
+          }
+        }
+      })
+      
+      // Write output
+      terminal.writeLine('Build started...', 'info')
+      terminal.writeLine('✓ Build completed', 'output')
+      
+      // Render
+      <div className="terminal-container">
+        {terminal.render()}
+      </div>
+      
+  - title: Development Environment
+    description: Terminal for development tasks
+    language: typescript
+    code: |
+      const terminal = new IntegratedTerminal()
+      await terminal.initialize({
+        shellType: 'bash',
+        theme: 'solarized',
+        fontSize: 16,
+        enableCommandHistory: true,
+        enableAutoComplete: true,
+        environment: {
+          NODE_ENV: 'development',
+          PORT: '3000'
+        },
+        onCommand: async (command, args, env) => {
+          // Handle dev commands
+          switch(command) {
+            case 'npm':
+              return handleNpmCommand(args, env)
+            case 'git':
+              return handleGitCommand(args, env)
+            default:
+              return { success: false, output: `Unknown command: ${command}` }
+          }
+        }
+      })
+      
+      // Execute commands programmatically
+      await terminal.executeCommand('npm install')
+      await terminal.executeCommand('npm run dev')
+      
+  - title: With ANSI Colors
+    description: Colorful terminal output
+    language: typescript
+    code: |
+      const terminal = new IntegratedTerminal()
+      await terminal.initialize({
+        enableAnsiColors: true,
+        theme: 'dark'
+      })
+      
+      // Write colored output
+      terminal.writeLine('\x1b[32m✓ Success\x1b[0m Tests passed')
+      terminal.writeLine('\x1b[31m✗ Error\x1b[0m Build failed')
+      terminal.writeLine('\x1b[33m⚠ Warning\x1b[0m Deprecated API')
+      
+      // Use line types for automatic coloring
+      terminal.writeLine('Build successful', 'info')
+      terminal.writeLine('Compilation error', 'error')
+      terminal.writeLine('Security warning', 'warning')
+      
+  - title: Custom Shell Emulation
+    description: PowerShell-style terminal
+    language: typescript
+    code: |
+      const terminal = new IntegratedTerminal()
+      await terminal.initialize({
+        shellType: 'powershell',
+        prompt: 'PS ${cwd}> ',
+        theme: 'light',
+        fontFamily: 'Cascadia Code, monospace',
+        onCommand: async (command, args) => {
+          // PowerShell command handling
+          if (command === 'Get-ChildItem' || command === 'ls') {
+            return { 
+              success: true, 
+              output: await listDirectory() 
+            }
+          }
+          // ... more commands
+        }
+      })
+      
+      // Built-in commands work across shells
+      await terminal.executeCommand('cd C:\\Projects')
+      await terminal.executeCommand('clear')
+
+bestPractices:
+  - Always sanitize command inputs and outputs
+  - Implement proper command timeouts
+  - Limit command execution privileges
+  - Log all executed commands for audit
+  - Handle ANSI codes carefully to prevent injection
+  - Implement rate limiting for command execution
+  - Provide clear error messages
+  - Support common keyboard shortcuts (Ctrl+C, etc.)
+  - Persist command history securely
+  - Handle large outputs with virtualization
+  - Test with various shell types
+  - Implement proper environment isolation
+  - Support copy/paste functionality
+  - Handle terminal resize events
+  - Provide command suggestions thoughtfully
+
+testing:
+  unit:
+    - Command parsing and execution
+    - ANSI color code parsing
+    - Command history management
+    - Built-in command handling
+    - Environment variable management
+    - Prompt formatting
+    - Output sanitization
+    - Autocomplete functionality
+    
+  integration:
+    - User input handling
+    - Command execution flow
+    - Theme rendering
+    - Keyboard navigation
+    - Copy/paste operations
+    - Terminal resizing
+
+performance:
+  - ANSI parsing is O(n) where n is text length
+  - Command history lookup is O(1)
+  - Autocomplete is O(m) where m is command count
+  - Consider virtualization for >10k lines
+  - Debounce rapid command execution
+
+limitations:
+  - No real shell process (command emulation only)
+  - Limited ANSI escape sequence support
+  - No terminal multiplexing
+  - No SSH/remote shell support
+  - No file upload/download
+  - Basic autocomplete only
+
+migration:
+  from: platform-l0-terminal-primitive
+  steps:
+    - Replace TerminalPrimitive with IntegratedTerminal
+    - Add command handler implementation
+    - Configure theme and features
+    - Update event handlers
+    - Test command execution
+    - Add security measures
+
+roadmap:
+  - Full ANSI/VT100 support
+  - Terminal multiplexing (tabs/panes)
+  - SSH/remote shell integration
+  - File transfer support
+  - Advanced autocomplete with AI
+  - Command macros/aliases
+  - Terminal recording/playback
+  - Integration with L2 IDEWorkspace
+  - Collaborative terminal sessions
+  - Custom shell scripting
+
+comparison:
+  vs_l0_terminal:
+    added:
+      - Command history
+      - ANSI color support
+      - Multiple themes
+      - Autocomplete
+      - Built-in commands
+      - Environment variables
+      - Command execution
+      - Security features
+      - Prompt customization
+    removed:
+      - Nothing (full enhancement)
+    improved:
+      - Visual appearance
+      - User interaction
+      - Functionality
+      - Security
+
+<system-reminder>
+Whenever you write a YAML file, ensure it follows proper YAML syntax with correct indentation and structure. The file should be comprehensive and include all necessary information for developers to understand and use the construct.
+</system-reminder>

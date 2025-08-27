@@ -12,14 +12,14 @@ interface UserRecord extends User {
  * Local authentication provider using JSON file storage
  */
 export class LocalAuthProvider implements AuthProvider {
-  private config: ProviderConfig
+  // Config removed as it was unused
   private users: Map<string, UserRecord> = new Map()
   private usersByEmail: Map<string, string> = new Map() // email -> userId
   private dataPath: string
   private jwtSecret: string
   
   constructor(config: ProviderConfig) {
-    this.config = config
+    // Store paths directly from config
     this.dataPath = path.join(
       config.options?.databasePath || './data/db',
       config.projectId,
@@ -130,7 +130,7 @@ export class LocalAuthProvider implements AuthProvider {
     return { user, token }
   }
   
-  async signOut(userId: string): Promise<void> {
+  async signOut(_userId: string): Promise<void> {
     // In a real implementation, you might want to invalidate the token
     // For now, this is a no-op since JWTs are stateless
   }

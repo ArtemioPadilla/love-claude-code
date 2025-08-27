@@ -1,0 +1,1109 @@
+id: platform-l2-serverless-api-pattern
+name: Serverless API Pattern
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - serverless
+  - api
+  - functions
+  - backend
+  - event-driven
+  - scalable
+  - pattern
+  - platform-construct
+
+description: |
+  Complete serverless API pattern with functions, API gateway, database, and event-driven
+  architecture. This pattern enables building scalable, pay-per-use backends with automatic
+  scaling, event processing, and managed infrastructure. It composes multiple L1 constructs
+  to provide a production-ready serverless platform supporting multiple runtimes, triggers,
+  and integrations.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-managed-container
+  - platform-l1-rest-api-service
+  - platform-l1-encrypted-database
+  - platform-l1-authenticated-websocket
+  - platform-l1-cdn-storage
+  - platform-l1-secure-auth-service
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: name
+    type: string
+    required: true
+    description: API name
+    example: my-serverless-api
+    validation:
+      pattern: '^[a-zA-Z0-9-]+$'
+
+  - name: region
+    type: string
+    required: false
+    description: Deployment region
+    default: us-east-1
+    example: us-west-2
+
+  - name: functions
+    type: array
+    required: true
+    description: Function definitions
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Function name
+          example: process-order
+        runtime:
+          type: string
+          enum: ['nodejs18', 'python3.11', 'java17', 'go1.21', 'rust1.75']
+          description: Runtime environment
+        handler:
+          type: string
+          description: Handler entry point
+          example: index.handler
+        memory:
+          type: number
+          default: 128
+          description: Memory allocation in MB
+          validation:
+            min: 128
+            max: 10240
+        timeout:
+          type: number
+          default: 30
+          description: Timeout in seconds
+          validation:
+            min: 1
+            max: 900
+        environment:
+          type: object
+          description: Environment variables
+        triggers:
+          type: array
+          description: Function triggers
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                enum: ['http', 'schedule', 'queue', 'storage', 'database']
+              config:
+                type: object
+                description: Trigger configuration
+        layers:
+          type: array
+          description: Function layers
+          items:
+            type: string
+        permissions:
+          type: array
+          description: Required permissions
+          items:
+            type: string
+
+  - name: api
+    type: object
+    required: false
+    description: API Gateway configuration
+    properties:
+      routes:
+        type: array
+        description: API routes
+        items:
+          type: object
+          properties:
+            path:
+              type: string
+              example: /users/{id}
+            method:
+              type: string
+              enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+            function:
+              type: string
+              description: Target function name
+            auth:
+              type: boolean
+              default: false
+              description: Require authentication
+            rateLimit:
+              type: number
+              description: Requests per minute
+            cors:
+              type: boolean
+              default: true
+            validation:
+              type: object
+              description: Request validation
+              properties:
+                body:
+                  type: object
+                query:
+                  type: object
+                headers:
+                  type: object
+      basePath:
+        type: string
+        default: /
+        description: API base path
+      stage:
+        type: string
+        default: prod
+        description: API stage
+      throttle:
+        type: object
+        description: Throttling configuration
+        properties:
+          burstLimit:
+            type: number
+            default: 5000
+          rateLimit:
+            type: number
+            default: 2000
+
+  - name: database
+    type: object
+    required: false
+    description: Database configuration
+    properties:
+      type:
+        type: string
+        enum: ['dynamodb', 'aurora-serverless', 'cosmos', 'firestore']
+        description: Database type
+      tables:
+        type: array
+        description: Table definitions
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            partitionKey:
+              type: string
+            sortKey:
+              type: string
+            indexes:
+              type: array
+
+  - name: storage
+    type: object
+    required: false
+    description: Storage configuration
+    properties:
+      buckets:
+        type: array
+        description: Storage buckets
+        items:
+          type: object
+          properties:
+            name:
+              type: string
+            public:
+              type: boolean
+              default: false
+            lifecycle:
+              type: object
+
+  - name: events
+    type: array
+    required: false
+    description: Event configurations
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Event name
+        source:
+          type: string
+          description: Event source
+        targets:
+          type: array
+          description: Target functions
+          items:
+            type: string
+        filter:
+          type: object
+          description: Event filter
+        transform:
+          type: object
+          description: Event transformation
+        dlq:
+          type: boolean
+          default: false
+          description: Enable dead letter queue
+
+  - name: monitoring
+    type: object
+    required: false
+    description: Monitoring configuration
+    properties:
+      tracing:
+        type: boolean
+        default: true
+        description: Enable distributed tracing
+      logging:
+        type: string
+        enum: ['debug', 'info', 'warn', 'error']
+        default: info
+        description: Log level
+      alarms:
+        type: array
+        description: CloudWatch alarms
+        items:
+          type: object
+          properties:
+            metric:
+              type: string
+            threshold:
+              type: number
+            action:
+              type: string
+
+  - name: scaling
+    type: object
+    required: false
+    description: Scaling configuration
+    properties:
+      minConcurrency:
+        type: number
+        default: 0
+        description: Minimum concurrent executions
+      maxConcurrency:
+        type: number
+        default: 1000
+        description: Maximum concurrent executions
+      reservedConcurrency:
+        type: number
+        description: Reserved concurrent executions
+
+outputs:
+  - name: apiId
+    type: string
+    description: Unique API identifier
+
+  - name: status
+    type: string
+    description: API status
+    enum: ['initializing', 'deploying', 'active', 'error']
+
+  - name: apiUrl
+    type: string
+    description: API Gateway URL
+
+  - name: functions
+    type: array
+    description: Deployed functions
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        endpoint:
+          type: string
+        invocations:
+          type: number
+        errors:
+          type: number
+        duration:
+          type: number
+        cost:
+          type: number
+        lastInvoked:
+          type: string
+
+  - name: metrics
+    type: object
+    description: Overall metrics
+    properties:
+      totalInvocations:
+        type: number
+      totalErrors:
+        type: number
+      avgDuration:
+        type: number
+      totalCost:
+        type: number
+      successRate:
+        type: number
+
+  - name: capabilities
+    type: object
+    description: Enabled capabilities
+    properties:
+      database:
+        type: boolean
+      storage:
+        type: boolean
+      events:
+        type: boolean
+      monitoring:
+        type: boolean
+      scaling:
+        type: boolean
+
+methods:
+  - name: invokeFunction
+    description: Invoke a function with event
+    signature: (name: string, event: any) => Promise<any>
+    parameters:
+      - name: name
+        type: string
+        description: Function name
+      - name: event
+        type: any
+        description: Event payload
+    returns:
+      type: any
+      description: Function response
+
+  - name: deployNewFunction
+    description: Deploy a new function
+    signature: (config: FunctionConfig) => Promise<void>
+    parameters:
+      - name: config
+        type: object
+        description: Function configuration
+
+  - name: updateFunction
+    description: Update function configuration
+    signature: (name: string, updates: Partial<FunctionConfig>) => Promise<void>
+    parameters:
+      - name: name
+        type: string
+        description: Function name
+      - name: updates
+        type: object
+        description: Configuration updates
+
+  - name: deleteFunction
+    description: Delete a function
+    signature: (name: string) => Promise<void>
+    parameters:
+      - name: name
+        type: string
+        description: Function to delete
+
+  - name: testFunction
+    description: Test function with event
+    signature: (name: string, testEvent: any) => Promise<any>
+    parameters:
+      - name: name
+        type: string
+        description: Function name
+      - name: testEvent
+        type: any
+        description: Test event
+    returns:
+      type: any
+      description: Test result
+
+  - name: getFunctionMetrics
+    description: Get metrics for specific function
+    signature: (name: string) => FunctionInstance | null
+    parameters:
+      - name: name
+        type: string
+        description: Function name
+    returns:
+      type: object
+      description: Function metrics
+
+  - name: getAllMetrics
+    description: Get all metrics
+    signature: () => any
+    returns:
+      type: object
+      description: All metrics
+
+events:
+  - name: initialized
+    description: API initialized
+    payload:
+      apiId: string
+      status: string
+
+  - name: functionDeployed
+    description: Function deployed
+    payload:
+      function: object
+
+  - name: functionDeployFailed
+    description: Function deployment failed
+    payload:
+      function: string
+      error: string
+
+  - name: functionInvokeStart
+    description: Function invocation started
+    payload:
+      function: string
+      event: any
+
+  - name: functionInvokeComplete
+    description: Function invocation completed
+    payload:
+      function: string
+      duration: number
+      result: any
+
+  - name: functionInvokeFailed
+    description: Function invocation failed
+    payload:
+      function: string
+      duration: number
+      error: string
+
+  - name: functionMetricsUpdated
+    description: Function metrics updated
+    payload:
+      function: string
+      metrics: object
+
+  - name: functionError
+    description: Function error occurred
+    payload:
+      function: string
+      error: string
+
+  - name: functionDeployStart
+    description: Function deployment started
+    payload:
+      function: string
+
+  - name: functionDeployComplete
+    description: Function deployment completed
+    payload:
+      function: string
+
+  - name: functionUpdateStart
+    description: Function update started
+    payload:
+      function: string
+
+  - name: functionUpdateComplete
+    description: Function update completed
+    payload:
+      function: string
+
+  - name: functionUpdateFailed
+    description: Function update failed
+    payload:
+      function: string
+      error: string
+
+  - name: functionDeleteStart
+    description: Function deletion started
+    payload:
+      function: string
+
+  - name: functionDeleteComplete
+    description: Function deletion completed
+    payload:
+      function: string
+
+  - name: functionDeleteFailed
+    description: Function deletion failed
+    payload:
+      function: string
+      error: string
+
+  - name: functionTestStart
+    description: Function test started
+    payload:
+      function: string
+
+  - name: functionTestComplete
+    description: Function test completed
+    payload:
+      function: string
+      result: any
+
+  - name: functionTestFailed
+    description: Function test failed
+    payload:
+      function: string
+      error: string
+
+  - name: apiRequest
+    description: API request received
+    payload:
+      path: string
+      method: string
+
+  - name: eventProcessed
+    description: Event processed
+    payload:
+      event: string
+      targets: array
+
+  - name: triggerSetup
+    description: Trigger configured
+    payload:
+      function: string
+      trigger: object
+
+  - name: metricsCollected
+    description: Metrics collected
+    payload:
+      metrics: object
+
+  - name: apiRoutesUpdated
+    description: API routes updated
+    payload: {}
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+  - name: destroyed
+    description: API destroyed
+    payload: {}
+
+patterns:
+  - name: RESTful API
+    description: |
+      Standard REST API with CRUD operations, authentication, and
+      validation for resource management.
+
+  - name: Event Processing Pipeline
+    description: |
+      Event-driven architecture with queues, topics, and fan-out
+      patterns for asynchronous processing.
+
+  - name: Scheduled Tasks
+    description: |
+      Cron-like scheduled functions for periodic tasks, cleanup
+      jobs, and batch processing.
+
+  - name: WebSocket API
+    description: |
+      Real-time bidirectional communication using WebSocket
+      connections and message routing.
+
+  - name: GraphQL API
+    description: |
+      GraphQL endpoint with resolver functions, subscriptions,
+      and schema-driven development.
+
+examples:
+  - title: Basic REST API
+    description: Simple RESTful API with CRUD operations
+    language: typescript
+    code: |
+      const api = new ServerlessAPIPattern()
+      
+      await api.initialize({
+        name: 'user-api',
+        functions: [
+          {
+            name: 'get-users',
+            runtime: 'nodejs18',
+            handler: 'users.list',
+            memory: 256,
+            timeout: 30
+          },
+          {
+            name: 'create-user',
+            runtime: 'nodejs18',
+            handler: 'users.create',
+            memory: 256,
+            timeout: 30
+          }
+        ],
+        api: {
+          routes: [
+            {
+              path: '/users',
+              method: 'GET',
+              function: 'get-users',
+              rateLimit: 100
+            },
+            {
+              path: '/users',
+              method: 'POST',
+              function: 'create-user',
+              auth: true,
+              validation: {
+                body: {
+                  type: 'object',
+                  required: ['name', 'email'],
+                  properties: {
+                    name: { type: 'string' },
+                    email: { type: 'string', format: 'email' }
+                  }
+                }
+              }
+            }
+          ]
+        }
+      })
+      
+      // Monitor function performance
+      api.on('functionMetricsUpdated', ({ function, metrics }) => {
+        console.log(`Function ${function}: ${metrics.invocations} calls, ${metrics.duration}ms avg`)
+      })
+
+  - title: Event-Driven Microservices
+    description: Microservices communicating via events
+    language: typescript
+    code: |
+      const api = new ServerlessAPIPattern()
+      
+      await api.initialize({
+        name: 'order-processing',
+        functions: [
+          {
+            name: 'order-api',
+            runtime: 'nodejs18',
+            handler: 'api.handler',
+            memory: 512,
+            timeout: 30,
+            triggers: [
+              {
+                type: 'http',
+                config: { path: '/orders', method: 'POST' }
+              }
+            ]
+          },
+          {
+            name: 'payment-processor',
+            runtime: 'python3.11',
+            handler: 'payment.process',
+            memory: 256,
+            timeout: 60,
+            triggers: [
+              {
+                type: 'queue',
+                config: { queue: 'payment-queue' }
+              }
+            ]
+          },
+          {
+            name: 'inventory-updater',
+            runtime: 'java17',
+            handler: 'com.example.InventoryHandler',
+            memory: 1024,
+            timeout: 120,
+            triggers: [
+              {
+                type: 'queue',
+                config: { queue: 'inventory-queue' }
+              }
+            ]
+          },
+          {
+            name: 'notification-sender',
+            runtime: 'go1.21',
+            handler: 'main',
+            memory: 128,
+            timeout: 30,
+            triggers: [
+              {
+                type: 'queue',
+                config: { queue: 'notification-queue' }
+              }
+            ]
+          }
+        ],
+        events: [
+          {
+            name: 'order-created',
+            source: 'order-api',
+            targets: ['payment-processor', 'inventory-updater']
+          },
+          {
+            name: 'payment-completed',
+            source: 'payment-processor',
+            targets: ['notification-sender']
+          },
+          {
+            name: 'inventory-updated',
+            source: 'inventory-updater',
+            targets: ['notification-sender']
+          }
+        ]
+      })
+      
+      // Monitor event flow
+      api.on('eventProcessed', ({ event, targets }) => {
+        console.log(`Event ${event} sent to ${targets.length} targets`)
+      })
+
+  - title: Scheduled Data Processing
+    description: Periodic data processing with scheduled functions
+    language: typescript
+    code: |
+      const api = new ServerlessAPIPattern()
+      
+      await api.initialize({
+        name: 'data-pipeline',
+        functions: [
+          {
+            name: 'daily-aggregator',
+            runtime: 'python3.11',
+            handler: 'aggregator.daily',
+            memory: 2048,
+            timeout: 300,
+            triggers: [
+              {
+                type: 'schedule',
+                config: { 
+                  rate: 'cron(0 2 * * ? *)', // 2 AM daily
+                  timezone: 'UTC'
+                }
+              }
+            ]
+          },
+          {
+            name: 'hourly-sync',
+            runtime: 'nodejs18',
+            handler: 'sync.hourly',
+            memory: 512,
+            timeout: 120,
+            triggers: [
+              {
+                type: 'schedule',
+                config: { 
+                  rate: 'rate(1 hour)'
+                }
+              }
+            ]
+          },
+          {
+            name: 'cleanup-old-data',
+            runtime: 'nodejs18',
+            handler: 'cleanup.handler',
+            memory: 256,
+            timeout: 600,
+            triggers: [
+              {
+                type: 'schedule',
+                config: { 
+                  rate: 'cron(0 4 * * SUN *)', // 4 AM Sunday
+                  timezone: 'UTC'
+                }
+              }
+            ]
+          }
+        ],
+        database: {
+          type: 'dynamodb',
+          tables: [
+            {
+              name: 'aggregated-data',
+              partitionKey: 'date',
+              sortKey: 'metric'
+            }
+          ]
+        },
+        monitoring: {
+          tracing: true,
+          logging: 'info',
+          alarms: [
+            {
+              metric: 'duration',
+              threshold: 240000, // 4 minutes
+              action: 'notify'
+            }
+          ]
+        }
+      })
+      
+      // Monitor scheduled executions
+      api.on('functionInvokeComplete', ({ function, duration }) => {
+        console.log(`Scheduled function ${function} completed in ${duration}ms`)
+      })
+
+  - title: Image Processing Pipeline
+    description: Serverless image processing with storage triggers
+    language: typescript
+    code: |
+      const api = new ServerlessAPIPattern()
+      
+      await api.initialize({
+        name: 'image-processor',
+        functions: [
+          {
+            name: 'thumbnail-generator',
+            runtime: 'nodejs18',
+            handler: 'thumbnail.generate',
+            memory: 1024,
+            timeout: 60,
+            triggers: [
+              {
+                type: 'storage',
+                config: { 
+                  bucket: 'uploads',
+                  events: ['s3:ObjectCreated:*'],
+                  prefix: 'images/',
+                  suffix: '.jpg'
+                }
+              }
+            ]
+          },
+          {
+            name: 'image-analyzer',
+            runtime: 'python3.11',
+            handler: 'analyzer.process',
+            memory: 2048,
+            timeout: 120,
+            triggers: [
+              {
+                type: 'storage',
+                config: { 
+                  bucket: 'uploads',
+                  events: ['s3:ObjectCreated:*']
+                }
+              }
+            ],
+            layers: ['image-processing-libs']
+          },
+          {
+            name: 'metadata-extractor',
+            runtime: 'nodejs18',
+            handler: 'metadata.extract',
+            memory: 512,
+            timeout: 30,
+            triggers: [
+              {
+                type: 'database',
+                config: {
+                  table: 'images',
+                  eventType: 'INSERT'
+                }
+              }
+            ]
+          }
+        ],
+        storage: {
+          buckets: [
+            {
+              name: 'uploads',
+              public: false
+            },
+            {
+              name: 'processed',
+              public: true,
+              lifecycle: {
+                rules: [
+                  {
+                    id: 'delete-old-thumbnails',
+                    expiration: { days: 90 }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        database: {
+          type: 'dynamodb',
+          tables: [
+            {
+              name: 'images',
+              partitionKey: 'imageId',
+              sortKey: 'uploadTime'
+            }
+          ]
+        }
+      })
+      
+      // Monitor processing pipeline
+      api.on('functionInvokeComplete', ({ function, result }) => {
+        if (function === 'thumbnail-generator') {
+          console.log('Thumbnail generated:', result.thumbnailUrl)
+        }
+      })
+
+  - title: Multi-Runtime API
+    description: API using multiple programming languages
+    language: typescript
+    code: |
+      const api = new ServerlessAPIPattern()
+      
+      await api.initialize({
+        name: 'polyglot-api',
+        functions: [
+          {
+            name: 'auth-service',
+            runtime: 'nodejs18',
+            handler: 'auth.handler',
+            memory: 256,
+            timeout: 30,
+            environment: {
+              JWT_SECRET: process.env.JWT_SECRET
+            }
+          },
+          {
+            name: 'ml-predictor',
+            runtime: 'python3.11',
+            handler: 'predict.handler',
+            memory: 4096,
+            timeout: 120,
+            layers: ['tensorflow', 'numpy']
+          },
+          {
+            name: 'data-processor',
+            runtime: 'java17',
+            handler: 'com.example.DataProcessor::handleRequest',
+            memory: 2048,
+            timeout: 300
+          },
+          {
+            name: 'performance-api',
+            runtime: 'rust1.75',
+            handler: 'bootstrap',
+            memory: 128,
+            timeout: 10
+          },
+          {
+            name: 'webhook-handler',
+            runtime: 'go1.21',
+            handler: 'main',
+            memory: 256,
+            timeout: 60
+          }
+        ],
+        api: {
+          basePath: '/api/v1',
+          routes: [
+            {
+              path: '/auth/login',
+              method: 'POST',
+              function: 'auth-service'
+            },
+            {
+              path: '/predict',
+              method: 'POST',
+              function: 'ml-predictor',
+              auth: true
+            },
+            {
+              path: '/process',
+              method: 'POST',
+              function: 'data-processor',
+              auth: true
+            },
+            {
+              path: '/fast',
+              method: 'GET',
+              function: 'performance-api'
+            },
+            {
+              path: '/webhook',
+              method: 'POST',
+              function: 'webhook-handler'
+            }
+          ]
+        }
+      })
+
+bestPractices:
+  - Keep functions small and focused on single responsibility
+  - Use appropriate memory allocation for workload
+  - Implement proper error handling and retries
+  - Use environment variables for configuration
+  - Enable tracing for debugging distributed systems
+  - Implement circuit breakers for external dependencies
+  - Use layers for shared dependencies
+  - Cache frequently accessed data
+  - Implement proper authentication and authorization
+  - Monitor cold starts and optimize accordingly
+  - Use dead letter queues for failed messages
+  - Implement idempotency for critical operations
+  - Version your function code and configurations
+  - Use structured logging for better observability
+  - Test functions locally before deployment
+
+troubleshooting:
+  - issue: Cold start latency
+    solutions:
+      - Use provisioned concurrency for critical functions
+      - Optimize function size and dependencies
+      - Keep functions warm with scheduled pings
+      - Use lightweight runtimes when possible
+
+  - issue: Function timeouts
+    solutions:
+      - Increase timeout configuration
+      - Optimize function code
+      - Use asynchronous patterns
+      - Break down into smaller functions
+
+  - issue: High costs
+    solutions:
+      - Right-size memory allocation
+      - Implement caching strategies
+      - Use reserved capacity for predictable workloads
+      - Monitor and optimize execution time
+
+  - issue: Throttling errors
+    solutions:
+      - Increase concurrent execution limits
+      - Implement exponential backoff
+      - Use queue-based processing
+      - Monitor burst patterns
+
+  - issue: Debugging difficulties
+    solutions:
+      - Enable distributed tracing
+      - Use structured logging
+      - Implement correlation IDs
+      - Use local testing frameworks
+
+deployment:
+  requiredProviders:
+    - function-runtime
+    - api-gateway
+  optionalProviders:
+    - database-service
+    - storage-service
+    - queue-service
+    - monitoring-service
+  configuration:
+    functions:
+      defaultMemory: 256
+      defaultTimeout: 30
+      maxConcurrency: 1000
+    api:
+      throttling: true
+      caching: true
+    monitoring:
+      retention: 30
+    security:
+      encryption: true
+      iamRoles: true
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-backend
+    - construct-marketplace-api
+  developmentMethod: manual
+  vibeCodingPercentage: 25
+  builtWith:
+    - platform-l1-managed-container
+    - platform-l1-rest-api-service
+    - platform-l1-encrypted-database
+  timeToCreate: 720
+  linesOfCode: 2500
+  testCoverage: 87
+  canProcessConstructs: true
+  platformFeatures:
+    - Multi-runtime support
+    - Event-driven architecture
+    - Auto-scaling
+    - Pay-per-use billing
+    - Distributed tracing

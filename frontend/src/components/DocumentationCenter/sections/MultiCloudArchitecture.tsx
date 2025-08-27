@@ -1,8 +1,8 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Cloud, Shield, Zap, Database, Globe, Server, 
-  Lock, CheckCircle, ArrowRight, Layers, 
+  Cloud, Shield, Zap, Server, 
+  Lock, Layers, 
   GitBranch, Package, Activity, BarChart3
 } from 'lucide-react'
 
@@ -171,7 +171,7 @@ const MultiCloudArchitecture: React.FC = () => {
   
   // Real-time
   realtime: {
-    subscribe(channel: string, callback: Function): Subscription
+    subscribe(channel: string, callback: (data: any) => void): Subscription
     publish(channel: string, data: any): Promise<void>
   }
 }`}</code>

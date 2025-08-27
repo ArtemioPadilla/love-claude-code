@@ -130,7 +130,7 @@ export const ClaudeSetupWizard: React.FC = () => {
         <h2 className="text-2xl font-bold mb-6">Claude Setup Wizard</h2>
         
         <div className="space-y-6">
-          {steps.map((step, index) => (
+          {steps.map((step, _index) => (
             <div key={step.id} className="flex items-start space-x-4">
               <div className="flex-shrink-0 mt-1">
                 {getStepIcon(step)}

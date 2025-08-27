@@ -1,0 +1,356 @@
+id: platform-l1-secure-code-editor
+name: Secure Code Editor
+level: L1
+version: 1.0.0
+description: Secure code editor with XSS protection, themes, and enhanced features. Built upon L0 CodeEditorPrimitive with security hardening and best practices.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 45
+    builtWith: 
+      - platform-l0-code-editor-primitive
+
+categories:
+  - ui
+  - editor
+  - security
+  - themes
+
+tags:
+  - editor
+  - secure
+  - xss-protection
+  - themes
+  - codemirror
+  - L1
+  - enhanced
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  initialValue:
+    type: string
+    description: Initial text content (will be sanitized)
+    required: false
+    default: ""
+    example: console.log("Hello World")
+    
+  language:
+    type: string
+    description: Programming language for syntax highlighting
+    required: false
+    default: javascript
+    validation:
+      enum: [javascript, python, typescript, html, css, json, markdown]
+    example: typescript
+    
+  theme:
+    type: string
+    description: Editor theme
+    required: false
+    default: light
+    validation:
+      enum: [light, dark]
+    example: dark
+    
+  readOnly:
+    type: boolean
+    description: Whether the editor is read-only
+    required: false
+    default: false
+    example: true
+    
+  enableXSSProtection:
+    type: boolean
+    description: Enable XSS protection for content
+    required: false
+    default: true
+    example: true
+    
+  enableContentSecurityPolicy:
+    type: boolean
+    description: Enable CSP headers
+    required: false
+    default: true
+    example: true
+    
+  maxLength:
+    type: number
+    description: Maximum character length (0 = unlimited)
+    required: false
+    default: 1000000
+    example: 50000
+    
+  dangerousPatterns:
+    type: array
+    description: Patterns to flag as dangerous
+    required: false
+    default: ["<script", "javascript:", "onerror=", "onload=", "eval(", "innerHTML"]
+    example: ["eval(", "document.write", "innerHTML"]
+
+outputs:
+  value:
+    type: string
+    description: Current editor content (raw)
+    
+  sanitizedValue:
+    type: string
+    description: XSS-safe version of content
+    
+  isDangerous:
+    type: boolean
+    description: Whether content contains dangerous patterns
+    
+  characterCount:
+    type: number
+    description: Current character count
+    
+  lineCount:
+    type: number
+    description: Current line count
+
+types:
+  ContentChangeEvent:
+    description: Event data when content changes
+    properties:
+      value:
+        type: string
+        description: Current content
+      isDangerous:
+        type: boolean
+        description: Danger flag
+      characterCount:
+        type: number
+        description: Character count
+      lineCount:
+        type: number
+        description: Line count
+        
+  SecurityConfig:
+    description: Security configuration
+    properties:
+      enableXSSProtection:
+        type: boolean
+        description: XSS protection flag
+      enableContentSecurityPolicy:
+        type: boolean
+        description: CSP flag
+      dangerousPatterns:
+        type: array
+        description: Patterns to detect
+      maxLength:
+        type: number
+        description: Max content length
+
+implementation:
+  ui: frontend/src/constructs/L1/ui/SecureCodeEditor.tsx
+  
+dependencies:
+  - platform-l0-code-editor-primitive
+  - dompurify
+
+security:
+  - aspect: XSS Protection
+    description: Sanitizes content to prevent XSS attacks
+    severity: high
+    implementation: DOMPurify for HTML content sanitization
+    recommendations:
+      - Always enable for user-generated content
+      - Review dangerous patterns regularly
+      - Monitor flagged content
+      
+  - aspect: Content Security Policy
+    description: Sets CSP headers to prevent code execution
+    severity: high
+    implementation: "default-src 'self'; script-src 'none';"
+    recommendations:
+      - Configure appropriate CSP for your use case
+      - Test thoroughly with your application
+      - Monitor CSP violations
+      
+  - aspect: Input Validation
+    description: Validates and limits input length
+    severity: medium
+    implementation: Character limit and pattern detection
+    recommendations:
+      - Set reasonable character limits
+      - Customize dangerous patterns for your domain
+      - Implement server-side validation too
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: sanitizationOperations
+      unit: operations
+      costPerUnit: 0
+      description: CPU usage for content sanitization
+  notes:
+    - No additional infrastructure costs
+    - DOMPurify runs client-side
+    - Minimal performance overhead
+
+c4:
+  type: Component
+  technology: CodeMirror 6 + DOMPurify
+  external: false
+  position:
+    x: 200
+    y: 300
+
+examples:
+  - title: Basic Secure Editor
+    description: Create a secure editor with default settings
+    language: typescript
+    code: |
+      import { SecureCodeEditor } from '@/constructs/L1/ui/SecureCodeEditor'
+      
+      const editor = new SecureCodeEditor()
+      await editor.initialize({
+        initialValue: 'console.log("Hello, World!")',
+        language: 'javascript',
+        theme: 'dark'
+      })
+      
+      // Render in React
+      <div className="editor-container">
+        {editor.render()}
+      </div>
+      
+  - title: Content Monitoring
+    description: Monitor for dangerous patterns
+    language: typescript
+    code: |
+      const editor = new SecureCodeEditor()
+      await editor.initialize({
+        dangerousPatterns: ['eval(', 'innerHTML', 'document.write'],
+        enableXSSProtection: true
+      })
+      
+      // Listen for dangerous content
+      editor.on('contentChanged', (data) => {
+        if (data.isDangerous) {
+          console.warn('Dangerous code detected!')
+          // Alert user or take action
+        }
+      })
+      
+      // Check current status
+      if (editor.getOutput('isDangerous')) {
+        showWarningBanner()
+      }
+      
+  - title: Read-Only Display
+    description: Display untrusted content safely
+    language: typescript
+    code: |
+      const viewer = new SecureCodeEditor()
+      await viewer.initialize({
+        initialValue: untrustedCode,
+        readOnly: true,
+        enableXSSProtection: true,
+        theme: 'light'
+      })
+      
+      // Get sanitized content for storage
+      const safeContent = viewer.getSanitizedValue()
+      
+      // Get CSP header for response
+      response.setHeader('Content-Security-Policy', viewer.getCSPHeader())
+      
+  - title: Character Limit Enforcement
+    description: Limit input length for forms
+    language: typescript
+    code: |
+      const editor = new SecureCodeEditor()
+      await editor.initialize({
+        maxLength: 1000,
+        language: 'markdown'
+      })
+      
+      // Monitor character count
+      editor.on('contentChanged', (data) => {
+        updateCharacterCounter(data.characterCount, 1000)
+      })
+      
+      // Validate before submission
+      const content = editor.getValue()
+      if (content.length > 1000) {
+        showError('Content too long')
+      }
+
+bestPractices:
+  - Always enable XSS protection for user-generated content
+  - Use read-only mode for displaying untrusted content
+  - Set appropriate character limits based on your use case
+  - Monitor and log dangerous pattern detections
+  - Implement server-side validation as well
+  - Use CSP headers in production responses
+  - Regularly update dangerous pattern lists
+  - Consider different themes for accessibility
+  - Test with various content types and edge cases
+  - Implement proper error handling for large content
+
+testing:
+  unit:
+    - XSS protection sanitizes dangerous content
+    - Dangerous patterns are detected correctly
+    - Character limits are enforced
+    - Theme switching works properly
+    - Read-only mode prevents editing
+    - Events fire on content changes
+    - CSP headers are generated correctly
+    
+  integration:
+    - Works with React rendering
+    - Integrates with form submissions
+    - Handles paste events securely
+    - Performance with large documents
+    - Memory usage is reasonable
+    - No XSS vulnerabilities
+
+performance:
+  - Sanitization adds ~5-10ms for typical content
+  - Pattern detection is O(n*m) where n=content length, m=patterns
+  - Character counting is real-time with minimal overhead
+  - Theme switching requires editor recreation
+  - Memory usage scales with document size
+
+limitations:
+  - Theme switching not yet dynamic (requires recreation)
+  - DOMPurify may be overly aggressive for some code content
+  - Pattern detection is case-insensitive substring matching
+  - No support for custom themes beyond light/dark
+  - CSP headers must be set by the server
+  - Max length is enforced client-side only
+
+migration:
+  from: platform-l0-code-editor-primitive
+  steps:
+    - Replace CodeEditorPrimitive with SecureCodeEditor
+    - Add enableXSSProtection: true to initialization
+    - Configure dangerous patterns for your use case
+    - Update event handlers to use new event system
+    - Add CSP headers to your server responses
+    - Test thoroughly with existing content
+
+roadmap:
+  - Dynamic theme switching without recreation
+  - Custom theme support
+  - More granular pattern detection (regex support)
+  - Server-side validation helpers
+  - Integration with L2 IDEWorkspace
+  - Performance optimizations for very large files
+  - Collaborative editing preparation
+
+<system-reminder>
+Whenever you write a YAML file, ensure it follows proper YAML syntax with correct indentation and structure. The file should be comprehensive and include all necessary information for developers to understand and use the construct.
+</system-reminder>

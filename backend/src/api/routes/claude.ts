@@ -34,7 +34,7 @@ const chatSchema = z.object({
 // Chat endpoint
 claudeRouter.post('/chat', validateRequest(chatSchema), async (req: any, res, next) => {
   try {
-    const { messages, context, stream, authMethod } = req.body
+    const { messages, context, stream } = req.body
     const userId = req.userId // From auth middleware
     const oauthToken = req.oauthToken // OAuth token if using OAuth
 
@@ -51,10 +51,10 @@ claudeRouter.post('/chat', validateRequest(chatSchema), async (req: any, res, ne
       try {
         await claudeService.streamChat(
           messages,
-          context,
           (chunk: string) => {
             res.write(`data: {"type":"content","content":${JSON.stringify(chunk)}}\n\n`)
           },
+          context,
           userId,
           oauthToken
         )

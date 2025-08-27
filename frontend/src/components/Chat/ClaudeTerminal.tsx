@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
   FiTerminal,
-  FiX,
+  // FiX, // Removed unused import
   FiMaximize2,
   FiMinimize2,
   FiCopy,
@@ -42,18 +42,24 @@ const ClaudeTerminalLine: React.FC<{ line: ClaudeTerminalLine }> = ({ line }) =>
   
   const getLineStyle = () => {
     switch (line.type) {
-      case 'command':
+      case 'command': {
         return 'text-blue-400 font-mono'
-      case 'error':
+      }
+      case 'error': {
         return 'text-red-400'
-      case 'success':
+      }
+      case 'success': {
         return 'text-green-400'
-      case 'info':
+      }
+      case 'info': {
         return 'text-yellow-400'
-      case 'assistant':
+      }
+      case 'assistant': {
         return 'text-gray-300'
-      default:
+      }
+      default: {
         return 'text-gray-300'
+      }
     }
   }
   
@@ -159,7 +165,7 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
       if (!mounted) return
       
       // Special handling for Claude Code CLI - it doesn't need API authentication
-      if (settings.ai?.authMethod === 'claude-code-cli') {
+      if (settings.ai?.authMethod === 'claude-cli') {
         setIsCliAvailable(true) // Assume available, will check when running commands
         addLine('info', '🤖 Claude Code CLI authentication selected')
         addLine('info', '📋 Setup Instructions:')
@@ -192,10 +198,10 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
         const headers: Record<string, string> = {}
         
         // Add authentication
-        if (settings.ai?.authMethod === 'claude-code-cli') {
+        if ((settings.ai?.authMethod as string) === 'claude-cli') {
           headers['X-Claude-CLI'] = 'true'
-        } else if (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.access_token) {
-          headers['X-Claude-Auth'] = `Bearer ${settings.ai.oauthCredentials.access_token}`
+        } else if (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.accessToken) {
+          headers['X-Claude-Auth'] = `Bearer ${settings.ai.oauthCredentials.accessToken}`
         } else if (settings.ai?.apiKey) {
           const token = localStorage.getItem('auth_token')
           if (token) {
@@ -217,7 +223,7 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
             addLine('success', 'Claude Terminal Ready')
             
             // Show authentication method being used
-            if (settings.ai?.authMethod === 'claude-code-cli') {
+            if ((settings.ai?.authMethod as string) === 'claude-cli') {
               addLine('info', 'Using Claude Code CLI authentication')
             } else if (settings.ai?.authMethod === 'oauth-max') {
               addLine('info', 'Using Claude Max OAuth authentication')
@@ -240,13 +246,14 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
             addLine('error', `Failed to check Claude CLI status (Error ${response.status})`)
           }
         }
-      } catch (error: any) {
+      } catch (error) {
         if (!mounted) return
         
+        const err = error as Error
         console.error('Failed to check CLI status:', error)
         setIsCliAvailable(false)
         
-        if (error.message?.includes('fetch')) {
+        if (err.message?.includes('fetch')) {
           addLine('error', 'Cannot connect to backend. Make sure the server is running.')
         } else {
           addLine('error', 'Failed to check Claude CLI status. Please try again.')
@@ -300,13 +307,13 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
     // Handle Claude commands
     if (trimmedCommand.startsWith('claude ')) {
       // Special handling for Claude Code CLI
-      if (settings.ai?.authMethod === 'claude-code-cli') {
+      if (settings.ai?.authMethod === 'claude-cli') {
         // For CLI, we don't check auth here - we let the CLI handle it
         // The error will be more specific when the command actually runs
       } else {
         // Check if other authentication methods are configured
         const hasAuth = 
-          (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.access_token) ||
+          (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.accessToken) ||
           (settings.ai?.authMethod === 'api-key' && settings.ai?.apiKey)
         
         if (!hasAuth) {
@@ -354,10 +361,10 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
       }
       
       // Add authentication based on settings
-      if (settings.ai?.authMethod === 'claude-code-cli') {
+      if (settings.ai?.authMethod === 'claude-cli') {
         headers['X-Claude-CLI'] = 'true'
-      } else if (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.access_token) {
-        headers['X-Claude-Auth'] = `Bearer ${settings.ai.oauthCredentials.access_token}`
+      } else if (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.accessToken) {
+        headers['X-Claude-Auth'] = `Bearer ${settings.ai.oauthCredentials.accessToken}`
       } else if (settings.ai?.apiKey) {
         // Get JWT token from localStorage if using API key auth
         const token = localStorage.getItem('auth_token')
@@ -396,7 +403,7 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
             }
           } else if (settings.ai?.authMethod === 'oauth-max') {
             addLine('error', 'OAuth session may have expired. Please sign in again in Settings.')
-          } else if (settings.ai?.authMethod === 'claude-code-cli') {
+          } else if (settings.ai?.authMethod === 'claude-cli') {
             addLine('error', '🔴 Claude Code CLI error')
             addLine('info', 'This usually means one of the following:')
             addLine('info', '  1. Claude Code CLI is not installed')
@@ -431,6 +438,7 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
       const decoder = new TextDecoder()
       let buffer = ''
       
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
@@ -456,8 +464,9 @@ export const ClaudeTerminal: React.FC<ClaudeTerminalProps> = ({
         
         buffer = lines[lines.length - 1]
       }
-    } catch (error: any) {
-      addLine('error', `Failed to execute command: ${error.message}`)
+    } catch (error) {
+      const err = error as Error
+      addLine('error', `Failed to execute command: ${err.message}`)
     } finally {
       setIsProcessing(false)
     }
@@ -568,8 +577,8 @@ Tips:
           </div>
           
           {/* Authentication status indicator */}
-          {!((settings.ai?.authMethod === 'claude-code-cli') ||
-              (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.access_token) ||
+          {!((settings.ai?.authMethod === 'claude-cli') ||
+              (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.accessToken) ||
               (settings.ai?.authMethod === 'api-key' && settings.ai?.apiKey)) && (
             <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded-md text-sm">
               <FiHelpCircle size={14} />
@@ -642,8 +651,8 @@ Tips:
               font-mono text-sm outline-none
               placeholder-gray-600
             "
-            placeholder={!((settings.ai?.authMethod === 'claude-code-cli') ||
-                          (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.access_token) ||
+            placeholder={!((settings.ai?.authMethod === 'claude-cli') ||
+                          (settings.ai?.authMethod === 'oauth-max' && settings.ai?.oauthCredentials?.accessToken) ||
                           (settings.ai?.authMethod === 'api-key' && settings.ai?.apiKey)) 
                         ? "Configure authentication in Settings first..."
                         : "Type a command..."}

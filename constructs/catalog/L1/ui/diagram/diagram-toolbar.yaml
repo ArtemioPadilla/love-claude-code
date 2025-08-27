@@ -1,0 +1,149 @@
+id: platform-l1-diagram-toolbar
+name: Diagram Toolbar
+level: L1
+type: ui
+description: Comprehensive toolbar for diagram manipulation and export
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - ui
+  - diagram
+  - toolbar
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - toolbar
+  - diagram
+  - controls
+  - export
+
+inputs:
+  - name: orientation
+    type: string
+    description: Toolbar orientation
+    required: false
+    defaultValue: horizontal
+    validation:
+      enum: [horizontal, vertical]
+  
+  - name: position
+    type: string
+    description: Toolbar position
+    required: false
+    defaultValue: top
+    validation:
+      enum: [top, bottom, left, right]
+  
+  - name: activeTool
+    type: string
+    description: Currently active tool
+    required: false
+    defaultValue: select
+  
+  - name: selectedLayout
+    type: string
+    description: Selected layout algorithm
+    required: false
+    defaultValue: force
+  
+  - name: enabledTools
+    type: array
+    description: List of enabled tools
+    required: false
+    defaultValue: [select, pan, node, edge, delete]
+  
+  - name: enableLayoutSelector
+    type: boolean
+    description: Show layout selector
+    required: false
+    defaultValue: true
+  
+  - name: enableZoomControls
+    type: boolean
+    description: Show zoom controls
+    required: false
+    defaultValue: true
+  
+  - name: enableExport
+    type: boolean
+    description: Show export options
+    required: false
+    defaultValue: true
+  
+  - name: exportFormats
+    type: array
+    description: Available export formats
+    required: false
+    defaultValue: [svg, png, json]
+  
+  - name: theme
+    type: object
+    description: Visual theme configuration
+    required: false
+    defaultValue:
+      background: '#f8f9fa'
+      border: '#dee2e6'
+      activeColor: '#007bff'
+      textColor: '#495057'
+      hoverColor: '#e9ecef'
+
+outputs:
+  - name: activeTool
+    type: string
+    description: Currently active tool
+  
+  - name: selectedLayout
+    type: string
+    description: Selected layout algorithm
+  
+  - name: toolbarHeight
+    type: number
+    description: Toolbar height in pixels
+  
+  - name: toolbarWidth
+    type: number
+    description: Toolbar width in pixels
+
+security:
+  - type: export-sanitization
+    description: Sanitizes exported data to prevent information leakage
+
+examples:
+  - title: Complete Diagram Toolbar
+    description: Create a full-featured diagram toolbar
+    code: |
+      const toolbar = new DiagramToolbar()
+      await toolbar.initialize({
+        orientation: 'horizontal',
+        position: 'top',
+        activeTool: 'select',
+        enableLayoutSelector: true,
+        enableZoomControls: true,
+        enableExport: true,
+        onToolChange: (tool) => {
+          console.log('Active tool:', tool)
+        },
+        onLayoutChange: (layout) => {
+          graph.setLayout(layout)
+        },
+        onExport: (format) => {
+          diagram.export(format)
+        }
+      })
+
+bestPractices:
+  - Group related tools together
+  - Provide clear visual feedback for active state
+  - Support keyboard shortcuts
+  - Make toolbar responsive
+  - Include tooltips for all tools
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 20
+  builtWith: []
+  timeToCreate: 30
+  canBuildConstructs: false

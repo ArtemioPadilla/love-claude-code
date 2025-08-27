@@ -1,0 +1,243 @@
+id: platform-l0-docker-service-primitive
+name: Docker Service Primitive
+level: L0
+type: external
+description: Zero-dependency primitive for Docker container and service configuration
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - external
+  - container
+  - docker
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - docker
+  - container
+  - service
+  - compose
+  - primitive
+  - external-integration
+
+inputs:
+  - name: dockerfile
+    type: string
+    description: Dockerfile content to parse
+    required: false
+  - name: dockerCompose
+    type: string | object
+    description: Docker Compose configuration
+    required: false
+  - name: service
+    type: DockerServiceConfig
+    description: Direct service configuration
+    required: false
+
+outputs:
+  - name: serviceConfig
+    type: DockerServiceConfig
+    description: Parsed service configuration
+  - name: composeConfig
+    type: DockerComposeConfig
+    description: Parsed compose configuration
+  - name: dockerfile
+    type: DockerfileStage[]
+    description: Parsed Dockerfile stages
+
+features:
+  - Docker Compose YAML parsing (basic)
+  - Dockerfile instruction parsing
+  - Port mapping configuration
+  - Volume mount definitions
+  - Environment variable handling
+  - Network configuration
+  - Resource limits and constraints
+  - Health check configuration
+  - Multi-stage Dockerfile support
+  - Service dependency management
+  - Zero external dependencies
+
+types:
+  - name: DockerImage
+    description: Docker image reference
+    properties:
+      - name: string
+      - tag: string (optional)
+      - registry: string (optional)
+      - digest: string (optional)
+  
+  - name: DockerPort
+    description: Port mapping configuration
+    properties:
+      - container: number
+      - host: number (optional)
+      - protocol: tcp | udp (optional)
+      - interface: string (optional)
+  
+  - name: DockerVolume
+    description: Volume mount configuration
+    properties:
+      - type: bind | volume | tmpfs
+      - source: string
+      - target: string
+      - readonly: boolean (optional)
+      - options: object (optional)
+  
+  - name: DockerServiceConfig
+    description: Complete service configuration
+    properties:
+      - image: DockerImage
+      - command: string | string[] (optional)
+      - ports: DockerPort[] (optional)
+      - volumes: DockerVolume[] (optional)
+      - environment: object (optional)
+      - networks: DockerNetworkConfig[] (optional)
+      - resources: DockerResourceLimits (optional)
+      - restart: DockerRestartPolicy (optional)
+
+methods:
+  - name: parseDefinition
+    description: Parse Docker Compose configuration
+    parameters:
+      - name: input
+        type: string | object
+        description: Docker Compose YAML or object
+    returns:
+      type: DockerComposeConfig
+      description: Parsed compose configuration
+  
+  - name: parseDockerfile
+    description: Parse Dockerfile content
+    parameters:
+      - name: dockerfile
+        type: string
+        description: Dockerfile content
+    returns:
+      type: DockerfileStage[]
+      description: Parsed Dockerfile stages
+  
+  - name: validateConfiguration
+    description: Validate Docker configuration
+    parameters:
+      - name: config
+        type: any
+        description: Configuration to validate
+    returns:
+      type: object
+      description: Validation result with errors
+  
+  - name: generateComposeEntry
+    description: Generate Docker Compose YAML entry
+    parameters:
+      - name: service
+        type: DockerServiceConfig
+        description: Service configuration
+    returns:
+      type: string
+      description: YAML formatted service entry
+
+examples:
+  - title: Parse Docker Compose
+    description: Parse a docker-compose.yml file
+    code: |
+      const docker = new DockerServicePrimitiveConstruct()
+      const config = docker.parseDefinition({
+        version: '3.8',
+        services: {
+          web: {
+            image: 'nginx:alpine',
+            ports: ['80:80'],
+            volumes: ['./html:/usr/share/nginx/html:ro']
+          }
+        }
+      })
+    language: typescript
+
+  - title: Parse Dockerfile
+    description: Parse multi-stage Dockerfile
+    code: |
+      const stages = docker.parseDockerfile(`
+        FROM node:18 AS builder
+        WORKDIR /app
+        COPY package*.json ./
+        RUN npm ci
+        COPY . .
+        RUN npm run build
+        
+        FROM node:18-alpine
+        WORKDIR /app
+        COPY --from=builder /app/dist ./dist
+        EXPOSE 3000
+        CMD ["node", "dist/index.js"]
+      `)
+    language: typescript
+
+  - title: Generate Compose Entry
+    description: Generate YAML for a service
+    code: |
+      const yaml = docker.generateComposeEntry({
+        image: { name: 'myapp', tag: 'latest' },
+        ports: [{ host: 8080, container: 80 }],
+        environment: { NODE_ENV: 'production' }
+      })
+    language: typescript
+
+bestPractices:
+  - Validate port mappings for conflicts
+  - Ensure volume paths are properly formatted
+  - Check environment variable naming conventions
+  - Use for configuration only - no runtime operations
+  - Validate resource limits are within reasonable bounds
+  - Handle both short and long YAML syntax forms
+
+security:
+  - aspect: dockerfile-injection
+    description: No validation of Dockerfile instructions
+    severity: high
+    recommendations:
+      - Use L1 SecureDockerService for production
+      - Validate and sanitize Dockerfile commands
+      - Restrict dangerous instructions (ADD from URLs, etc.)
+      
+  - aspect: yaml-parsing
+    description: YAML parsing may be vulnerable to malicious input
+    severity: medium
+    recommendations:
+      - Limit YAML file size
+      - Use safe YAML parsing libraries
+      - Validate compose schema version
+      
+  - aspect: resource-limits
+    description: No validation of resource constraints
+    severity: low
+    recommendations:
+      - Validate CPU and memory limits are reasonable
+      - Check volume mount paths for security
+      - Ensure port mappings don't expose sensitive services
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+
+c4:
+  type: Component
+  technology: Docker
+  description: Docker configuration parser and validator
+
+deployment:
+  requiredProviders: []
+  configSchema: {}
+  environmentVariables: []
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  generatedBy: Claude
+
+metadata:
+  createdAt: 2024-01-23
+  updatedAt: 2024-01-23
+  status: stable

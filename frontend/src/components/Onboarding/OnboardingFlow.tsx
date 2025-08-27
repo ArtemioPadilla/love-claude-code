@@ -198,12 +198,12 @@ export const OnboardingFlow: React.FC = () => {
               whileTap={{ scale: 0.98 }}
               onClick={() => {
                 updateSettings({
-                  ai: { ...settings.ai, authMethod: 'oauth' }
+                  ai: { ...settings.ai, authMethod: 'oauth-max' }
                 });
                 setCompletedSteps(new Set([...completedSteps, currentStep]));
               }}
               className={`p-6 rounded-xl border-2 transition-all text-left ${
-                settings.ai?.authMethod === 'oauth'
+                settings.ai?.authMethod === 'oauth-max'
                   ? 'border-blue-500 bg-blue-500/10'
                   : 'border-gray-600 hover:border-gray-500'
               }`}
@@ -222,7 +222,7 @@ export const OnboardingFlow: React.FC = () => {
                     $200/month subscription at claude.ai
                   </p>
                 </div>
-                {settings.ai?.authMethod === 'oauth' && (
+                {settings.ai?.authMethod === 'oauth-max' && (
                   <Check className="w-5 h-5 text-blue-500" />
                 )}
               </div>
@@ -234,12 +234,12 @@ export const OnboardingFlow: React.FC = () => {
                 whileTap={{ scale: 0.98 }}
                 onClick={() => {
                   updateSettings({
-                    ai: { ...settings.ai, authMethod: 'claude-code-cli' }
+                    ai: { ...settings.ai, authMethod: 'claude-cli' }
                   });
                   setCompletedSteps(new Set([...completedSteps, currentStep]));
                 }}
                 className={`p-6 rounded-xl border-2 transition-all text-left ${
-                  settings.ai?.authMethod === 'claude-code-cli'
+                  settings.ai?.authMethod === 'claude-cli'
                     ? 'border-blue-500 bg-blue-500/10'
                     : 'border-gray-600 hover:border-gray-500'
                 }`}
@@ -258,7 +258,7 @@ export const OnboardingFlow: React.FC = () => {
                       Integrated terminal experience
                     </p>
                   </div>
-                  {settings.ai?.authMethod === 'claude-code-cli' && (
+                  {settings.ai?.authMethod === 'claude-cli' && (
                     <Check className="w-5 h-5 text-blue-500" />
                   )}
                 </div>
@@ -301,8 +301,8 @@ export const OnboardingFlow: React.FC = () => {
                 <span className="text-gray-400">Claude Integration:</span>
                 <span className="text-white">
                   {settings.ai?.authMethod === 'api-key' && 'API Key'}
-                  {settings.ai?.authMethod === 'oauth' && 'Claude Max'}
-                  {settings.ai?.authMethod === 'claude-code-cli' && 'Claude CLI'}
+                  {settings.ai?.authMethod === 'oauth-max' && 'Claude Max'}
+                  {settings.ai?.authMethod === 'claude-cli' && 'Claude CLI'}
                 </span>
               </div>
             </div>

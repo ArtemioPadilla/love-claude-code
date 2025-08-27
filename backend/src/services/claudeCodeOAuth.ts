@@ -167,7 +167,7 @@ export class ClaudeCodeOAuthClient {
         
         // Process all complete lines
         for (let i = 0; i < lines.length - 1; i++) {
-          const line = lines[i].trim()
+          const line = lines[i]?.trim() || ''
           if (line.startsWith('data: ')) {
             const data = line.slice(6)
             if (data === '[DONE]') {
@@ -186,7 +186,7 @@ export class ClaudeCodeOAuthClient {
         }
         
         // Keep the last incomplete line in the buffer
-        buffer = lines[lines.length - 1]
+        buffer = lines[lines.length - 1] || ''
       }
       
     } catch (error: any) {

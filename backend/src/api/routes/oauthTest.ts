@@ -20,7 +20,7 @@ oauthTestRouter.post('/test', authenticateFlexible, async (req: any, res) => {
     console.log('Testing OAuth authentication methods...')
     const results = await claudeCodeService.testOAuthWithEndpoints(oauthToken, message)
     
-    res.json({
+    return res.json({
       message: 'OAuth authentication test results',
       results,
       summary: {
@@ -31,7 +31,7 @@ oauthTestRouter.post('/test', authenticateFlexible, async (req: any, res) => {
     })
   } catch (error: any) {
     console.error('OAuth test error:', error)
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Test failed',
       message: error.message
     })

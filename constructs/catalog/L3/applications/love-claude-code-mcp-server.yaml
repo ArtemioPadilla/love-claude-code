@@ -1,0 +1,407 @@
+id: platform-l3-love-claude-code-mcp-server
+name: Love Claude Code MCP Server
+level: L3
+version: 1.0.0
+description: >
+  Complete MCP (Model Context Protocol) server for Love Claude Code that provides tools for provider 
+  management, construct development, platform deployment, and UI testing. Supports extensibility 
+  through SDK and plugin system. This self-referential MCP server can develop and test its own MCP tools.
+
+categories:
+  - applications
+  - mcp
+  - tools
+  - automation
+
+tags:
+  - mcp-server
+  - model-context-protocol
+  - tools
+  - automation
+  - provider-management
+  - construct-development
+  - deployment
+  - ui-testing
+  - self-referential
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l2-serverless-api-pattern
+  - platform-l2-microservice-backend
+  - platform-l2-real-time-collaboration
+
+inputs:
+  - name: name
+    type: string
+    description: Name of the MCP server
+    required: true
+    example: love-claude-mcp-server
+  
+  - name: deployment
+    type: MCPDeploymentConfig
+    description: Deployment configuration
+    required: false
+    defaultValue:
+      mode: local
+      port: 3010
+      host: localhost
+  
+  - name: tools
+    type: MCPToolsConfig
+    description: Tools to enable
+    required: false
+    defaultValue:
+      providers: true
+      constructs: true
+      deployment: true
+      uiTesting: true
+      custom: []
+  
+  - name: extensions
+    type: MCPExtension[]
+    description: Custom extensions to load
+    required: false
+    example:
+      - name: github-integration
+        path: ./extensions/github
+      - name: slack-notifications
+        path: ./extensions/slack
+  
+  - name: logging
+    type: LoggingConfig
+    description: Logging configuration
+    required: false
+    defaultValue:
+      level: info
+      format: json
+      destination: stdout
+  
+  - name: security
+    type: MCPSecurityConfig
+    description: Security settings
+    required: false
+    defaultValue:
+      authentication: true
+      rateLimit: 100
+      cors:
+        enabled: true
+        origins: ['*']
+
+outputs:
+  - name: serverId
+    type: string
+    description: Unique server identifier
+  
+  - name: endpoints
+    type: MCPEndpoints
+    description: Available endpoints
+  
+  - name: tools
+    type: MCPTool[]
+    description: Loaded MCP tools
+  
+  - name: metrics
+    type: MCPMetrics
+    description: Server metrics
+  
+  - name: status
+    type: ServerStatus
+    description: Current server status
+
+methods:
+  - name: start
+    description: Start the MCP server
+    returns: ServerInfo
+  
+  - name: stop
+    description: Stop the MCP server
+    returns: void
+  
+  - name: executeTool
+    description: Execute an MCP tool
+    parameters:
+      - name: string
+      - params: any
+    returns: MCPToolResponse
+  
+  - name: registerTool
+    description: Register a new tool
+    parameters:
+      - tool: MCPTool
+    returns: void
+  
+  - name: loadExtension
+    description: Load an extension
+    parameters:
+      - extension: MCPExtension
+    returns: void
+  
+  - name: getSDK
+    description: Get SDK for tool development
+    returns: MCPSDK
+
+tools:
+  - category: Provider Management
+    tools:
+      - analyze_project_requirements
+      - list_providers
+      - compare_providers
+      - estimate_costs
+      - switch_provider
+      - migrate_data
+      - check_provider_health
+  
+  - category: Construct Development
+    tools:
+      - create_construct
+      - validate_construct
+      - test_construct
+      - publish_construct
+      - search_constructs
+      - install_construct
+      - update_construct
+  
+  - category: Platform Deployment
+    tools:
+      - deploy_platform
+      - update_platform
+      - rollback_platform
+      - scale_platform
+      - monitor_platform
+      - backup_platform
+      - restore_platform
+  
+  - category: UI Testing
+    tools:
+      - inspect_element
+      - get_page_screenshot
+      - click_element
+      - type_in_element
+      - navigate_to
+      - check_element_visible
+      - get_computed_styles
+      - validate_layout
+
+examples:
+  - title: Basic Local MCP Server
+    description: Simple local deployment
+    code: |
+      const mcpServer = new LoveClaudeCodeMCPServer()
+      
+      await mcpServer.initialize({
+        name: 'local-mcp',
+        deployment: {
+          mode: 'local',
+          port: 3010
+        }
+      })
+      
+      const server = await mcpServer.start()
+      console.log(`MCP server running at ${server.url}`)
+      
+      // Execute a tool
+      const result = await mcpServer.executeTool('list_providers', {})
+      console.log('Available providers:', result.data)
+  
+  - title: Production MCP Server
+    description: Deploy to AWS with monitoring
+    code: |
+      const mcpServer = new LoveClaudeCodeMCPServer()
+      
+      await mcpServer.initialize({
+        name: 'prod-mcp',
+        deployment: {
+          mode: 'serverless',
+          provider: CloudProvider.AWS,
+          region: 'us-west-2'
+        },
+        tools: {
+          providers: true,
+          constructs: true,
+          deployment: true,
+          uiTesting: false
+        },
+        logging: {
+          level: 'info',
+          destination: 'cloudwatch'
+        },
+        security: {
+          authentication: true,
+          apiKeys: ['${MCP_API_KEY}'],
+          rateLimit: 1000
+        }
+      })
+      
+      await mcpServer.deploy()
+  
+  - title: Custom Tool Development
+    description: Create and register custom MCP tools
+    code: |
+      const mcpServer = new LoveClaudeCodeMCPServer()
+      
+      await mcpServer.initialize({
+        name: 'custom-mcp'
+      })
+      
+      // Get SDK for tool development
+      const sdk = mcpServer.getSDK()
+      
+      // Create custom tool
+      const customTool = sdk.createTool({
+        name: 'analyze_performance',
+        description: 'Analyze application performance',
+        parameters: {
+          url: { type: 'string', required: true },
+          duration: { type: 'number', default: 60 }
+        },
+        handler: async (params) => {
+          // Tool implementation
+          const metrics = await sdk.measurePerformance(params.url, params.duration)
+          return {
+            success: true,
+            data: metrics
+          }
+        }
+      })
+      
+      // Register the tool
+      await mcpServer.registerTool(customTool)
+  
+  - title: Extension System
+    description: Load and use extensions
+    code: |
+      const mcpServer = new LoveClaudeCodeMCPServer()
+      
+      await mcpServer.initialize({
+        name: 'extended-mcp',
+        extensions: [
+          {
+            name: 'github-integration',
+            path: './extensions/github',
+            config: {
+              token: process.env.GITHUB_TOKEN
+            }
+          },
+          {
+            name: 'slack-notifications',
+            path: './extensions/slack',
+            config: {
+              webhook: process.env.SLACK_WEBHOOK
+            }
+          }
+        ]
+      })
+      
+      // Extensions automatically add their tools
+      const prResult = await mcpServer.executeTool('create_github_pr', {
+        repo: 'love-claude-code',
+        title: 'Add new construct',
+        branch: 'feature/new-construct'
+      })
+  
+  - title: Self-Referential MCP Development
+    description: MCP server develops its own tools
+    code: |
+      const mcpServer = new LoveClaudeCodeMCPServer()
+      
+      await mcpServer.initialize({
+        name: 'self-referential-mcp'
+      })
+      
+      // Use MCP to create a new MCP tool
+      const newTool = await mcpServer.executeTool('create_construct', {
+        type: 'mcp-tool',
+        name: 'analyze_code_quality',
+        level: 'L2',
+        description: 'Analyze code quality metrics'
+      })
+      
+      // Test the newly created tool
+      const testResult = await mcpServer.executeTool('test_construct', {
+        constructId: newTool.data.id
+      })
+      
+      // Publish if tests pass
+      if (testResult.data.passed) {
+        await mcpServer.executeTool('publish_construct', {
+          constructId: newTool.data.id
+        })
+      }
+
+bestPractices:
+  - Use environment variables for sensitive configuration
+  - Enable authentication for production deployments
+  - Implement proper rate limiting
+  - Log all tool executions for audit
+  - Validate tool parameters before execution
+  - Use caching for expensive operations
+  - Monitor tool performance and errors
+  - Keep tools focused and single-purpose
+  - Document all custom tools thoroughly
+  - Test tools extensively before deployment
+
+testing:
+  - Unit test each tool independently
+  - Integration test tool combinations
+  - Test error handling and edge cases
+  - Verify authentication and authorization
+  - Test rate limiting behavior
+  - Validate WebSocket connections
+  - Test extension loading and unloading
+  - Verify SDK functionality
+
+monitoring:
+  - Tool execution metrics
+  - Error rates by tool
+  - Response time percentiles
+  - WebSocket connection stability
+  - Memory and CPU usage
+  - Request rate and patterns
+  - Authentication failures
+  - Extension performance
+
+security:
+  - Authenticate all requests
+  - Validate and sanitize inputs
+  - Rate limit by API key
+  - Log security events
+  - Regular security audits
+  - Secure extension loading
+  - Principle of least privilege
+  - Encrypt sensitive data
+
+deployment:
+  supportedModes:
+    - local
+    - docker
+    - serverless
+    - kubernetes
+  
+  requiredEnvironmentVariables:
+    - MCP_API_KEY (for authentication)
+    - ANTHROPIC_API_KEY (for Claude tools)
+    - AWS_REGION (for AWS deployment)
+  
+  configuration:
+    timeout: 300
+    memory: 512
+    concurrent: 100
+
+selfReferential:
+  isPlatformConstruct: true
+  canBuildConstructs: true
+  buildComplexity: very-high
+  dependsOn:
+    - L2 serverless patterns
+    - MCP protocol implementation
+  enables:
+    - Tool development SDK
+    - Extension ecosystem
+    - Self-improving tools
+  developmentMethod: vibe-coding
+  vibeCodingPercentage: 90
+  createdWith: [LoveClaudeCodeFrontend, LoveClaudeCodeBackend]

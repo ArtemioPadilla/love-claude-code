@@ -20,20 +20,25 @@ export class DiagramGenerator {
     const edges: Edge[] = []
     
     switch (level) {
-      case C4Level.CONTEXT:
+      case C4Level.CONTEXT: {
         return this.generateContextDiagram(composition)
+      }
       
-      case C4Level.CONTAINER:
+      case C4Level.CONTAINER: {
         return this.generateContainerDiagram(composition)
+      }
       
-      case C4Level.COMPONENT:
+      case C4Level.COMPONENT: {
         return this.generateComponentDiagram(composition)
+      }
       
-      case C4Level.CODE:
+      case C4Level.CODE: {
         return this.generateCodeDiagram(composition)
+      }
       
-      default:
+      default: {
         return { nodes, edges }
+      }
     }
   }
   
@@ -164,7 +169,7 @@ export class DiagramGenerator {
     let row = 0
     let col = 0
     
-    composition.constructs.forEach((construct, index) => {
+    composition.constructs.forEach((construct, _index) => {
       const node: Node = {
         id: construct.instanceName,
         type: 'container',

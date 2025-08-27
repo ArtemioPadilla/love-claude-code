@@ -1,0 +1,168 @@
+id: platform-l0-mcp-server-primitive
+name: MCP Server Primitive
+level: L0
+type: Pattern
+description: MCP protocol client for external server integration with tool discovery and streaming
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - external
+  - integration
+  - mcp
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - mcp
+  - server
+  - primitive
+  - protocol
+  - streaming
+  - websocket
+  - tools
+
+inputs:
+  - name: serverUrl
+    type: string
+    description: MCP server WebSocket URL
+    required: true
+    validation:
+      pattern: ^wss?://.*
+  - name: authConfig
+    type: object
+    description: Authentication configuration
+    required: false
+    defaultValue:
+      type: none
+  - name: reconnectAttempts
+    type: number
+    description: Number of reconnection attempts
+    required: false
+    defaultValue: 3
+  - name: timeout
+    type: number
+    description: Request timeout in milliseconds
+    required: false
+    defaultValue: 30000
+
+outputs:
+  - name: client
+    type: object
+    description: MCP client instance for making requests
+  - name: tools
+    type: array
+    description: Available tools from the server
+  - name: state
+    type: object
+    description: Current server connection state
+
+security:
+  - aspect: authentication
+    description: Supports multiple authentication methods for secure server access
+    severity: high
+    recommendations:
+      - Use secure authentication methods (OAuth2, API keys)
+      - Store credentials securely
+      - Implement token refresh for OAuth
+      - Rotate API keys regularly
+  - aspect: transport-security
+    description: WebSocket communication security
+    severity: high
+    recommendations:
+      - Always use WSS (WebSocket Secure) in production
+      - Validate server certificates
+      - Implement message encryption for sensitive data
+      - Use connection timeouts to prevent hanging
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: requests
+      unit: 1000 requests
+      costPerUnit: 0.001
+      typicalUsage: 100
+
+c4:
+  type: Component
+  technology: WebSocket Client
+
+examples:
+  - title: Basic Connection
+    description: Connect to an MCP server with API key authentication
+    code: |
+      const mcp = new MCPServerPrimitive()
+      await mcp.initialize({
+        serverUrl: 'wss://mcp-server.example.com',
+        authConfig: {
+          type: 'api-key',
+          apiKey: 'your-api-key',
+          headerName: 'X-API-Key'
+        }
+      })
+      
+      // Get available tools
+      const tools = mcp.getOutput('tools')
+      console.log('Available tools:', tools)
+    language: typescript
+
+  - title: Tool Invocation
+    description: Use the MCP client to invoke server tools
+    code: |
+      const client = mcp.getOutput('client')
+      
+      // Invoke a tool
+      const result = await client.invoke('analyze-code', {
+        code: 'function example() { return 42; }',
+        language: 'javascript'
+      })
+      
+      console.log('Analysis result:', result)
+    language: typescript
+
+  - title: Streaming Response
+    description: Handle streaming responses from MCP server
+    code: |
+      const client = mcp.getOutput('client')
+      
+      // Stream results
+      for await (const chunk of client.stream('generate-text', {
+        prompt: 'Write a hello world program',
+        maxTokens: 100
+      })) {
+        console.log('Chunk:', chunk)
+      }
+    language: typescript
+
+bestPractices:
+  - Implement proper error recovery and reconnection logic
+  - Monitor connection health and latency
+  - Cache tool definitions to reduce discovery overhead
+  - Use streaming for large responses to improve UX
+  - Implement request queuing for rate-limited servers
+  - Handle WebSocket disconnections gracefully
+  - Log all tool invocations for debugging and audit
+
+deployment:
+  requiredProviders: []
+  configSchema:
+    type: object
+    properties:
+      maxConcurrentRequests:
+        type: number
+        default: 10
+      enableCompression:
+        type: boolean
+        default: true
+      heartbeatInterval:
+        type: number
+        default: 30000
+  environmentVariables: []
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith: []
+  timeToCreate: 60
+  canBuildConstructs: false

@@ -8,8 +8,8 @@ export async function listProviders(
     if (args.feature) {
       const providers = getProvidersByFeature(args.feature)
       const filtered = providers.map(p => ({
-        type: p,
-        ...providerCapabilities[p]
+        ...providerCapabilities[p],
+        type: p
       }))
       
       return {

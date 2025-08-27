@@ -46,6 +46,13 @@
     "start:backend": "cd backend && npm run start",
     "test": "npm run test:frontend && npm run test:backend",
     "test:frontend": "cd frontend && npm test",
+    "tdd:guard": "tdd-guard on",
+    "tdd:guard:off": "tdd-guard off",
+    "tdd:cycle": "npm run tdd:guard && npm run test:frontend",
+    "tdd:status": "node scripts/tdd-status.js",
+    "playwright:install": "npx playwright install",
+    "e2e": "cd frontend && npx playwright test",
+    "e2e:ui": "cd frontend && npx playwright test --ui",
     "test:backend": "cd backend && npm test",
     "test:e2e": "playwright test",
     "test:watch": "jest --watch",
@@ -124,6 +131,7 @@
     "lint-staged": "^15.2.0",
     "plop": "^4.0.0",
     "prettier": "^3.1.1",
+    "puppeteer": "^24.16.1",
     "snyk": "^1.1266.0",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
@@ -136,7 +144,8 @@
     "electron-store": "^8.1.0",
     "electron-updater": "^6.1.7",
     "extract-zip": "^2.0.1",
-    "keytar": "^7.9.0"
+    "keytar": "^7.9.0",
+    "prom-client": "^15.1.3"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [

@@ -1,0 +1,225 @@
+id: platform-l0-modal-primitive
+name: Modal Primitive
+level: L0
+version: 1.0.0
+description: Raw modal overlay with no styling, animations, or accessibility features. Just a centered overlay with content.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 20
+    builtWith: []
+
+categories:
+  - ui
+  - overlay
+  - dialog
+  - primitive
+
+tags:
+  - modal
+  - dialog
+  - overlay
+  - popup
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  isOpen:
+    type: boolean
+    description: Whether the modal is visible
+    required: true
+    
+  content:
+    type: React.ReactNode
+    description: Modal content to display (string or React elements)
+    required: true
+    example: |
+      "Simple text content"
+      // or
+      <div>
+        <h2>Title</h2>
+        <p>Content</p>
+      </div>
+    
+  onClose:
+    type: function
+    description: Callback when modal should close () => void
+    required: false
+    
+  closeOnOverlayClick:
+    type: boolean
+    description: Close modal when clicking the dark overlay
+    required: false
+    default: true
+    
+  closeOnEscape:
+    type: boolean
+    description: Close modal when pressing Escape key
+    required: false
+    default: true
+
+outputs:
+  modalElement:
+    type: HTMLElement
+    description: The modal content container DOM element
+    
+  overlayElement:
+    type: HTMLElement
+    description: The dark overlay DOM element
+    
+  isVisible:
+    type: boolean
+    description: Current visibility state of the modal
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/ModalPrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: focus-management
+    description: No focus trapping or management at L0 level
+    severity: medium
+    recommendations:
+      - Use L1 AccessibleModal for production applications
+      - L0 constructs have no accessibility features by design
+      
+  - aspect: scroll-locking
+    description: Body scroll is not locked when modal is open
+    severity: low
+    recommendations:
+      - Implement scroll locking in L1
+      - Prevent background interaction in production
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 600
+    y: 100
+
+examples:
+  - title: Simple Text Modal
+    description: Basic modal with text content
+    language: typescript
+    code: |
+      import { ModalPrimitive } from '@/constructs/L0/ui/ModalPrimitive'
+      
+      const modal = new ModalPrimitive()
+      await modal.initialize({
+        isOpen: true,
+        content: 'This is a simple modal message!',
+        onClose: () => {
+          modal.setInput('isOpen', false)
+        }
+      })
+      
+      // Get the React component
+      const component = modal.render()
+      
+  - title: Modal with Custom Content
+    description: Modal with React elements
+    language: typescript
+    code: |
+      const modal = new ModalPrimitive()
+      await modal.initialize({
+        isOpen: true,
+        content: (
+          <div>
+            <h2>Confirm Action</h2>
+            <p>Are you sure you want to proceed?</p>
+            <button onClick={() => {
+              console.log('Confirmed!')
+              modal.setInput('isOpen', false)
+            }}>
+              Yes
+            </button>
+            <button onClick={() => modal.setInput('isOpen', false)}>
+              Cancel
+            </button>
+          </div>
+        ),
+        onClose: () => modal.setInput('isOpen', false)
+      })
+      
+  - title: Non-Closeable Modal
+    description: Modal that must be closed programmatically
+    language: typescript
+    code: |
+      const modal = new ModalPrimitive()
+      await modal.initialize({
+        isOpen: true,
+        content: 'Processing... Please wait.',
+        closeOnOverlayClick: false,
+        closeOnEscape: false
+        // No onClose handler - must be closed via code
+      })
+      
+      // Later, close it:
+      setTimeout(() => {
+        modal.setInput('isOpen', false)
+      }, 3000)
+      
+  - title: Controlled Modal State
+    description: Managing modal visibility externally
+    language: typescript
+    code: |
+      const modal = new ModalPrimitive()
+      let isModalOpen = false
+      
+      await modal.initialize({
+        isOpen: isModalOpen,
+        content: 'Controlled modal content',
+        onClose: () => {
+          isModalOpen = false
+          modal.setInput('isOpen', isModalOpen)
+        }
+      })
+      
+      // Open modal
+      isModalOpen = true
+      modal.setInput('isOpen', isModalOpen)
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No animations, transitions, or visual effects
+  - No ARIA attributes or screen reader support
+  - No focus management or keyboard navigation
+  - Simple centered positioning only
+  - Used as a building block for higher-level modal constructs
+  - Part of the Love Claude Code platform itself
+  - Keep modal content simple for L0 level
+
+testing:
+  unit:
+    - Renders when isOpen is true
+    - Hides when isOpen is false
+    - Displays provided content
+    - Handles overlay click when enabled
+    - Responds to Escape key when enabled
+    - Sets output references correctly
+    - Updates visibility output
+    
+  integration:
+    - Used by L1 StyledModal
+    - Used by L2 DialogSystem
+    - Part of L3 Love Claude Code UI

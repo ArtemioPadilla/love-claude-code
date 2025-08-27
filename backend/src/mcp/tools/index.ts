@@ -6,3 +6,10 @@ export { estimateCosts } from './estimate-costs.js'
 export { checkProviderHealth } from './check-health.js'
 export { migrateData } from './migrate-data.js'
 export { compareProviders } from './compare-providers.js'
+
+// New MCP tools for deployment, analysis, self-hosting, debugging, and profiling
+export { deployProject } from './deploy-project.js'
+export { analyzeConstruct } from './analyze-construct.js'
+export { selfHostPlatform } from './self-host-platform.js'
+export { debugSystem } from './debug-system.js'
+export { profilePerformance } from './profile-performance.js'

@@ -149,7 +149,7 @@ class ClaudeCodeService {
   /**
    * Attempt to use OAuth token with Claude Code approach
    */
-  async chatWithOAuth(messages: any[], oauthToken: string): Promise<string> {
+  async chatWithOAuth(_messages: any[], oauthToken: string): Promise<string> {
     // First, test which endpoint works
     const testMessage = 'Hello, this is a test message.'
     const testResults = await this.testOAuthWithEndpoints(oauthToken, testMessage)

@@ -1,6 +1,6 @@
 import { spawn } from 'child_process'
 import { createError } from '../middleware/error.js'
-import { Readable } from 'stream'
+// import { Readable } from 'stream' // Unused import
 
 interface ClaudeCodeMessage {
   type: 'text' | 'error' | 'usage' | 'system'
@@ -181,7 +181,7 @@ export class ClaudeCodeCLIService {
         
         // Process all complete lines
         for (let i = 0; i < lines.length - 1; i++) {
-          const line = lines[i].trim()
+          const line = lines[i]?.trim() || ''
           if (!line) continue
           
           try {
@@ -204,7 +204,7 @@ export class ClaudeCodeCLIService {
         }
         
         // Keep the last incomplete line in the buffer
-        buffer = lines[lines.length - 1]
+        buffer = lines[lines.length - 1] || ''
       })
       
       claude.stderr.on('data', (data) => {
@@ -264,7 +264,7 @@ export class ClaudeCodeCLIService {
     prompt += conversation
     
     // Add instruction for the assistant to continue
-    if (messages[messages.length - 1].role === 'user') {
+    if (messages[messages.length - 1]?.role === 'user') {
       prompt += '\n\nAssistant:'
     }
     

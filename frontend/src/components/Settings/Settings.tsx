@@ -12,23 +12,29 @@ export function Settings() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'general':
+      case 'general': {
         return <GeneralSettings />
-      case 'ai':
+      }
+      case 'ai': {
         return <AISettings />
-      case 'providers':
+      }
+      case 'providers': {
         return <ProviderSettings />
-      case 'security':
+      }
+      case 'security': {
         return <SecuritySettings />
-      case 'integrations':
+      }
+      case 'integrations': {
         return (
           <div className="p-6">
             <h2 className="text-lg font-medium mb-4">Integrations</h2>
             <p className="text-muted-foreground">Coming soon...</p>
           </div>
         )
-      default:
+      }
+      default: {
         return null
+      }
     }
   }
 

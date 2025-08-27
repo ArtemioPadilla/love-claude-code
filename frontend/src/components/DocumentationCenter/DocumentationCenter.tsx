@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { 
-  Home, Book, Code2, Cloud, Shield, Zap, Terminal, 
-  ChevronRight, Search, Menu, X, FileText, Layers,
+  Book, Code2, Cloud, Shield, Terminal, 
+  ChevronRight, Search, Menu, X, Layers,
   GitBranch, Database, Globe, Lock, BarChart, Rocket,
-  ArrowLeft, ExternalLink, Package
+  ArrowLeft, ExternalLink, Package, TestTube, Users,
+  Hammer, Workflow, Store, Building2, Server, Gauge, Plug
 } from 'lucide-react'
 import { useNavigationStore } from '../Navigation'
 import ArchitectureDiagram from './ArchitectureDiagram'
@@ -19,6 +20,17 @@ import MultiCloudArchitecture from './sections/MultiCloudArchitecture'
 import SecurityBestPractices from './sections/SecurityBestPractices'
 import { DesktopAppGuide } from './DesktopAppGuide'
 import Footer from '../Layout/Footer'
+import TDDGuide from '../Documentation/sections/TDDGuide'
+import AgentParallelization from './sections/AgentParallelization'
+import ConstructSystemGuide from './sections/ConstructSystemGuide'
+import ConstructBuilderGuide from './sections/ConstructBuilderGuide'
+import VisualComposerGuide from './sections/VisualComposerGuide'
+import MarketplaceGuide from './sections/MarketplaceGuide'
+import EnterpriseGuide from './sections/EnterpriseGuide'
+import SelfHostingGuide from './sections/SelfHostingGuide'
+import PerformanceGuide from './sections/PerformanceGuide'
+import ConstructDevelopmentGuide from './sections/ConstructDevelopmentGuide'
+import ExternalIntegrationGuide from './sections/ExternalIntegrationGuide'
 
 interface DocSection {
   id: string
@@ -114,6 +126,86 @@ const DocumentationCenter: React.FC = () => {
       title: 'Troubleshooting',
       icon: <Shield className="w-5 h-5" />,
       content: <Troubleshooting />
+    },
+    {
+      id: 'tdd',
+      title: 'TDD/SDD Infrastructure',
+      icon: <TestTube className="w-5 h-5" />,
+      content: <TDDGuide />
+    },
+    {
+      id: 'agent-parallelization',
+      title: 'Agent Parallelization',
+      icon: <Users className="w-5 h-5" />,
+      content: <AgentParallelization />
+    },
+    {
+      id: 'constructs',
+      title: 'Construct System',
+      icon: <Layers className="w-5 h-5" />,
+      subsections: [
+        {
+          id: 'construct-system',
+          title: 'Overview',
+          icon: <Layers className="w-4 h-4" />,
+          content: <ConstructSystemGuide />
+        },
+        {
+          id: 'construct-development',
+          title: 'Development Guide',
+          icon: <Hammer className="w-4 h-4" />,
+          content: <ConstructDevelopmentGuide />
+        },
+        {
+          id: 'construct-builder',
+          title: 'ConstructBuilder IDE',
+          icon: <Code2 className="w-4 h-4" />,
+          content: <ConstructBuilderGuide />
+        },
+        {
+          id: 'visual-composer',
+          title: 'Visual Composer',
+          icon: <Workflow className="w-4 h-4" />,
+          content: <VisualComposerGuide />
+        },
+        {
+          id: 'marketplace',
+          title: 'Marketplace',
+          icon: <Store className="w-4 h-4" />,
+          content: <MarketplaceGuide />
+        }
+      ]
+    },
+    {
+      id: 'enterprise',
+      title: 'Enterprise',
+      icon: <Building2 className="w-5 h-5" />,
+      subsections: [
+        {
+          id: 'enterprise-features',
+          title: 'Enterprise Guide',
+          icon: <Building2 className="w-4 h-4" />,
+          content: <EnterpriseGuide />
+        },
+        {
+          id: 'self-hosting',
+          title: 'Self-Hosting',
+          icon: <Server className="w-4 h-4" />,
+          content: <SelfHostingGuide />
+        },
+        {
+          id: 'performance',
+          title: 'Performance Monitoring',
+          icon: <Gauge className="w-4 h-4" />,
+          content: <PerformanceGuide />
+        }
+      ]
+    },
+    {
+      id: 'integrations',
+      title: 'External Integrations',
+      icon: <Plug className="w-5 h-5" />,
+      content: <ExternalIntegrationGuide />
     }
   ]
 

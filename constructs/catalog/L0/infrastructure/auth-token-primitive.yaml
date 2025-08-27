@@ -1,0 +1,339 @@
+id: platform-l0-auth-token-primitive
+name: Auth Token Primitive
+level: L0
+version: 1.0.0
+description: Raw token generation and validation with no encryption or security. Just basic string-based tokens.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 20
+    builtWith: []
+
+categories:
+  - infrastructure
+  - auth
+  - security
+  - primitive
+
+tags:
+  - auth
+  - token
+  - authentication
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  tokenPrefix:
+    type: string
+    description: Prefix for generated tokens
+    required: false
+    default: token
+    example: api
+    
+  tokenLength:
+    type: number
+    description: Length of random token part
+    required: false
+    default: 32
+    example: 16
+    
+  expirationTime:
+    type: number
+    description: Token expiration time in milliseconds (0 = never expire)
+    required: false
+    default: 0
+    example: 3600000  # 1 hour
+
+outputs:
+  activeTokens:
+    type: number
+    description: Number of active (non-expired) tokens
+    
+  totalGenerated:
+    type: number
+    description: Total tokens generated since deployment
+    
+  lastOperation:
+    type: TokenOperation
+    description: Information about last operation
+
+types:
+  TokenInfo:
+    description: Token information
+    properties:
+      token:
+        type: string
+        description: The token string
+      payload:
+        type: any
+        description: Associated payload data
+      createdAt:
+        type: Date
+        description: When token was created
+      expiresAt:
+        type: Date | null
+        description: When token expires (null = never)
+      lastAccessed:
+        type: Date
+        description: Last validation time
+      isExpired:
+        type: boolean
+        description: Whether token is expired
+        
+  TokenOperation:
+    description: Token operation tracking
+    properties:
+      type:
+        type: string
+        enum: [generate, validate, revoke, revoke_all, cleanup]
+        description: Operation type
+      timestamp:
+        type: Date
+        description: When operation occurred
+      token:
+        type: string
+        description: Token involved (optional)
+      success:
+        type: boolean
+        description: Whether operation succeeded
+      reason:
+        type: string
+        description: Failure reason (optional)
+      count:
+        type: number
+        description: Number affected (for bulk operations)
+        
+  TokenStats:
+    description: Token service statistics
+    properties:
+      activeTokens:
+        type: number
+        description: Currently active tokens
+      expiredTokens:
+        type: number
+        description: Expired but not cleaned tokens
+      totalGenerated:
+        type: number
+        description: Total tokens ever generated
+      tokenPrefix:
+        type: string
+        description: Current token prefix
+      tokenLength:
+        type: number
+        description: Current token length
+      expirationTime:
+        type: number
+        description: Current expiration setting
+
+implementation:
+  infrastructure: frontend/src/constructs/L0/infrastructure/AuthTokenPrimitive.ts
+  
+dependencies: []
+
+security:
+  - aspect: no-encryption
+    description: Tokens are plain strings with no encryption
+    severity: critical
+    recommendations:
+      - Use L1 SecureAuthService for production
+      - Never use for sensitive data
+      
+  - aspect: weak-randomness
+    description: Uses Math.random() not crypto-secure random
+    severity: critical
+    recommendations:
+      - Use crypto.randomBytes in L1+
+      - Not suitable for security tokens
+      
+  - aspect: no-signatures
+    description: No token signing or verification
+    severity: critical
+    recommendations:
+      - Implement JWT in L1+
+      - Use HMAC or RSA signatures
+      
+  - aspect: plain-storage
+    description: Tokens and payloads stored in plain text
+    severity: high
+    recommendations:
+      - Encrypt sensitive payloads in L1+
+      - Use secure token storage
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs at L0
+    - In-memory token storage only
+    - No persistence or backup
+
+c4:
+  type: Component
+  technology: Token Management
+  external: false
+  position:
+    x: 600
+    y: 500
+
+examples:
+  - title: Basic Token Generation
+    description: Generate and validate simple tokens
+    language: typescript
+    code: |
+      import { AuthTokenPrimitive } from '@/constructs/L0/infrastructure/AuthTokenPrimitive'
+      
+      const auth = new AuthTokenPrimitive()
+      await auth.initialize({
+        tokenPrefix: 'app',
+        tokenLength: 24
+      })
+      await auth.deploy()
+      
+      // Generate token
+      const token = await auth.generate({
+        userId: 'user123',
+        role: 'admin'
+      })
+      console.log(token) // 'app_Abc123Def456...'
+      
+      // Validate token
+      const isValid = await auth.validate(token)
+      console.log(isValid) // true
+      
+      // Get token data
+      const data = await auth.getTokenData(token)
+      console.log(data.payload) // { userId: 'user123', role: 'admin' }
+      
+  - title: Session Tokens
+    description: Tokens with expiration
+    language: typescript
+    code: |
+      const sessions = new AuthTokenPrimitive()
+      await sessions.initialize({
+        tokenPrefix: 'sess',
+        expirationTime: 3600000 // 1 hour
+      })
+      await sessions.deploy()
+      
+      // Create session token
+      const sessionToken = await sessions.generate({
+        userId: 'user456',
+        ip: '192.168.1.100',
+        userAgent: 'Mozilla/5.0...'
+      })
+      
+      // Check if expired
+      const tokenInfo = await sessions.getTokenData(sessionToken)
+      console.log(`Expires at: ${tokenInfo.expiresAt}`)
+      console.log(`Is expired: ${tokenInfo.isExpired}`)
+      
+      // Clean up expired tokens periodically
+      setInterval(async () => {
+        const cleaned = await sessions.cleanup()
+        console.log(`Cleaned ${cleaned} expired tokens`)
+      }, 300000) // Every 5 minutes
+      
+  - title: API Key Management
+    description: Managing multiple API keys
+    language: typescript
+    code: |
+      const apiKeys = new AuthTokenPrimitive()
+      await apiKeys.initialize({
+        tokenPrefix: 'sk_live',
+        tokenLength: 40,
+        expirationTime: 0 // Never expire
+      })
+      await apiKeys.deploy()
+      
+      // Generate API keys for different apps
+      const key1 = await apiKeys.generate({
+        appName: 'Mobile App',
+        permissions: ['read:users', 'write:posts']
+      })
+      
+      const key2 = await apiKeys.generate({
+        appName: 'Web Dashboard',
+        permissions: ['admin:all']
+      })
+      
+      // List all API keys
+      const allKeys = await apiKeys.listTokens()
+      console.log(`Total API keys: ${allKeys.length}`)
+      
+      // Revoke a specific key
+      await apiKeys.revoke(key1)
+      
+      // Get statistics
+      const stats = apiKeys.getStats()
+      console.log(`Active keys: ${stats.activeTokens}`)
+      
+  - title: Token Lifecycle
+    description: Complete token lifecycle management
+    language: typescript
+    code: |
+      const auth = new AuthTokenPrimitive()
+      await auth.initialize({
+        tokenPrefix: 'tkn',
+        expirationTime: 600000 // 10 minutes
+      })
+      await auth.deploy()
+      
+      // Generate token
+      const token = await auth.generate({ user: 'john' })
+      
+      // Validate periodically
+      const checkToken = async () => {
+        const valid = await auth.validate(token)
+        if (!valid) {
+          console.log('Token expired or revoked')
+          return false
+        }
+        
+        const data = await auth.getTokenData(token)
+        console.log(`Last accessed: ${data.lastAccessed}`)
+        return true
+      }
+      
+      // Revoke token
+      await auth.revoke(token)
+      
+      // Or revoke all tokens (logout everywhere)
+      const revokedCount = await auth.revokeAll()
+      console.log(`Revoked ${revokedCount} tokens`)
+
+bestPractices:
+  - This is a primitive construct - use L1 SecureAuthService for production
+  - No encryption or secure hashing
+  - No cryptographically secure random generation
+  - No signature verification
+  - Tokens stored in plain text in memory
+  - No persistence - all tokens lost on restart
+  - Used as building block for higher-level constructs
+  - Part of the Love Claude Code platform itself
+
+testing:
+  unit:
+    - Generates tokens with configured format
+    - Validates existing tokens
+    - Rejects non-existent tokens
+    - Handles token expiration
+    - Tracks token statistics
+    - Manages token lifecycle
+    - Cleans up expired tokens
+    - Stores and retrieves payloads
+    
+  integration:
+    - Used by L1 SecureAuthService
+    - Used by L2 AuthenticationSystem
+    - Part of L3 Love Claude Code platform

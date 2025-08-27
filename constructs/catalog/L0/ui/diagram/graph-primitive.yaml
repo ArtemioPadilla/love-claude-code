@@ -1,0 +1,126 @@
+id: platform-l0-graph-primitive
+name: Graph Primitive
+level: L0
+type: UI
+description: Pure TypeScript graph data structure with algorithms
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - ui
+  - visualization
+  - data-structure
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - graph
+  - primitive
+  - algorithms
+  - visualization
+inputs:
+  - name: directed
+    type: boolean
+    description: Whether the graph is directed
+    required: false
+    defaultValue: false
+  - name: initialData
+    type: object
+    description: Initial graph data
+    required: false
+    defaultValue:
+      nodes: []
+      edges: []
+      directed: false
+  - name: width
+    type: number
+    description: Canvas width
+    required: false
+    defaultValue: 800
+  - name: height
+    type: number
+    description: Canvas height
+    required: false
+    defaultValue: 600
+outputs:
+  - name: graphData
+    type: object
+    description: Current graph data structure
+  - name: nodeCount
+    type: number
+    description: Number of nodes in the graph
+  - name: edgeCount
+    type: number
+    description: Number of edges in the graph
+security:
+  - aspect: algorithm-complexity
+    description: No protection against algorithmic complexity attacks
+    severity: medium
+    recommendations:
+      - Use L1 SafeGraph with complexity limits
+      - Implement timeouts for graph algorithms
+      - Limit maximum node/edge counts
+      
+  - aspect: memory-consumption
+    description: Unbounded memory usage for large graphs
+    severity: medium
+    recommendations:
+      - Monitor graph size and memory usage
+      - Implement node/edge count limits
+      - Use streaming algorithms for large datasets
+      
+  - aspect: data-validation
+    description: No validation of graph data integrity
+    severity: low
+    recommendations:
+      - Validate node IDs are unique
+      - Check edge endpoints exist
+      - Sanitize custom node/edge data
+cost:
+  baseMonthly: 0
+  usageFactors: []
+c4:
+  type: Component
+  technology: Pure TypeScript
+examples:
+  - title: Basic Graph Usage
+    description: Create and manipulate a graph
+    code: |
+      const graph = new GraphPrimitive()
+      await graph.initialize({
+        directed: true,
+        initialData: {
+          nodes: [
+            { id: 'A', x: 100, y: 100 },
+            { id: 'B', x: 200, y: 200 }
+          ],
+          edges: [
+            { id: 'edge1', source: 'A', target: 'B', weight: 5 }
+          ],
+          directed: true
+        }
+      })
+
+      // Add nodes and edges
+      graph.addNode({ id: 'C', x: 300, y: 100 })
+      graph.addEdge({ source: 'B', target: 'C', weight: 3 })
+
+      // Run algorithms
+      const path = graph.shortestPath('A', 'C')
+      const traversal = graph.bfs('A')
+    language: typescript
+bestPractices:
+  - This is a primitive - use L1 InteractiveGraph for production
+  - No performance optimizations for very large graphs
+  - Pure data structure - no visual styling
+deployment:
+  requiredProviders: []
+  configSchema: {}
+  environmentVariables: []
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith: []
+  timeToCreate: 45
+  canBuildConstructs: false

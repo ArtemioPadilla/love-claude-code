@@ -141,8 +141,9 @@ class ClaudeService {
         })),
       })
 
-      return response.content[0].type === 'text' 
-        ? response.content[0].text 
+      const firstContent = response.content?.[0]
+      return firstContent?.type === 'text' 
+        ? firstContent.text 
         : 'I apologize, but I couldn\'t generate a response.'
     } catch (error: any) {
       console.error('Claude API error:', {
@@ -188,8 +189,9 @@ class ClaudeService {
               oauthToken
             )
             
-            return response.content[0].type === 'text' 
-              ? response.content[0].text 
+            const firstContent = response.content?.[0]
+            return firstContent?.type === 'text' 
+              ? firstContent.text 
               : 'I apologize, but I couldn\'t generate a response.'
           } catch (altError: any) {
             console.error('Alternative OAuth approach also failed:', altError)
@@ -270,7 +272,7 @@ You help users write, debug, and understand code. Be concise but thorough in you
       `Great question about "${lastMessage}"! Unfortunately, I can only provide mock responses when using OAuth authentication.\n\nThe OAuth tokens from claude.ai cannot be used with the Anthropic developer SDK. Please switch to API key authentication in Settings for real Claude responses.`,
     ]
 
-    const response = responses[Math.floor(Math.random() * responses.length)]
+    const response = responses[Math.floor(Math.random() * responses.length)] || responses[0] || 'Mock response not available'
 
     if (context?.files && context.files.length > 0) {
       return `${response}\n\nI can see you're working with ${context.files.length} file(s), but I can only provide limited assistance in mock mode.`
@@ -279,7 +281,7 @@ You help users write, debug, and understand code. Be concise but thorough in you
     return response
   }
 
-  async streamChat(messages: any[], context?: any, onChunk: (chunk: string) => void, userId?: string, oauthToken?: string): Promise<void> {
+  async streamChat(messages: any[], onChunk: (chunk: string) => void, context?: any, userId?: string, oauthToken?: string): Promise<void> {
     try {
       // Only use mock mode if explicitly enabled
       if (this.mockMode) {

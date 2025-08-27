@@ -20,7 +20,7 @@ import { ClaudeTerminal } from './ClaudeTerminal'
 import { ClaudeSetupWizard } from '@components/Setup/ClaudeSetupWizard'
 import { useSettingsStore } from '@stores/settingsStore'
 import { isElectron } from '@utils/electronDetection'
-import { WifiOff, HardDrive } from 'lucide-react'
+// import { WifiOff, HardDrive } from 'lucide-react' // Removed unused imports
 
 interface ChatProps {
   className?: string
@@ -37,7 +37,7 @@ export function Chat({ className = '' }: ChatProps) {
   const [containerWidth, setContainerWidth] = useState(0)
   const [showSetupWizard, setShowSetupWizard] = useState(false)
   const [mode, setMode] = useState<'chat' | 'terminal'>(
-    settings.ai?.authMethod === 'claude-code-cli' ? 'terminal' : 'chat'
+    settings.ai?.authMethod === 'claude-cli' ? 'terminal' : 'chat'
   )
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -138,12 +138,12 @@ export function Chat({ className = '' }: ChatProps) {
                 onClick={() => setMode('chat')}
                 className={`
                   flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
-                  ${mode === 'chat' 
+                  ${(mode as string) === 'chat' 
                     ? 'bg-background text-foreground shadow-sm' 
                     : 'text-muted-foreground hover:text-foreground'
                   }
                 `}
-                whileHover={{ scale: mode === 'chat' ? 1 : 1.02 }}
+                whileHover={{ scale: (mode as string) === 'chat' ? 1 : 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <FiMessageSquare size={isCompact ? 14 : 16} />
@@ -158,7 +158,7 @@ export function Chat({ className = '' }: ChatProps) {
                     : 'text-muted-foreground hover:text-foreground'
                   }
                 `}
-                whileHover={{ scale: mode === 'terminal' ? 1 : 1.02 }}
+                whileHover={{ scale: (mode as string) === 'terminal' ? 1 : 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
                 <FiTerminal size={isCompact ? 14 : 16} />
@@ -228,12 +228,12 @@ export function Chat({ className = '' }: ChatProps) {
               onClick={() => setMode('chat')}
               className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
-                ${mode === 'chat' 
+                ${(mode as string) === 'chat' 
                   ? 'bg-background text-foreground shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground'
                 }
               `}
-              whileHover={{ scale: mode === 'chat' ? 1 : 1.02 }}
+              whileHover={{ scale: (mode as string) === 'chat' ? 1 : 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
               <FiMessageSquare size={isCompact ? 14 : 16} />
@@ -243,14 +243,14 @@ export function Chat({ className = '' }: ChatProps) {
               onClick={() => setMode('terminal')}
               className={`
                 flex items-center gap-2 px-3 py-1.5 rounded-md transition-all
-                ${mode === 'terminal' 
+                ${(mode as string) === 'terminal' 
                   ? 'bg-background text-foreground shadow-sm' 
                   : 'text-muted-foreground hover:text-foreground'
                 }
               `}
-              whileHover={{ scale: mode === 'terminal' ? 1 : 1.02 }}
+              whileHover={{ scale: (mode as string) === 'terminal' ? 1 : 1.02 }}
               whileTap={{ scale: 0.98 }}
-              title={settings.ai?.authMethod === 'claude-code-cli' ? 'Recommended for CLI users' : undefined}
+              title={settings.ai?.authMethod === 'claude-cli' ? 'Recommended for CLI users' : undefined}
             >
               <FiTerminal size={isCompact ? 14 : 16} />
               {!isCompact && <span className="text-sm font-medium">Terminal</span>}

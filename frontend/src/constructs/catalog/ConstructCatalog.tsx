@@ -4,7 +4,7 @@ import {
   Search, Filter, Grid, List, Package, Cloud, Shield, 
   Zap, Database, Code2, Layers, Star, Clock, Users,
   ChevronRight, X, SlidersHorizontal, TrendingUp,
-  GitBranch, Award, Sparkles
+  GitBranch, Award, Sparkles, Workflow
 } from 'lucide-react'
 import { 
   ConstructDisplay, 
@@ -17,14 +17,17 @@ import { ConstructDetails } from './ConstructDetails'
 import { useConstructStore } from '../../stores/constructStore'
 import Footer from '../../components/Layout/Footer'
 import NavigationBar from '../../components/Layout/NavigationBar'
+import { useNavigate } from '../../components/Navigation'
 
 /**
  * Main construct catalog component
  */
 const ConstructCatalog: React.FC = () => {
+  const navigate = useNavigate()
   const { 
     constructs, 
     loading, 
+    error,
     filters, 
     setFilters, 
     selectedConstruct,
@@ -150,6 +153,16 @@ const ConstructCatalog: React.FC = () => {
             
             {/* View Controls */}
             <div className="flex items-center gap-4">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => navigate('visual-composer')}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <Workflow className="w-4 h-4" />
+                <span className="font-medium">Visual Composer</span>
+              </motion.button>
+              
               <div className="flex items-center gap-2 bg-gray-800 rounded-lg p-1">
                 <button
                   onClick={() => setViewMode('grid')}

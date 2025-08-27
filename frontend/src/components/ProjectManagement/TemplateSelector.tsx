@@ -14,6 +14,7 @@ const categoryIcons = {
   backend: <Server className="w-5 h-5" />,
   fullstack: <Layers className="w-5 h-5" />,
   ai: <Brain className="w-5 h-5" />,
+  construct: <Layers className="w-5 h-5" />,
   other: <Grid className="w-5 h-5" />
 }
 
@@ -22,7 +23,8 @@ const categoryLabels = {
   backend: 'Backend', 
   fullstack: 'Full Stack',
   ai: 'AI & ML',
-  other: 'Other'
+  construct: 'Constructs',
+  other: 'Platform & Tools'
 }
 
 export const TemplateSelector: React.FC<TemplateSelectorProps> = ({

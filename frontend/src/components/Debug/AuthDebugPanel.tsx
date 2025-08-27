@@ -1,13 +1,18 @@
 import { useState } from 'react'
 import { useSettingsStore } from '@stores/settingsStore'
-import { api } from '@services/api'
 import { FiTool, FiRefreshCw, FiCheck, FiX } from 'react-icons/fi'
 import clsx from 'clsx'
 
 export function AuthDebugPanel() {
   const { settings } = useSettingsStore()
   const [isExpanded, setIsExpanded] = useState(false)
-  const [testResult, setTestResult] = useState<any>(null)
+  const [testResult, setTestResult] = useState<{
+    status?: number
+    ok?: boolean
+    headers?: Record<string, string>
+    body?: unknown
+    error?: string
+  } | null>(null)
   const [isTesting, setIsTesting] = useState(false)
 
   const runAuthTest = async () => {
@@ -33,9 +38,10 @@ export function AuthDebugPanel() {
         headers: Object.fromEntries(response.headers.entries()),
         body: data
       })
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as Error
       setTestResult({
-        error: error.message
+        error: err.message
       })
     } finally {
       setIsTesting(false)
@@ -160,11 +166,11 @@ export function AuthDebugPanel() {
             <div className="bg-muted/50 p-3 rounded text-xs font-mono space-y-1">
               <div>Status: {testResult.status} {testResult.ok ? '✅' : '❌'}</div>
               {testResult.error && <div>Error: {testResult.error}</div>}
-              {testResult.body && (
+              {testResult.body != null && (
                 <details className="mt-2">
                   <summary className="cursor-pointer text-primary hover:underline">Response</summary>
                   <pre className="mt-2 text-xs overflow-auto">
-                    {testResult.body}
+                    {typeof testResult.body === 'string' ? testResult.body : JSON.stringify(testResult.body, null, 2)}
                   </pre>
                 </details>
               )}

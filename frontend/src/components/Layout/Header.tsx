@@ -35,6 +35,15 @@ interface HeaderProps {
   onHelpClick?: () => void
 }
 
+interface MenuItem {
+  label?: string
+  icon?: React.ElementType
+  shortcut?: string
+  action?: () => void
+  divider?: boolean
+  hideInView?: string
+}
+
 export function Header({ onMenuClick, onSettingsClick, onHelpClick }: HeaderProps) {
   const { preferences, toggleAdvancedMode } = useUserPreferencesStore()
   const { setCurrentView, getCurrentProject, currentView } = useProjectStore()
@@ -54,7 +63,7 @@ export function Header({ onMenuClick, onSettingsClick, onHelpClick }: HeaderProp
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
   
-  const menuItems = {
+  const menuItems: Record<string, MenuItem[]> = {
     File: [
       { label: 'New File', icon: FiFile, shortcut: 'Ctrl+N' },
       { label: 'Open File', icon: FiFolder, shortcut: 'Ctrl+O' },

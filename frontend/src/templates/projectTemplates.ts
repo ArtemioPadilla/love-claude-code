@@ -2,7 +2,7 @@ export interface ProjectTemplate {
   id: string
   name: string
   description: string
-  category: 'frontend' | 'backend' | 'fullstack' | 'ai' | 'other'
+  category: 'frontend' | 'backend' | 'fullstack' | 'ai' | 'construct' | 'other'
   icon: string
   tags: string[]
   files: {
@@ -15,6 +15,15 @@ export interface ProjectTemplate {
 }
 
 export const projectTemplates: ProjectTemplate[] = [
+  {
+    id: 'construct-development',
+    name: 'Construct Development',
+    description: 'Create reusable constructs for the platform',
+    category: 'construct',
+    icon: '🏗️',
+    tags: ['construct', 'platform', 'development', 'reusable', 'L0', 'L1', 'L2', 'L3'],
+    files: [] // Files will be generated based on construct level
+  },
   {
     id: 'react-spa',
     name: 'React Single Page App',

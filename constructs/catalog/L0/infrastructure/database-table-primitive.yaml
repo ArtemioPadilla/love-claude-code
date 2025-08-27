@@ -1,0 +1,301 @@
+id: platform-l0-database-table-primitive
+name: Database Table Primitive
+level: L0
+version: 1.0.0
+description: Raw in-memory table with no persistence, indexing, or validation. Just basic CRUD operations on records.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 30
+    builtWith: []
+
+categories:
+  - infrastructure
+  - database
+  - storage
+  - primitive
+
+tags:
+  - database
+  - table
+  - storage
+  - crud
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  tableName:
+    type: string
+    description: Name of the database table
+    required: true
+    example: users
+    
+  primaryKey:
+    type: string
+    description: Primary key field name
+    required: false
+    default: id
+    example: sku
+    
+  autoIncrement:
+    type: boolean
+    description: Auto-increment primary key
+    required: false
+    default: true
+
+outputs:
+  tableId:
+    type: string
+    description: Unique table identifier
+    
+  recordCount:
+    type: number
+    description: Number of records in table
+    
+  lastInsertId:
+    type: string | number
+    description: ID of last inserted record
+    
+  lastOperation:
+    type: OperationInfo
+    description: Information about last operation
+
+types:
+  OperationInfo:
+    description: Operation tracking information
+    properties:
+      type:
+        type: string
+        enum: [insert, select, update, delete, truncate]
+        description: Operation type
+      timestamp:
+        type: Date
+        description: When operation occurred
+      recordId:
+        type: string | number
+        description: ID of affected record (optional)
+      success:
+        type: boolean
+        description: Whether operation succeeded
+      count:
+        type: number
+        description: Number of records affected (optional)
+        
+  TableStats:
+    description: Table statistics
+    properties:
+      tableId:
+        type: string
+        description: Table identifier
+      tableName:
+        type: string
+        description: Table name
+      recordCount:
+        type: number
+        description: Number of records
+      primaryKey:
+        type: string
+        description: Primary key field name
+      autoIncrement:
+        type: boolean
+        description: Whether using auto-increment
+      lastInsertId:
+        type: string | number
+        description: Last inserted ID (optional)
+      lastOperation:
+        type: OperationInfo
+        description: Last operation info (optional)
+
+implementation:
+  infrastructure: frontend/src/constructs/L0/infrastructure/DatabaseTablePrimitive.ts
+  
+dependencies: []
+
+security:
+  - aspect: no-persistence
+    description: Data is only stored in memory, lost on restart
+    severity: critical
+    recommendations:
+      - Use L1 EncryptedDatabase for production
+      - Implement backup/restore at higher levels
+      
+  - aspect: no-validation
+    description: No data validation or type checking
+    severity: high
+    recommendations:
+      - Validate data at application level
+      - Use schema validation in L1+
+      
+  - aspect: no-access-control
+    description: No authentication or authorization
+    severity: critical
+    recommendations:
+      - Implement access control in L1
+      - Use row-level security in production
+      
+  - aspect: no-encryption
+    description: Data stored in plain text in memory
+    severity: high
+    recommendations:
+      - Use encrypted storage in L1+
+      - Never store sensitive data at L0
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs at L0
+    - In-memory storage only
+    - No persistence or backup costs
+
+c4:
+  type: Component
+  technology: In-Memory Storage
+  external: false
+  position:
+    x: 400
+    y: 500
+
+examples:
+  - title: Basic User Table
+    description: Simple table with auto-increment ID
+    language: typescript
+    code: |
+      import { DatabaseTablePrimitive } from '@/constructs/L0/infrastructure/DatabaseTablePrimitive'
+      
+      const usersTable = new DatabaseTablePrimitive()
+      await usersTable.initialize({
+        tableName: 'users'
+      })
+      await usersTable.deploy()
+      
+      // Insert records
+      const userId = await usersTable.insert({
+        name: 'John Doe',
+        email: 'john@example.com',
+        createdAt: new Date()
+      })
+      console.log('Created user:', userId) // 1
+      
+      // Find by ID
+      const user = await usersTable.findById(userId)
+      console.log(user) // { id: 1, name: 'John Doe', ... }
+      
+  - title: Product Catalog
+    description: Table with custom primary key
+    language: typescript
+    code: |
+      const productsTable = new DatabaseTablePrimitive()
+      await productsTable.initialize({
+        tableName: 'products',
+        primaryKey: 'sku',
+        autoIncrement: false
+      })
+      await productsTable.deploy()
+      
+      // Insert with custom ID
+      await productsTable.insert({
+        sku: 'WIDGET-001',
+        name: 'Super Widget',
+        price: 19.99,
+        inStock: true
+      })
+      
+      // Update product
+      await productsTable.update('WIDGET-001', {
+        price: 24.99,
+        inStock: false
+      })
+      
+  - title: CRUD Operations
+    description: Complete CRUD example
+    language: typescript
+    code: |
+      const table = new DatabaseTablePrimitive()
+      await table.initialize({ tableName: 'tasks' })
+      await table.deploy()
+      
+      // Create
+      const id1 = await table.insert({ title: 'Task 1', done: false })
+      const id2 = await table.insert({ title: 'Task 2', done: false })
+      
+      // Read
+      const task = await table.findById(id1)
+      const allTasks = await table.findAll()
+      
+      // Update
+      await table.update(id1, { done: true })
+      
+      // Delete
+      await table.delete(id2)
+      
+      // Count
+      const count = await table.count()
+      console.log(`${count} tasks remaining`)
+      
+  - title: Batch Operations
+    description: Working with multiple records
+    language: typescript
+    code: |
+      const table = new DatabaseTablePrimitive()
+      await table.initialize({ tableName: 'logs' })
+      await table.deploy()
+      
+      // Insert batch
+      const ids = []
+      for (let i = 0; i < 100; i++) {
+        const id = await table.insert({
+          level: 'info',
+          message: `Log entry ${i}`,
+          timestamp: new Date()
+        })
+        ids.push(id)
+      }
+      
+      // Get all IDs
+      const allIds = table.getIds()
+      console.log(`Total records: ${allIds.length}`)
+      
+      // Check existence
+      const exists = await table.exists(ids[0])
+      
+      // Clear all
+      const deleted = await table.truncate()
+      console.log(`Deleted ${deleted} records`)
+
+bestPractices:
+  - This is a primitive construct - use L1 EncryptedDatabase for production
+  - No data persistence - all data lost on restart
+  - No indexes or query capabilities
+  - No validation or constraints
+  - No transactions or ACID properties
+  - In-memory storage only
+  - Used as building block for higher-level constructs
+  - Part of the Love Claude Code platform itself
+
+testing:
+  unit:
+    - Validates required table name
+    - Handles auto-increment IDs
+    - Supports custom primary keys
+    - Performs CRUD operations
+    - Tracks operation history
+    - Maintains record count
+    - Returns copies (not references)
+    - Handles various data types
+    
+  integration:
+    - Used by L1 EncryptedDatabase
+    - Used by L2 DataAccessLayer
+    - Part of L3 Love Claude Code platform

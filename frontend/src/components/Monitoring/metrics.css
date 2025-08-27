@@ -1,0 +1,167 @@
+.metrics-dashboard {
+  background-color: #f9fafb;
+  min-height: 100vh;
+}
+
+.dark .metrics-dashboard {
+  background-color: #111827;
+}
+
+/* Smooth transitions for metric cards */
+.metrics-dashboard .metric-card {
+  transition: all 0.3s ease;
+}
+
+/* Chart tooltips styling */
+.recharts-tooltip-wrapper {
+  outline: none !important;
+}
+
+.recharts-default-tooltip {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+}
+
+.dark .recharts-default-tooltip {
+  background-color: rgba(31, 41, 55, 0.95) !important;
+  border-color: #374151 !important;
+}
+
+.recharts-tooltip-label {
+  color: #111827 !important;
+  font-weight: 600 !important;
+  margin-bottom: 4px !important;
+}
+
+.dark .recharts-tooltip-label {
+  color: #f3f4f6 !important;
+}
+
+.recharts-tooltip-item {
+  color: #6b7280 !important;
+}
+
+.dark .recharts-tooltip-item {
+  color: #d1d5db !important;
+}
+
+/* Alert animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.metrics-dashboard .alert-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  .metrics-dashboard table {
+    font-size: 0.875rem;
+  }
+  
+  .metrics-dashboard th,
+  .metrics-dashboard td {
+    padding: 0.5rem;
+  }
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.metrics-loading {
+  background: linear-gradient(
+    90deg,
+    #f3f4f6 25%,
+    #e5e7eb 50%,
+    #f3f4f6 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.dark .metrics-loading {
+  background: linear-gradient(
+    90deg,
+    #374151 25%,
+    #4b5563 50%,
+    #374151 75%
+  );
+  background-size: 200% 100%;
+}
+
+/* Performance indicator colors */
+.performance-good {
+  color: #10b981;
+}
+
+.performance-warning {
+  color: #f59e0b;
+}
+
+.performance-error {
+  color: #ef4444;
+}
+
+/* Metric card hover effects */
+.metric-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Chart grid lines */
+.recharts-cartesian-grid-horizontal line,
+.recharts-cartesian-grid-vertical line {
+  stroke-dasharray: 3 3;
+}
+
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: #374151;
+}
+
+/* Scrollbar styling for alerts */
+.metrics-dashboard .alerts-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.metrics-dashboard .alerts-container::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 3px;
+}
+
+.metrics-dashboard .alerts-container::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.metrics-dashboard .alerts-container::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+.dark .metrics-dashboard .alerts-container::-webkit-scrollbar-track {
+  background: #1f2937;
+}
+
+.dark .metrics-dashboard .alerts-container::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark .metrics-dashboard .alerts-container::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
+}

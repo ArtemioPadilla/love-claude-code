@@ -11,11 +11,14 @@ export async function analyzeProjectRequirements(
       success: true,
       data: {
         recommendations,
-        summary: recommendations.length > 0 ? {
-          topChoice: recommendations[0],
-          reasoning: `Based on your requirements for a ${requirements.projectType} project with ${requirements.expectedUsers} users, ` +
-            `we recommend ${recommendations[0].provider} because: ${recommendations[0].reasoning.join(', ')}`
-        } : {
+        summary: recommendations.length > 0 ? (() => {
+          const topChoice = recommendations[0]!
+          return {
+            topChoice,
+            reasoning: `Based on your requirements for a ${requirements.projectType} project with ${requirements.expectedUsers} users, ` +
+              `we recommend ${topChoice.provider} because: ${topChoice.reasoning.join(', ')}`
+          }
+        })() : {
           topChoice: null,
           reasoning: 'No suitable providers found for your requirements'
         }

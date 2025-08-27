@@ -47,7 +47,7 @@ export function ProviderSettings() {
 
   const renderProviderConfig = () => {
     switch (providerType) {
-      case 'local':
+      case 'local': {
         return (
           <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
             <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
@@ -58,8 +58,9 @@ export function ProviderSettings() {
             </p>
           </div>
         )
+      }
 
-      case 'firebase':
+      case 'firebase': {
         return (
           <div className="space-y-4">
             <div>
@@ -118,8 +119,9 @@ export function ProviderSettings() {
             </div>
           </div>
         )
+      }
 
-      case 'aws':
+      case 'aws': {
         return (
           <div className="space-y-4">
             <div>
@@ -181,6 +183,7 @@ export function ProviderSettings() {
             </div>
           </div>
         )
+      }
     }
   }
 

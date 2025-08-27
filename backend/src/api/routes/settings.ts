@@ -6,7 +6,36 @@ import crypto from 'crypto'
 
 export const settingsRouter = Router()
 
-// Apply authentication to all settings routes
+// Public route to get initial settings (no auth required)
+settingsRouter.get('/public', async (req, res, next) => {
+  try {
+    // Return default settings for unauthenticated users
+    const defaultSettings = {
+      general: {
+        appName: 'Love Claude Code',
+        theme: 'dark',
+        language: 'en',
+        autoSave: true,
+        autoSaveInterval: 30000
+      },
+      ai: {
+        model: 'claude-3-5-sonnet-20241022',
+        temperature: 0.7,
+        maxTokens: 4000,
+        streamResponses: true
+      },
+      providers: {
+        default: 'local'
+      }
+    }
+    
+    res.json({ settings: defaultSettings })
+  } catch (error) {
+    next(error)
+  }
+})
+
+// Apply authentication to all other settings routes
 settingsRouter.use(authenticateToken)
 
 // In-memory settings storage (replace with proper database in production)
@@ -161,9 +190,9 @@ settingsRouter.post('/validate-api-key', async (req: any, res, next) => {
     
     // In production, you could make a test call to Anthropic API
     // For now, just return success if format is valid
-    res.json({ valid: true })
+    return res.json({ valid: true })
   } catch (error) {
-    next(error)
+    return next(error)
   }
 })
 

@@ -1,0 +1,536 @@
+/**
+ * L1 Encrypted WebSocket - WebSocket with TLS and message-level encryption
+ * 
+ * This L1 construct extends the L0 WebSocket primitive with comprehensive
+ * security features including TLS enforcement, end-to-end message encryption,
+ * key exchange protocols, and security monitoring.
+ */
+
+import { 
+  PlatformConstructDefinition, 
+  ConstructLevel, 
+  ConstructType,
+  SecurityConsideration,
+  ValidationRule 
+} from '../../types'
+
+export const encryptedWebSocketDefinition: PlatformConstructDefinition = {
+  id: 'platform-l1-encrypted-websocket',
+  name: 'Encrypted WebSocket',
+  description: 'WebSocket connection with TLS enforcement and message-level encryption using AES-256-GCM',
+  level: ConstructLevel.L1,
+  type: ConstructType.Infrastructure,
+  category: 'networking',
+  version: '1.0.0',
+  status: 'stable',
+  author: {
+    name: 'Love Claude Code Platform',
+    email: 'platform@loveclaudecode.com'
+  },
+  
+  dependencies: [
+    // L0 WebSocket Primitive
+    { constructId: 'platform-l0-websocket-primitive', level: ConstructLevel.L0, optional: false },
+    // L0 Infrastructure Primitives for crypto
+    { constructId: 'platform-l0-crypto-primitive', level: ConstructLevel.L0, optional: false },
+    { constructId: 'platform-l0-key-store-primitive', level: ConstructLevel.L0, optional: false }
+  ],
+  
+  inputs: [
+    {
+      name: 'url',
+      type: 'string',
+      description: 'WebSocket URL (must be wss:// for TLS)',
+      required: true,
+      validation: {
+        pattern: '^wss://',
+        message: 'URL must use secure WebSocket protocol (wss://)'
+      } as ValidationRule
+    },
+    {
+      name: 'tlsConfig',
+      type: 'TLSConfig',
+      description: 'TLS configuration options',
+      required: false,
+      defaultValue: {
+        minVersion: 'TLSv1.3',
+        cipherSuites: [
+          'TLS_AES_256_GCM_SHA384',
+          'TLS_CHACHA20_POLY1305_SHA256',
+          'TLS_AES_128_GCM_SHA256'
+        ],
+        verifyServerCertificate: true,
+        enableSessionTickets: true
+      }
+    },
+    {
+      name: 'encryptionConfig',
+      type: 'EncryptionConfig',
+      description: 'Message-level encryption configuration',
+      required: false,
+      defaultValue: {
+        algorithm: 'AES-256-GCM',
+        keyExchangeMethod: 'ECDHE-P256',
+        keyRotationInterval: 3600000, // 1 hour
+        enablePerfectForwardSecrecy: true,
+        messageIntegrity: 'HMAC-SHA256'
+      }
+    },
+    {
+      name: 'securityConfig',
+      type: 'SecurityConfig',
+      description: 'Additional security configuration',
+      required: false,
+      defaultValue: {
+        enableReplayProtection: true,
+        maxMessageAge: 300000, // 5 minutes
+        enableCompression: false, // Disabled to prevent CRIME attacks
+        enableHeartbeat: true,
+        heartbeatInterval: 30000 // 30 seconds
+      }
+    },
+    {
+      name: 'monitoringConfig',
+      type: 'MonitoringConfig',
+      description: 'Security monitoring configuration',
+      required: false,
+      defaultValue: {
+        logSecurityEvents: true,
+        alertOnSuspiciousActivity: true,
+        metricsInterval: 60000, // 1 minute
+        enableAuditLog: true
+      }
+    }
+  ],
+  
+  outputs: [
+    {
+      name: 'encryptedWs',
+      type: 'EncryptedWebSocket',
+      description: 'Encrypted WebSocket instance with all security features'
+    },
+    {
+      name: 'sendEncrypted',
+      type: 'Function',
+      description: 'Function to send encrypted messages'
+    },
+    {
+      name: 'keyExchange',
+      type: 'Function',
+      description: 'Function to initiate key exchange'
+    },
+    {
+      name: 'rotateKeys',
+      type: 'Function',
+      description: 'Function to rotate encryption keys'
+    },
+    {
+      name: 'getSecurityStatus',
+      type: 'Function',
+      description: 'Function to get current security status'
+    },
+    {
+      name: 'encryptionMetrics',
+      type: 'EncryptionMetrics',
+      description: 'Real-time encryption metrics and statistics'
+    },
+    {
+      name: 'isSecure',
+      type: 'boolean',
+      description: 'Whether the connection is fully secure'
+    },
+    {
+      name: 'currentCipher',
+      type: 'string',
+      description: 'Currently negotiated TLS cipher suite'
+    },
+    {
+      name: 'sessionId',
+      type: 'string',
+      description: 'Encrypted session identifier'
+    }
+  ],
+  
+  properties: [
+    {
+      name: 'tlsVersion',
+      type: 'string',
+      description: 'Negotiated TLS version',
+      visibility: 'public',
+      modifiable: false
+    },
+    {
+      name: 'encryptionStrength',
+      type: 'number',
+      description: 'Current encryption strength in bits',
+      visibility: 'public',
+      modifiable: false
+    },
+    {
+      name: 'keysRotated',
+      type: 'number',
+      description: 'Number of times keys have been rotated',
+      visibility: 'public',
+      modifiable: false
+    },
+    {
+      name: 'messagesEncrypted',
+      type: 'number',
+      description: 'Total number of messages encrypted',
+      visibility: 'public',
+      modifiable: false
+    },
+    {
+      name: 'securityAlerts',
+      type: 'number',
+      description: 'Number of security alerts raised',
+      visibility: 'public',
+      modifiable: false
+    }
+  ],
+  
+  methods: [
+    {
+      name: 'connect',
+      description: 'Establish encrypted WebSocket connection',
+      parameters: [],
+      returnType: 'Promise<void>',
+      visibility: 'public'
+    },
+    {
+      name: 'disconnect',
+      description: 'Gracefully close encrypted connection',
+      parameters: [],
+      returnType: 'Promise<void>',
+      visibility: 'public'
+    },
+    {
+      name: 'sendEncrypted',
+      description: 'Send encrypted message through WebSocket',
+      parameters: [
+        { name: 'data', type: 'any', description: 'Data to encrypt and send' },
+        { name: 'priority', type: 'string', description: 'Message priority', optional: true }
+      ],
+      returnType: 'Promise<void>',
+      visibility: 'public'
+    },
+    {
+      name: 'initiateKeyExchange',
+      description: 'Start ECDHE key exchange protocol',
+      parameters: [],
+      returnType: 'Promise<KeyExchangeResult>',
+      visibility: 'public'
+    },
+    {
+      name: 'rotateKeys',
+      description: 'Rotate encryption keys with zero downtime',
+      parameters: [
+        { name: 'immediate', type: 'boolean', description: 'Force immediate rotation', optional: true }
+      ],
+      returnType: 'Promise<void>',
+      visibility: 'public'
+    },
+    {
+      name: 'verifyMessageIntegrity',
+      description: 'Verify message integrity using HMAC',
+      parameters: [
+        { name: 'message', type: 'EncryptedMessage', description: 'Message to verify' }
+      ],
+      returnType: 'boolean',
+      visibility: 'private'
+    },
+    {
+      name: 'detectReplayAttack',
+      description: 'Check if message is a replay attack',
+      parameters: [
+        { name: 'message', type: 'EncryptedMessage', description: 'Message to check' }
+      ],
+      returnType: 'boolean',
+      visibility: 'private'
+    }
+  ],
+  
+  events: [
+    {
+      name: 'encryptedMessageReceived',
+      description: 'Emitted when an encrypted message is received and decrypted',
+      payload: {
+        data: 'any',
+        metadata: {
+          timestamp: 'number',
+          sequenceNumber: 'number',
+          verified: 'boolean'
+        }
+      }
+    },
+    {
+      name: 'keyRotation',
+      description: 'Emitted when encryption keys are rotated',
+      payload: {
+        previousKeyId: 'string',
+        newKeyId: 'string',
+        rotationTime: 'Date'
+      }
+    },
+    {
+      name: 'securityAlert',
+      description: 'Emitted when a security issue is detected',
+      payload: {
+        type: 'string',
+        severity: 'low | medium | high | critical',
+        description: 'string',
+        timestamp: 'Date',
+        action: 'string'
+      }
+    },
+    {
+      name: 'tlsHandshakeComplete',
+      description: 'Emitted when TLS handshake completes',
+      payload: {
+        version: 'string',
+        cipher: 'string',
+        peerCertificate: 'object'
+      }
+    },
+    {
+      name: 'encryptionMetricsUpdate',
+      description: 'Emitted with updated encryption metrics',
+      payload: {
+        messagesEncrypted: 'number',
+        messagesDecrypted: 'number',
+        averageEncryptTime: 'number',
+        averageDecryptTime: 'number',
+        keyRotations: 'number'
+      }
+    }
+  ],
+  
+  constraints: {
+    performance: {
+      maxEncryptionLatency: 10, // ms
+      maxDecryptionLatency: 10, // ms
+      maxKeyRotationTime: 100, // ms
+      minThroughput: 10000 // messages per second
+    },
+    security: [
+      {
+        type: 'tls-version',
+        description: 'Must use TLS 1.3 or higher',
+        level: 'required'
+      },
+      {
+        type: 'cipher-strength',
+        description: 'Must use 256-bit encryption or stronger',
+        level: 'required'
+      },
+      {
+        type: 'perfect-forward-secrecy',
+        description: 'Must implement PFS with ephemeral keys',
+        level: 'required'
+      },
+      {
+        type: 'message-integrity',
+        description: 'All messages must have HMAC verification',
+        level: 'required'
+      },
+      {
+        type: 'replay-protection',
+        description: 'Must detect and prevent replay attacks',
+        level: 'required'
+      },
+      {
+        type: 'key-rotation',
+        description: 'Keys must be rotated at least hourly',
+        level: 'recommended'
+      }
+    ] as SecurityConsideration[],
+    compatibility: {
+      browsers: ['chrome >= 90', 'firefox >= 88', 'safari >= 14', 'edge >= 90'],
+      platforms: ['windows', 'macos', 'linux'],
+      nodeVersion: '>=18.0.0',
+      cryptoLibraries: ['webcrypto', 'node:crypto']
+    }
+  },
+  
+  exampleUsage: `// Create an encrypted WebSocket connection
+const encryptedWs = new EncryptedWebSocket({
+  url: 'wss://secure-server.example.com:8443',
+  tlsConfig: {
+    minVersion: 'TLSv1.3',
+    cipherSuites: ['TLS_AES_256_GCM_SHA384'],
+    verifyServerCertificate: true
+  },
+  encryptionConfig: {
+    algorithm: 'AES-256-GCM',
+    keyExchangeMethod: 'ECDHE-P256',
+    keyRotationInterval: 3600000, // 1 hour
+    enablePerfectForwardSecrecy: true
+  },
+  securityConfig: {
+    enableReplayProtection: true,
+    maxMessageAge: 300000 // 5 minutes
+  }
+})
+
+// Connect with TLS handshake
+await encryptedWs.connect()
+
+// Handle encrypted messages
+encryptedWs.on('encryptedMessageReceived', (event) => {
+  console.log('Received encrypted message:', event.data)
+  console.log('Message verified:', event.metadata.verified)
+})
+
+// Handle security alerts
+encryptedWs.on('securityAlert', (alert) => {
+  if (alert.severity === 'critical') {
+    console.error('Critical security alert:', alert.description)
+    // Take immediate action
+  }
+})
+
+// Send encrypted message
+await encryptedWs.sendEncrypted({
+  type: 'command',
+  action: 'process_payment',
+  data: { amount: 100, currency: 'USD' }
+})
+
+// Rotate keys manually
+await encryptedWs.rotateKeys(true)
+
+// Monitor encryption metrics
+encryptedWs.on('encryptionMetricsUpdate', (metrics) => {
+  console.log('Encryption performance:', {
+    avgEncryptTime: metrics.averageEncryptTime + 'ms',
+    avgDecryptTime: metrics.averageDecryptTime + 'ms',
+    totalMessages: metrics.messagesEncrypted
+  })
+})
+
+// Get security status
+const status = await encryptedWs.getSecurityStatus()
+console.log('Security status:', status)`,
+  
+  tests: {
+    unit: [
+      'TLS handshake negotiation',
+      'Message encryption/decryption',
+      'Key exchange protocol (ECDHE)',
+      'HMAC message verification',
+      'Replay attack detection',
+      'Key rotation logic',
+      'Cipher suite selection'
+    ],
+    integration: [
+      'End-to-end encrypted communication',
+      'Key rotation during active connection',
+      'TLS downgrade attack prevention',
+      'Certificate validation',
+      'Performance under load with encryption',
+      'Reconnection with session resumption'
+    ],
+    e2e: [
+      'Complete secure connection flow',
+      'Multi-client encrypted communication',
+      'Key rotation across multiple clients',
+      'Security alert handling',
+      'Performance benchmarking'
+    ]
+  },
+  
+  monitoring: {
+    metrics: [
+      'tls_handshake_duration',
+      'encryption_latency_ms',
+      'decryption_latency_ms',
+      'messages_encrypted_total',
+      'messages_decrypted_total',
+      'key_rotations_total',
+      'security_alerts_total',
+      'replay_attacks_blocked',
+      'cipher_strength_bits',
+      'active_encrypted_connections'
+    ],
+    logs: [
+      'TLS handshake details',
+      'Key exchange events',
+      'Key rotation events',
+      'Security alerts',
+      'Encryption errors',
+      'Certificate validation results'
+    ],
+    alerts: [
+      {
+        name: 'Weak cipher negotiated',
+        condition: 'cipher_strength_bits < 256',
+        severity: 'high'
+      },
+      {
+        name: 'High decryption failure rate',
+        condition: 'decryption_failure_rate > 0.01',
+        severity: 'critical'
+      },
+      {
+        name: 'Replay attack detected',
+        condition: 'replay_attacks_blocked > 0',
+        severity: 'high'
+      },
+      {
+        name: 'Key rotation failure',
+        condition: 'key_rotation_failed == true',
+        severity: 'critical'
+      }
+    ]
+  },
+  
+  documentation: {
+    examples: [
+      {
+        title: 'Basic Encrypted Connection',
+        code: `const ws = new EncryptedWebSocket({ url: 'wss://server.com' })
+await ws.connect()`
+      },
+      {
+        title: 'Custom Cipher Configuration',
+        code: `const ws = new EncryptedWebSocket({
+  url: 'wss://server.com',
+  tlsConfig: {
+    cipherSuites: ['TLS_AES_256_GCM_SHA384']
+  }
+})`
+      },
+      {
+        title: 'Key Rotation Handler',
+        code: `ws.on('keyRotation', (event) => {
+  console.log('Keys rotated:', event.newKeyId)
+})`
+      }
+    ],
+    tutorials: [
+      'Setting up end-to-end encryption',
+      'Implementing perfect forward secrecy',
+      'Handling key rotation gracefully',
+      'Monitoring encryption performance',
+      'Debugging TLS issues'
+    ],
+    apiReference: 'https://docs.loveclaudecode.com/constructs/l1/encrypted-websocket'
+  },
+  
+  metadata: {
+    tags: ['websocket', 'encryption', 'tls', 'security', 'infrastructure', 'aes', 'ecdhe'],
+    changelog: [
+      {
+        version: '1.0.0',
+        date: '2025-01-23',
+        changes: ['Initial release with TLS 1.3, AES-256-GCM, and ECDHE key exchange']
+      }
+    ],
+    requirements: [
+      'TLS certificates for server endpoints',
+      'WebCrypto API support in browser',
+      'Secure random number generation',
+      'Time synchronization for replay protection'
+    ]
+  }
+}

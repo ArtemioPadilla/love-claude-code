@@ -1,0 +1,648 @@
+id: platform-l2-ide-workspace
+name: IDE Workspace
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - ide
+  - workspace
+  - development
+  - editor
+  - terminal
+  - file-explorer
+  - pattern
+  - platform-construct
+
+description: |
+  Complete integrated development environment pattern that combines multiple L1 constructs
+  to create a fully-functional IDE workspace. Includes a secure code editor with syntax
+  highlighting and AI assistance, integrated terminal for command execution, project file
+  explorer with Git integration, and responsive layout system. This pattern provides
+  everything needed for modern software development in a web-based environment.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-secure-code-editor
+  - platform-l1-integrated-terminal
+  - platform-l1-project-file-explorer
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: projectPath
+    type: string
+    required: true
+    description: Root directory path for the workspace
+    example: /home/user/my-project
+    validation:
+      pattern: '^(/[^/]+)+/?$'
+
+  - name: theme
+    type: string
+    required: false
+    default: dark
+    enum: ['light', 'dark', 'auto']
+    description: UI theme for the workspace
+
+  - name: layout
+    type: object
+    required: false
+    description: Layout configuration for panels
+    properties:
+      editorPosition:
+        type: string
+        default: center
+        enum: ['center', 'right']
+        description: Position of the editor panel
+      terminalPosition:
+        type: string
+        default: bottom
+        enum: ['bottom', 'right']
+        description: Position of the terminal panel
+      explorerPosition:
+        type: string
+        default: left
+        enum: ['left', 'hidden']
+        description: Position of the file explorer
+      defaultSizes:
+        type: object
+        description: Default panel sizes in pixels
+        properties:
+          explorer:
+            type: number
+            default: 200
+            validation:
+              min: 150
+              max: 400
+          editor:
+            type: number
+            description: Editor takes remaining space
+          terminal:
+            type: number
+            default: 200
+            validation:
+              min: 100
+              max: 600
+
+  - name: editor
+    type: object
+    required: false
+    description: Editor configuration
+    properties:
+      language:
+        type: string
+        default: javascript
+        description: Default syntax highlighting language
+      fontSize:
+        type: number
+        default: 14
+        validation:
+          min: 10
+          max: 24
+      tabSize:
+        type: number
+        default: 4
+        validation:
+          min: 2
+          max: 8
+      wordWrap:
+        type: boolean
+        default: false
+      minimap:
+        type: boolean
+        default: true
+      autoSave:
+        type: boolean
+        default: false
+      autoFormat:
+        type: boolean
+        default: false
+
+  - name: terminal
+    type: object
+    required: false
+    description: Terminal configuration
+    properties:
+      shell:
+        type: string
+        default: /bin/bash
+        description: Shell to use in terminal
+      fontSize:
+        type: number
+        default: 14
+        validation:
+          min: 10
+          max: 20
+      cursorStyle:
+        type: string
+        default: block
+        enum: ['block', 'line', 'underline']
+
+  - name: features
+    type: object
+    required: false
+    description: Enable/disable workspace features
+    default:
+      git: true
+      debugging: false
+      extensions: false
+      search: true
+      problems: true
+      output: true
+    properties:
+      git:
+        type: boolean
+        default: true
+        description: Git integration
+      debugging:
+        type: boolean
+        default: false
+        description: Debugging support
+      extensions:
+        type: boolean
+        default: false
+        description: Extension system
+      search:
+        type: boolean
+        default: true
+        description: Search functionality
+      problems:
+        type: boolean
+        default: true
+        description: Problems panel
+      output:
+        type: boolean
+        default: true
+        description: Output panel
+
+  - name: keybindings
+    type: string
+    required: false
+    default: vscode
+    enum: ['vscode', 'sublime', 'vim', 'emacs']
+    description: Keyboard shortcut scheme
+
+outputs:
+  - name: workspaceId
+    type: string
+    description: Unique workspace identifier
+
+  - name: status
+    type: string
+    description: Workspace initialization status
+    enum: ['initializing', 'ready', 'error']
+
+  - name: components
+    type: object
+    description: Component availability status
+    properties:
+      editor:
+        type: boolean
+      terminal:
+        type: boolean
+      explorer:
+        type: boolean
+      layout:
+        type: boolean
+
+  - name: state
+    type: object
+    description: Current workspace state
+    properties:
+      activeFile:
+        type: string
+        description: Currently active file path
+      openFiles:
+        type: array
+        itemType: string
+        description: List of open file paths
+      modifiedFiles:
+        type: array
+        itemType: string
+        description: List of modified file paths
+      terminalSessions:
+        type: number
+        description: Number of active terminal sessions
+
+  - name: capabilities
+    type: object
+    description: Enabled workspace capabilities
+    properties:
+      multiFile:
+        type: boolean
+      debugging:
+        type: boolean
+      git:
+        type: boolean
+      search:
+        type: boolean
+      extensions:
+        type: boolean
+
+methods:
+  - name: openFile
+    description: Open a file in the editor
+    signature: (path: string) => Promise<void>
+    parameters:
+      - name: path
+        type: string
+        description: File path to open
+
+  - name: createFile
+    description: Create a new file
+    signature: (path: string, content?: string) => Promise<void>
+    parameters:
+      - name: path
+        type: string
+        description: File path to create
+      - name: content
+        type: string
+        description: Initial file content
+
+  - name: saveFile
+    description: Save a specific file
+    signature: (path: string) => Promise<void>
+
+  - name: saveActiveFile
+    description: Save the currently active file
+    signature: () => Promise<void>
+
+  - name: closeFile
+    description: Close a file
+    signature: (path: string) => Promise<void>
+
+  - name: renameFile
+    description: Rename a file
+    signature: (oldPath: string, newPath: string) => Promise<void>
+
+  - name: runFile
+    description: Execute the current or specified file
+    signature: (path?: string) => Promise<void>
+
+  - name: executeCommand
+    description: Execute a command in the terminal
+    signature: (command: string) => Promise<void>
+
+  - name: searchInWorkspace
+    description: Search for text in workspace files
+    signature: (query: string, options?: SearchOptions) => Promise<SearchResult[]>
+
+  - name: setTheme
+    description: Change the workspace theme
+    signature: (theme: 'light' | 'dark' | 'auto') => Promise<void>
+
+  - name: togglePanel
+    description: Toggle visibility of a panel
+    signature: (panelId: string) => Promise<void>
+
+  - name: getActiveFile
+    description: Get the currently active file
+    signature: () => WorkspaceFile | undefined
+
+  - name: getOpenFiles
+    description: Get all open files
+    signature: () => WorkspaceFile[]
+
+  - name: getModifiedFiles
+    description: Get all modified files
+    signature: () => WorkspaceFile[]
+
+events:
+  - name: initialized
+    description: Workspace initialized successfully
+    payload:
+      workspaceId: string
+
+  - name: fileOpened
+    description: File opened in editor
+    payload:
+      path: string
+      language: string
+
+  - name: fileCreated
+    description: New file created
+    payload:
+      path: string
+
+  - name: fileSaved
+    description: File saved successfully
+    payload:
+      path: string
+
+  - name: fileClosed
+    description: File closed
+    payload:
+      path: string
+
+  - name: fileRenamed
+    description: File renamed
+    payload:
+      oldPath: string
+      newPath: string
+
+  - name: fileModified
+    description: File content modified
+    payload:
+      path: string
+
+  - name: searchComplete
+    description: Search operation completed
+    payload:
+      query: string
+      results: array
+
+  - name: themeChanged
+    description: Theme changed
+    payload:
+      theme: string
+
+  - name: layoutChange
+    description: Layout configuration changed
+    payload:
+      panelId: string
+      size: number
+
+  - name: panelToggle
+    description: Panel visibility toggled
+    payload:
+      panelId: string
+      visible: boolean
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+patterns:
+  - name: Multi-file Editing
+    description: |
+      Open and edit multiple files simultaneously with tab management
+      and quick file switching using keyboard shortcuts.
+
+  - name: Integrated Development
+    description: |
+      Write code in the editor and immediately test it in the terminal
+      without switching contexts or windows.
+
+  - name: Project Navigation
+    description: |
+      Browse project structure, create/rename/delete files, and search
+      across the entire codebase from the file explorer.
+
+  - name: Responsive Workspace
+    description: |
+      Panels automatically adjust for different screen sizes, with
+      collapsible panels for mobile development.
+
+examples:
+  - title: Basic Web Development Workspace
+    description: Simple setup for web development
+    language: typescript
+    code: |
+      const workspace = new IDEWorkspace()
+      
+      await workspace.initialize({
+        projectPath: '/home/user/my-web-app',
+        theme: 'dark',
+        editor: {
+          language: 'javascript',
+          fontSize: 14,
+          tabSize: 2,
+          autoSave: true
+        },
+        terminal: {
+          shell: '/bin/bash',
+          fontSize: 14
+        },
+        features: {
+          git: true,
+          search: true,
+          problems: true
+        }
+      })
+      
+      // Open main application file
+      await workspace.openFile('/home/user/my-web-app/src/index.js')
+      
+      // Start development server in terminal
+      await workspace.executeCommand('npm run dev')
+      
+      // Set up file watchers
+      workspace.on('fileSaved', async ({ path }) => {
+        if (path.endsWith('.js') || path.endsWith('.jsx')) {
+          // Auto-format on save
+          await workspace.executeCommand(`prettier --write ${path}`)
+        }
+      })
+
+  - title: TypeScript Development Environment
+    description: Advanced setup for TypeScript projects
+    language: typescript
+    code: |
+      const workspace = new IDEWorkspace()
+      
+      await workspace.initialize({
+        projectPath: '/projects/typescript-app',
+        theme: 'dark',
+        layout: {
+          editorPosition: 'center',
+          terminalPosition: 'bottom',
+          defaultSizes: {
+            explorer: 250,
+            terminal: 250
+          }
+        },
+        editor: {
+          language: 'typescript',
+          fontSize: 16,
+          tabSize: 2,
+          wordWrap: false,
+          minimap: true,
+          autoFormat: true
+        },
+        features: {
+          git: true,
+          debugging: false,
+          search: true,
+          problems: true
+        },
+        keybindings: 'vscode'
+      })
+      
+      // Set up TypeScript compiler watch
+      await workspace.executeCommand('npx tsc --watch')
+      
+      // Open multiple TypeScript files
+      const files = [
+        '/projects/typescript-app/src/main.ts',
+        '/projects/typescript-app/src/types.ts',
+        '/projects/typescript-app/src/utils.ts'
+      ]
+      
+      for (const file of files) {
+        await workspace.openFile(file)
+      }
+      
+      // Listen for TypeScript errors
+      workspace.on('problems', (problems) => {
+        console.log(`Found ${problems.length} TypeScript errors`)
+        problems.forEach(problem => {
+          console.log(`${problem.file}:${problem.line} - ${problem.message}`)
+        })
+      })
+      
+      // Auto-save and compile
+      workspace.on('fileModified', async ({ path }) => {
+        if (path.endsWith('.ts') || path.endsWith('.tsx')) {
+          setTimeout(async () => {
+            await workspace.saveFile(path)
+          }, 1000) // Auto-save after 1 second of inactivity
+        }
+      })
+
+  - title: Python Data Science Workspace
+    description: Workspace configured for Python data science
+    language: typescript
+    code: |
+      const workspace = new IDEWorkspace()
+      
+      await workspace.initialize({
+        projectPath: '/notebooks/data-analysis',
+        theme: 'light',
+        layout: {
+          terminalPosition: 'right',
+          defaultSizes: {
+            explorer: 200,
+            terminal: 400 // Wider terminal for data output
+          }
+        },
+        editor: {
+          language: 'python',
+          fontSize: 14,
+          tabSize: 4,
+          wordWrap: true
+        },
+        terminal: {
+          shell: '/usr/bin/python3',
+          fontSize: 12
+        }
+      })
+      
+      // Open Jupyter notebook file
+      await workspace.openFile('/notebooks/data-analysis/analysis.py')
+      
+      // Start IPython in terminal
+      await workspace.executeCommand('ipython')
+      
+      // Set up automatic cell execution
+      workspace.on('runSelection', async (code) => {
+        // Send selected code to IPython
+        await workspace.executeCommand(code)
+      })
+      
+      // Create visualizations directory
+      await workspace.createFile('/notebooks/data-analysis/plots/.gitkeep', '')
+      
+      // Install required packages
+      await workspace.executeCommand('pip install -r requirements.txt')
+
+bestPractices:
+  - Use consistent file naming conventions across the project
+  - Configure auto-save to prevent data loss
+  - Set up appropriate syntax highlighting for file types
+  - Use keyboard shortcuts for common operations
+  - Keep terminal sessions organized with clear names
+  - Regularly save workspace state for persistence
+  - Configure editor settings per file type
+  - Use search functionality for large codebases
+  - Set up file watchers for automatic tasks
+  - Organize files in a logical project structure
+  - Use split views for comparing files
+  - Configure appropriate themes for long coding sessions
+  - Set up linting and formatting tools
+  - Use version control integration effectively
+  - Keep workspace clean by closing unused files
+
+troubleshooting:
+  - issue: Editor not syntax highlighting correctly
+    solutions:
+      - Check if correct language is detected
+      - Manually set language mode
+      - Verify file extension mapping
+      - Install language support if needed
+
+  - issue: Terminal commands not executing
+    solutions:
+      - Check shell configuration
+      - Verify command permissions
+      - Check if shell is installed
+      - Review security restrictions
+
+  - issue: Files not saving
+    solutions:
+      - Check file permissions
+      - Verify disk space
+      - Check for file locks
+      - Review auto-save settings
+
+  - issue: Layout panels not resizing
+    solutions:
+      - Check minimum size constraints
+      - Verify responsive breakpoints
+      - Clear saved layout state
+      - Check for CSS conflicts
+
+  - issue: High memory usage
+    solutions:
+      - Close unused files
+      - Limit terminal output history
+      - Disable unused features
+      - Clear search results
+      - Reduce file watcher scope
+
+deployment:
+  requiredProviders:
+    - file-system
+    - shell-access
+  optionalProviders:
+    - git
+    - language-servers
+  configuration:
+    docker:
+      baseImage: node:18-alpine
+      additionalPackages:
+        - git
+        - bash
+        - python3
+    security:
+      fileSystemAccess: restricted
+      shellCommands: sandboxed
+      networkAccess: limited
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-frontend
+    - love-claude-code-construct-builder
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l1-secure-code-editor
+    - platform-l1-integrated-terminal
+    - platform-l1-project-file-explorer
+    - platform-l1-responsive-layout
+  timeToCreate: 240
+  linesOfCode: 800
+  testCoverage: 85
+  canBuildConstructs: true
+  platformFeatures:
+    - Complete IDE experience
+    - Multi-file editing
+    - Integrated terminal
+    - File management
+    - Search capabilities

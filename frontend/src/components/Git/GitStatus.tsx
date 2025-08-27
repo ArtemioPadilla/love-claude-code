@@ -27,20 +27,24 @@ export function GitStatus() {
   
   const currentProject = getCurrentProject()
   
-  // Only show in Electron
-  if (!isElectron() || !currentProject) {
-    return null
-  }
+  // Move hooks to top level
+  useEffect(() => {
+    // Only check Git installation in Electron with a current project
+    if (isElectron() && currentProject) {
+      checkGitInstallation()
+    }
+  }, [currentProject])
   
   useEffect(() => {
-    checkGitInstallation()
-  }, [])
-  
-  useEffect(() => {
-    if (currentProject && isGitInstalled) {
+    if (currentProject && isGitInstalled && isElectron()) {
       checkGitStatus()
     }
   }, [currentProject?.id, isGitInstalled])
+  
+  // Early return after hooks
+  if (!isElectron() || !currentProject) {
+    return null
+  }
   
   const checkGitInstallation = async () => {
     try {
@@ -177,12 +181,12 @@ export function GitStatus() {
       ) : (
         <>
           {modifiedCount > 0 && (
-            <Badge variant={getStatusColor(modifiedCount)} className="text-xs">
+            <Badge variant={modifiedCount > 5 ? "error" : modifiedCount > 2 ? "warning" : "info"} className="text-xs">
               {modifiedCount} modified
             </Badge>
           )}
           {untrackedCount > 0 && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="default" className="text-xs">
               {untrackedCount} untracked
             </Badge>
           )}

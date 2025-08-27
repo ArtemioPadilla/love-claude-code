@@ -1,0 +1,659 @@
+id: platform-l2-claude-conversation-system
+name: Claude Conversation System
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - ai
+  - claude
+  - conversation
+  - chat
+  - context
+  - history
+  - pattern
+  - platform-construct
+
+description: |
+  Complete conversation management system with Claude AI integration, intelligent context
+  handling, conversation history, and advanced features like streaming responses, file
+  attachments, and multi-modal support. This pattern provides a production-ready system
+  for managing AI conversations with persistence, search, export, and cost tracking.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-ai-chat-interface
+  - platform-l1-encrypted-database
+  - platform-l1-cdn-storage
+  - platform-l1-rest-api-service
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: userId
+    type: string
+    required: true
+    description: User identifier for conversation history
+    example: user-123
+    validation:
+      pattern: '^[a-zA-Z0-9-_]+$'
+
+  - name: apiKey
+    type: string
+    required: false
+    description: Claude API key (can be set in settings)
+    sensitive: true
+    example: sk-ant-api03-...
+
+  - name: model
+    type: string
+    required: false
+    default: claude-3-5-sonnet
+    enum: ['claude-3-5-sonnet', 'claude-3-opus', 'claude-3-haiku']
+    description: Claude model to use
+
+  - name: maxTokens
+    type: number
+    required: false
+    default: 4000
+    description: Maximum tokens per response
+    validation:
+      min: 100
+      max: 200000
+
+  - name: temperature
+    type: number
+    required: false
+    default: 0.7
+    description: Response creativity (0-1)
+    validation:
+      min: 0
+      max: 1
+
+  - name: contextWindow
+    type: number
+    required: false
+    default: 200000
+    description: Context window size in tokens
+    validation:
+      min: 1000
+      max: 200000
+
+  - name: features
+    type: object
+    required: false
+    description: Feature flags
+    default:
+      streaming: true
+      codeExecution: false
+      fileAttachments: false
+      webSearch: false
+      multiModal: false
+      voiceInput: false
+    properties:
+      streaming:
+        type: boolean
+        default: true
+        description: Enable streaming responses
+      codeExecution:
+        type: boolean
+        default: false
+        description: Allow code execution in responses
+      fileAttachments:
+        type: boolean
+        default: false
+        description: Enable file attachments
+      webSearch:
+        type: boolean
+        default: false
+        description: Enable web search capability
+      multiModal:
+        type: boolean
+        default: false
+        description: Enable multi-modal inputs
+      voiceInput:
+        type: boolean
+        default: false
+        description: Enable voice input
+
+  - name: ui
+    type: object
+    required: false
+    description: UI configuration
+    properties:
+      theme:
+        type: string
+        default: dark
+        enum: ['light', 'dark', 'auto']
+        description: UI theme
+      layout:
+        type: string
+        default: sidebar
+        enum: ['sidebar', 'fullscreen', 'floating']
+        description: Layout style
+      position:
+        type: string
+        default: right
+        enum: ['left', 'right', 'bottom']
+        description: Chat position
+      defaultOpen:
+        type: boolean
+        default: true
+        description: Open by default
+
+  - name: history
+    type: object
+    required: false
+    description: History configuration
+    default:
+      enabled: true
+      maxConversations: 100
+      autoSave: true
+      syncAcrossDevices: false
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: Enable conversation history
+      maxConversations:
+        type: number
+        default: 100
+        description: Maximum stored conversations
+        validation:
+          min: 10
+          max: 1000
+      autoSave:
+        type: boolean
+        default: true
+        description: Auto-save conversations
+      syncAcrossDevices:
+        type: boolean
+        default: false
+        description: Sync across devices
+
+  - name: context
+    type: object
+    required: false
+    description: Context management
+    properties:
+      projectContext:
+        type: boolean
+        default: true
+        description: Include project context
+      codebaseAnalysis:
+        type: boolean
+        default: true
+        description: Analyze codebase context
+      documentContext:
+        type: boolean
+        default: true
+        description: Include document context
+      customContext:
+        type: array
+        itemType: string
+        description: Custom context items
+
+outputs:
+  - name: systemId
+    type: string
+    description: Unique system identifier
+
+  - name: status
+    type: string
+    description: System status
+    enum: ['ready', 'loading', 'error']
+
+  - name: capabilities
+    type: object
+    description: Enabled capabilities
+    properties:
+      streaming:
+        type: boolean
+      codeExecution:
+        type: boolean
+      fileAttachments:
+        type: boolean
+      voiceInput:
+        type: boolean
+      multiModal:
+        type: boolean
+
+  - name: statistics
+    type: object
+    description: Usage statistics
+    properties:
+      totalConversations:
+        type: number
+        description: Total number of conversations
+      totalMessages:
+        type: number
+        description: Total messages across all conversations
+      totalTokens:
+        type: number
+        description: Total tokens used
+      activeConversation:
+        type: string
+        description: Currently active conversation ID
+
+  - name: currentContext
+    type: object
+    description: Current configuration context
+    properties:
+      model:
+        type: string
+        description: Active model
+      temperature:
+        type: number
+        description: Current temperature setting
+      maxTokens:
+        type: number
+        description: Maximum tokens setting
+      contextSize:
+        type: number
+        description: Context window size
+
+methods:
+  - name: sendMessage
+    description: Send a message to Claude
+    signature: (content: string) => Promise<void>
+    parameters:
+      - name: content
+        type: string
+        description: Message content
+
+  - name: createNewConversation
+    description: Create a new conversation
+    signature: (title?: string) => Promise<string>
+    parameters:
+      - name: title
+        type: string
+        description: Optional conversation title
+    returns:
+      type: string
+      description: Conversation ID
+
+  - name: loadConversation
+    description: Load a conversation by ID
+    signature: (id: string) => Promise<void>
+    parameters:
+      - name: id
+        type: string
+        description: Conversation ID
+
+  - name: switchConversation
+    description: Switch to a different conversation
+    signature: (id: string) => Promise<void>
+    parameters:
+      - name: id
+        type: string
+        description: Conversation ID
+
+  - name: deleteConversation
+    description: Delete a conversation
+    signature: (id: string) => Promise<void>
+    parameters:
+      - name: id
+        type: string
+        description: Conversation ID
+
+  - name: searchConversations
+    description: Search through conversations
+    signature: (query: string) => Promise<Conversation[]>
+    parameters:
+      - name: query
+        type: string
+        description: Search query
+    returns:
+      type: array
+      description: Matching conversations
+
+  - name: exportConversation
+    description: Export a conversation
+    signature: (id: string, format: 'json' | 'markdown') => Promise<string>
+    parameters:
+      - name: id
+        type: string
+        description: Conversation ID
+      - name: format
+        type: string
+        enum: ['json', 'markdown']
+        description: Export format
+    returns:
+      type: string
+      description: Exported content
+
+  - name: updateContext
+    description: Update conversation context
+    signature: (context: Partial<ConversationContext>) => Promise<void>
+    parameters:
+      - name: context
+        type: object
+        description: Context updates
+
+  - name: regenerateLastResponse
+    description: Regenerate the last assistant response
+    signature: () => Promise<void>
+
+  - name: getActiveConversation
+    description: Get the currently active conversation
+    signature: () => Conversation | undefined
+    returns:
+      type: object
+      description: Active conversation
+
+  - name: getAllConversations
+    description: Get all conversations
+    signature: () => Conversation[]
+    returns:
+      type: array
+      description: All conversations
+
+events:
+  - name: initialized
+    description: System initialized successfully
+    payload:
+      systemId: string
+
+  - name: conversationCreated
+    description: New conversation created
+    payload:
+      id: string
+      title: string
+      created: date
+
+  - name: conversationLoaded
+    description: Conversation loaded from history
+    payload:
+      id: string
+      messages: array
+
+  - name: conversationDeleted
+    description: Conversation deleted
+    payload:
+      id: string
+
+  - name: messageSent
+    description: User message sent
+    payload:
+      id: string
+      content: string
+      timestamp: date
+
+  - name: messageReceived
+    description: Assistant response received
+    payload:
+      id: string
+      content: string
+      tokens: number
+      cost: number
+
+  - name: contextUpdated
+    description: Context updated
+    payload:
+      projectFiles: array
+      relevantCode: array
+      documentation: array
+
+  - name: streamingUpdate
+    description: Streaming response update
+    payload:
+      messageId: string
+      content: string
+      isComplete: boolean
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+patterns:
+  - name: Intelligent Context Management
+    description: |
+      Automatically includes relevant context from project files, previous
+      conversations, and custom sources to improve response quality.
+
+  - name: Conversation Persistence
+    description: |
+      All conversations are encrypted and stored with full history, searchable
+      and exportable in multiple formats.
+
+  - name: Cost-Aware Usage
+    description: |
+      Tracks token usage and calculates costs in real-time, helping manage
+      API usage and budget.
+
+  - name: Streaming Responses
+    description: |
+      Supports real-time streaming responses for better user experience with
+      long-form content generation.
+
+  - name: Multi-Modal Support
+    description: |
+      Handles text, images, and files as inputs with appropriate processing
+      and context extraction.
+
+examples:
+  - title: Basic Conversation System
+    description: Simple Claude integration with history
+    language: typescript
+    code: |
+      const conversation = new ClaudeConversationSystem()
+      
+      await conversation.initialize({
+        userId: 'user-123',
+        model: 'claude-3-5-sonnet',
+        features: {
+          streaming: true,
+          codeExecution: true
+        }
+      })
+      
+      // Send a message
+      await conversation.sendMessage('Hello Claude!')
+      
+      // Listen for responses
+      conversation.on('messageReceived', (message) => {
+        console.log('Claude:', message.content)
+        console.log(`Tokens used: ${message.tokens}`)
+      })
+
+  - title: Advanced Context Management
+    description: Using project context for better responses
+    language: typescript
+    code: |
+      const conversation = new ClaudeConversationSystem()
+      
+      await conversation.initialize({
+        userId: 'developer-456',
+        model: 'claude-3-opus',
+        maxTokens: 8000,
+        context: {
+          projectContext: true,
+          codebaseAnalysis: true,
+          documentContext: true
+        }
+      })
+      
+      // Update context with project information
+      await conversation.updateContext({
+        projectFiles: [
+          '/src/index.ts',
+          '/src/components/App.tsx',
+          '/src/services/api.ts'
+        ],
+        relevantCode: [
+          'export class APIService { ... }',
+          'function processData() { ... }'
+        ],
+        documentation: [
+          'API.md',
+          'ARCHITECTURE.md'
+        ]
+      })
+      
+      // Now Claude has context for better responses
+      await conversation.sendMessage(
+        'How should I refactor the APIService to support caching?'
+      )
+
+  - title: Multi-Conversation Management
+    description: Managing multiple conversations with search
+    language: typescript
+    code: |
+      const system = new ClaudeConversationSystem()
+      
+      await system.initialize({
+        userId: 'power-user',
+        history: {
+          enabled: true,
+          maxConversations: 500,
+          autoSave: true,
+          syncAcrossDevices: true
+        }
+      })
+      
+      // Create specialized conversations
+      const bugFixConv = await system.createNewConversation('Bug Fix: Login Issue')
+      await system.sendMessage('The login form is not validating email addresses...')
+      
+      const featureConv = await system.createNewConversation('Feature: Dark Mode')
+      await system.switchConversation(featureConv)
+      await system.sendMessage('I want to implement dark mode support...')
+      
+      // Search through conversations
+      const searchResults = await system.searchConversations('login')
+      console.log(`Found ${searchResults.length} conversations about login`)
+      
+      // Export for documentation
+      const markdown = await system.exportConversation(bugFixConv, 'markdown')
+      fs.writeFileSync('bug-fix-discussion.md', markdown)
+
+  - title: Cost-Conscious Implementation
+    description: Managing API costs with model selection
+    language: typescript
+    code: |
+      const system = new ClaudeConversationSystem()
+      
+      // Use Haiku for simple queries
+      await system.initialize({
+        userId: 'cost-conscious-dev',
+        model: 'claude-3-haiku',
+        maxTokens: 1000,
+        temperature: 0.3
+      })
+      
+      // Track costs
+      system.on('messageReceived', (message) => {
+        console.log(`Cost: $${message.metadata.cost.toFixed(4)}`)
+      })
+      
+      // For complex tasks, temporarily switch to Sonnet
+      const complexConv = await system.createNewConversation('Complex Analysis')
+      await system.updateConfig({
+        model: 'claude-3-5-sonnet',
+        maxTokens: 4000
+      })
+      
+      await system.sendMessage('Analyze this complex codebase architecture...')
+      
+      // Get total usage statistics
+      const stats = system.getOutputs().statistics
+      console.log(`Total tokens used: ${stats.totalTokens}`)
+
+bestPractices:
+  - Store API keys securely using environment variables or settings
+  - Implement proper error handling for API failures
+  - Use streaming for better user experience with long responses
+  - Regularly export important conversations for backup
+  - Monitor token usage to control costs
+  - Use appropriate models for different task complexities
+  - Keep conversation context focused and relevant
+  - Implement rate limiting to avoid API throttling
+  - Clear old conversations to manage storage
+  - Use conversation titles for better organization
+  - Tag conversations for easier searching
+  - Export conversations for documentation
+  - Implement user-level access controls
+  - Use encryption for sensitive conversations
+  - Monitor and log API errors for debugging
+
+troubleshooting:
+  - issue: API key not working
+    solutions:
+      - Verify key is correct and active
+      - Check API key permissions
+      - Ensure proper header format
+      - Try regenerating the key
+
+  - issue: Conversations not saving
+    solutions:
+      - Check database initialization
+      - Verify encryption key generation
+      - Check storage permissions
+      - Review error logs
+
+  - issue: Streaming not working
+    solutions:
+      - Ensure streaming is enabled
+      - Check WebSocket support
+      - Verify API supports streaming
+      - Check network connectivity
+
+  - issue: High token usage
+    solutions:
+      - Reduce context size
+      - Use smaller models for simple tasks
+      - Implement conversation pruning
+      - Clear irrelevant context
+
+  - issue: Slow response times
+    solutions:
+      - Use streaming for perception
+      - Reduce max tokens if appropriate
+      - Check API rate limits
+      - Optimize context building
+
+deployment:
+  requiredProviders:
+    - api-access
+    - database
+    - storage
+  optionalProviders:
+    - cdn
+    - websocket
+  configuration:
+    apiEndpoints:
+      anthropic: https://api.anthropic.com/v1
+      bedrock: https://bedrock-runtime.*.amazonaws.com
+    security:
+      apiKeyStorage: encrypted
+      conversationEncryption: true
+      tlsRequired: true
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-frontend
+    - vibe-coding-system
+    - construct-development-mode
+  developmentMethod: manual
+  vibeCodingPercentage: 15
+  builtWith:
+    - platform-l1-ai-chat-interface
+    - platform-l1-encrypted-database
+    - platform-l1-cdn-storage
+    - platform-l1-rest-api-service
+  timeToCreate: 300
+  linesOfCode: 900
+  testCoverage: 90
+  canBuildConstructs: false
+  platformFeatures:
+    - AI conversation management
+    - Context-aware responses
+    - Conversation history
+    - Multi-model support
+    - Cost tracking

@@ -35,14 +35,14 @@ interface ExecutionRecord {
  * Local function provider using Node.js child processes
  */
 export class LocalFunctionProvider implements FunctionProvider {
-  private config: ProviderConfig
+  // Config removed as it was unused
   private functionsPath: string
   private functions: Map<string, FunctionDefinition> = new Map()
   private executions: Map<string, ExecutionRecord> = new Map()
   private processes: Map<string, ExecutionProcess> = new Map()
   
   constructor(config: ProviderConfig) {
-    this.config = config
+    // Store functionsPath directly from config
     this.functionsPath = path.join(
       config.options?.functionsPath || './data/functions',
       config.projectId
@@ -110,7 +110,7 @@ export class LocalFunctionProvider implements FunctionProvider {
       runtime: definition.runtime || 'nodejs18',
       timeout: definition.timeout || 30000,
       memory: definition.memory || 128,
-      environment: definition.environment || {},
+      environmentVariables: definition.environmentVariables || {},
       createdAt: new Date(),
       updatedAt: new Date()
     }
@@ -179,7 +179,7 @@ export class LocalFunctionProvider implements FunctionProvider {
         cwd: functionDir,
         env: {
           ...process.env,
-          ...func.environment,
+          ...func.environmentVariables,
           FUNCTION_HANDLER: func.handler,
           FUNCTION_TIMEOUT: String(func.timeout || 30000)
         }

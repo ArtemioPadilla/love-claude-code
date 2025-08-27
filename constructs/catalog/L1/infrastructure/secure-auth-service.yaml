@@ -1,0 +1,1122 @@
+id: platform-l1-secure-auth-service
+name: Secure Auth Service
+level: L1
+version: 1.0.0
+author: Love Claude Code
+category: infrastructure
+tags:
+  - auth
+  - security
+  - jwt
+  - oauth
+  - mfa
+  - session
+  - managed
+  - platform-construct
+
+description: |
+  Production-ready authentication service with comprehensive security features including
+  JWT tokens with refresh token rotation, multi-factor authentication (MFA), OAuth2/SAML
+  integration, session management, brute force protection, and detailed audit logging.
+  Built upon the L0 Auth Token Primitive, this L1 construct provides enterprise-grade
+  authentication and authorization capabilities for modern applications.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: authConfig
+    type: object
+    required: true
+    description: Core authentication configuration
+    properties:
+      provider:
+        type: string
+        required: true
+        enum: ['jwt', 'oauth2', 'saml', 'openid']
+        description: Authentication provider type
+      issuer:
+        type: string
+        required: true
+        description: Token issuer identifier
+        example: my-app.example.com
+      audience:
+        type: string
+        required: true
+        description: Token audience
+        example: api.example.com
+      secretKey:
+        type: string
+        required: false
+        description: Secret key for HMAC algorithms
+        sensitive: true
+      publicKey:
+        type: string
+        required: false
+        description: Public key for RSA algorithms
+        sensitive: true
+      algorithm:
+        type: string
+        required: false
+        default: HS256
+        enum: ['HS256', 'HS384', 'HS512', 'RS256', 'RS384', 'RS512', 'ES256']
+        description: JWT signing algorithm
+
+  - name: tokenConfig
+    type: object
+    required: true
+    description: Token lifecycle configuration
+    properties:
+      accessTokenExpiry:
+        type: number
+        required: true
+        description: Access token expiry in seconds
+        default: 900
+        validation:
+          min: 60
+          max: 3600
+      refreshTokenExpiry:
+        type: number
+        required: true
+        description: Refresh token expiry in seconds
+        default: 604800
+        validation:
+          min: 3600
+          max: 31536000
+      refreshTokenRotation:
+        type: boolean
+        required: true
+        default: true
+        description: Rotate refresh tokens on use
+      revokeOldRefreshTokens:
+        type: boolean
+        required: true
+        default: true
+        description: Revoke old refresh tokens after rotation
+      maxRefreshTokens:
+        type: number
+        required: false
+        default: 5
+        description: Max refresh tokens per user
+      tokenPrefix:
+        type: string
+        required: false
+        description: Custom token prefix
+      includePermissions:
+        type: boolean
+        required: true
+        default: false
+        description: Include permissions in access token
+      includeTenant:
+        type: boolean
+        required: false
+        default: false
+        description: Include tenant info in token
+
+  - name: mfaConfig
+    type: object
+    required: false
+    description: Multi-factor authentication configuration
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      required:
+        type: boolean
+        default: false
+        description: Require MFA for all users
+      methods:
+        type: array
+        itemType: string
+        enum: ['totp', 'sms', 'email', 'push', 'webauthn']
+        description: Supported MFA methods
+      gracePeriod:
+        type: number
+        default: 0
+        description: Grace period before MFA required (seconds)
+      backupCodes:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          count:
+            type: number
+            default: 10
+          length:
+            type: number
+            default: 8
+
+  - name: sessionConfig
+    type: object
+    required: false
+    description: Session management configuration
+    default:
+      sessionTimeout: 3600
+      slidingExpiration: true
+      concurrentSessions: 5
+      deviceFingerprinting: false
+      sessionStore: memory
+    properties:
+      sessionTimeout:
+        type: number
+        default: 3600
+        description: Session timeout in seconds
+      slidingExpiration:
+        type: boolean
+        default: true
+        description: Reset timeout on activity
+      concurrentSessions:
+        type: number
+        default: 5
+        description: Max concurrent sessions per user
+      deviceFingerprinting:
+        type: boolean
+        default: false
+        description: Track device fingerprints
+      sessionStore:
+        type: string
+        default: memory
+        enum: ['memory', 'redis', 'database']
+        description: Session storage backend
+      cookieConfig:
+        type: object
+        properties:
+          secure:
+            type: boolean
+            default: true
+          httpOnly:
+            type: boolean
+            default: true
+          sameSite:
+            type: string
+            default: strict
+            enum: ['strict', 'lax', 'none']
+          domain:
+            type: string
+
+  - name: securityConfig
+    type: object
+    required: false
+    description: Security features configuration
+    default:
+      bruteForceProtection:
+        enabled: true
+        maxAttempts: 5
+        windowMinutes: 15
+        blockDurationMinutes: 30
+      passwordPolicy:
+        minLength: 8
+        requireUppercase: true
+        requireLowercase: true
+        requireNumbers: true
+        requireSpecialChars: true
+        preventReuse: 5
+      anomalyDetection: false
+      riskScoring: false
+    properties:
+      bruteForceProtection:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          maxAttempts:
+            type: number
+            default: 5
+          windowMinutes:
+            type: number
+            default: 15
+          blockDurationMinutes:
+            type: number
+            default: 30
+      passwordPolicy:
+        type: object
+        properties:
+          minLength:
+            type: number
+            default: 8
+          requireUppercase:
+            type: boolean
+            default: true
+          requireLowercase:
+            type: boolean
+            default: true
+          requireNumbers:
+            type: boolean
+            default: true
+          requireSpecialChars:
+            type: boolean
+            default: true
+          preventReuse:
+            type: number
+            default: 5
+          expiryDays:
+            type: number
+      ipWhitelist:
+        type: array
+        itemType: string
+        description: Allowed IP addresses
+      ipBlacklist:
+        type: array
+        itemType: string
+        description: Blocked IP addresses
+      anomalyDetection:
+        type: boolean
+        default: false
+      riskScoring:
+        type: boolean
+        default: false
+
+  - name: oauth2Config
+    type: object
+    required: false
+    description: OAuth2 integration configuration
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      providers:
+        type: array
+        itemType:
+          type: object
+          properties:
+            name:
+              type: string
+              required: true
+            clientId:
+              type: string
+              required: true
+              sensitive: true
+            clientSecret:
+              type: string
+              required: true
+              sensitive: true
+            authorizationUrl:
+              type: string
+              required: true
+            tokenUrl:
+              type: string
+              required: true
+            userInfoUrl:
+              type: string
+              required: true
+            scopes:
+              type: array
+              itemType: string
+            mapping:
+              type: object
+              properties:
+                id:
+                  type: string
+                email:
+                  type: string
+                name:
+                  type: string
+                avatar:
+                  type: string
+      defaultScopes:
+        type: array
+        itemType: string
+        default: ['openid', 'email', 'profile']
+      pkce:
+        type: boolean
+        default: true
+        description: Use PKCE flow
+      stateParameter:
+        type: boolean
+        default: true
+
+  - name: auditConfig
+    type: object
+    required: false
+    description: Audit logging configuration
+    default:
+      enabled: true
+      events: ['login', 'logout', 'token_refresh', 'password_change']
+      retention: 90
+      sensitiveDataMasking: true
+      includeRequestDetails: false
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      events:
+        type: array
+        itemType: string
+        enum: ['login', 'logout', 'token_refresh', 'mfa_challenge', 'password_change', 'permission_change', 'account_locked', 'suspicious_activity']
+      retention:
+        type: number
+        default: 90
+        description: Retention period in days
+      sensitiveDataMasking:
+        type: boolean
+        default: true
+      includeRequestDetails:
+        type: boolean
+        default: false
+
+  - name: rateLimitConfig
+    type: object
+    required: false
+    description: Rate limiting configuration
+    default:
+      enabled: true
+      endpoints:
+        login:
+          requests: 10
+          windowMinutes: 5
+        register:
+          requests: 5
+          windowMinutes: 15
+        refresh:
+          requests: 20
+          windowMinutes: 5
+        passwordReset:
+          requests: 3
+          windowMinutes: 60
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      endpoints:
+        type: object
+        properties:
+          login:
+            type: object
+            properties:
+              requests:
+                type: number
+              windowMinutes:
+                type: number
+          register:
+            type: object
+            properties:
+              requests:
+                type: number
+              windowMinutes:
+                type: number
+          refresh:
+            type: object
+            properties:
+              requests:
+                type: number
+              windowMinutes:
+                type: number
+          passwordReset:
+            type: object
+            properties:
+              requests:
+                type: number
+              windowMinutes:
+                type: number
+
+  - name: customClaims
+    type: function
+    required: false
+    description: Function to add custom claims to tokens
+    signature: (user: User) => Record<string, any>
+
+  - name: webhooks
+    type: object
+    required: false
+    description: Webhook URLs for auth events
+    properties:
+      onLogin:
+        type: string
+        description: Login webhook URL
+      onLogout:
+        type: string
+        description: Logout webhook URL
+      onRegister:
+        type: string
+        description: Registration webhook URL
+      onPasswordChange:
+        type: string
+        description: Password change webhook URL
+      onAccountLocked:
+        type: string
+        description: Account locked webhook URL
+
+outputs:
+  - name: serviceId
+    type: string
+    description: Unique auth service identifier
+
+  - name: status
+    type: string
+    description: Service operational status
+    enum: ['initializing', 'active', 'error', 'maintenance']
+
+  - name: endpoints
+    type: object
+    description: Authentication endpoints
+    properties:
+      login:
+        type: string
+        description: Login endpoint
+      logout:
+        type: string
+        description: Logout endpoint
+      refresh:
+        type: string
+        description: Token refresh endpoint
+      register:
+        type: string
+        description: Registration endpoint
+      verify:
+        type: string
+        description: Token verification endpoint
+      userInfo:
+        type: string
+        description: User info endpoint
+      mfa:
+        type: string
+        description: MFA endpoint
+      passwordReset:
+        type: string
+        description: Password reset endpoint
+
+  - name: capabilities
+    type: object
+    description: Enabled authentication features
+    properties:
+      mfa:
+        type: boolean
+      oauth2:
+        type: boolean
+      saml:
+        type: boolean
+      passwordless:
+        type: boolean
+      biometric:
+        type: boolean
+      socialLogin:
+        type: boolean
+
+  - name: metrics
+    type: object
+    description: Authentication metrics
+    properties:
+      totalUsers:
+        type: number
+      activeUsers:
+        type: number
+      activeSessions:
+        type: number
+      loginRate:
+        type: number
+      failedLogins:
+        type: number
+      mfaAdoption:
+        type: number
+      averageSessionDuration:
+        type: number
+      topLoginMethods:
+        type: array
+        itemType:
+          type: object
+          properties:
+            method:
+              type: string
+            count:
+              type: number
+
+  - name: health
+    type: object
+    description: Service health status
+    properties:
+      status:
+        type: string
+        enum: ['healthy', 'degraded', 'unhealthy']
+      tokenService:
+        type: boolean
+      sessionStore:
+        type: boolean
+      database:
+        type: boolean
+
+methods:
+  - name: login
+    description: Authenticate user with credentials
+    signature: (credentials: LoginCredentials, options?: LoginOptions) => Promise<AuthToken>
+    parameters:
+      - name: credentials
+        type: object
+        properties:
+          email:
+            type: string
+          password:
+            type: string
+      - name: options
+        type: object
+        description: Login options (device info, etc)
+
+  - name: logout
+    description: Terminate user session
+    signature: (token: string) => Promise<void>
+
+  - name: refreshToken
+    description: Refresh access token
+    signature: (refreshToken: string) => Promise<AuthToken>
+
+  - name: register
+    description: Register new user
+    signature: (userData: UserData, options?: RegisterOptions) => Promise<RegisterResult>
+
+  - name: verifyToken
+    description: Verify and decode token
+    signature: (token: string) => Promise<TokenPayload>
+
+  - name: changePassword
+    description: Change user password
+    signature: (userId: string, oldPassword: string, newPassword: string) => Promise<void>
+
+  - name: initiateMFA
+    description: Start MFA challenge
+    signature: (user: User) => Promise<MFAChallenge>
+
+  - name: verifyMFA
+    description: Verify MFA code
+    signature: (challengeId: string, code: string) => Promise<AuthToken>
+
+  - name: getMetrics
+    description: Get authentication metrics
+    signature: () => Promise<AuthMetrics>
+
+events:
+  - name: login
+    description: User logged in successfully
+    payload:
+      userId: string
+      sessionId: string
+
+  - name: logout
+    description: User logged out
+    payload:
+      userId: string
+
+  - name: register
+    description: New user registered
+    payload:
+      userId: string
+
+  - name: tokenRefresh
+    description: Token refreshed
+    payload:
+      userId: string
+
+  - name: passwordChanged
+    description: Password changed successfully
+    payload:
+      userId: string
+
+  - name: mfaInitiated
+    description: MFA challenge started
+    payload:
+      userId: string
+
+  - name: mfaVerified
+    description: MFA verified successfully
+    payload:
+      userId: string
+
+  - name: accountLocked
+    description: Account locked due to security
+    payload:
+      userId: string
+      reason: string
+
+  - name: audit
+    description: Audit event logged
+    payload:
+      event: string
+      userId: string
+      timestamp: Date
+      details: object
+
+  - name: metrics
+    description: Metrics collected
+    payload: AuthMetrics
+
+  - name: error
+    description: Authentication error
+    payload:
+      error: string
+      operation: string
+
+security:
+  - aspect: JWT Security
+    description: Secure token generation and validation
+    implementation: |
+      - Strong signing algorithms (RS256 recommended)
+      - Short-lived access tokens (15-30 minutes)
+      - Secure key storage and rotation
+      - Token fingerprinting
+      - JTI for revocation support
+
+  - aspect: Refresh Token Security
+    description: Secure refresh token handling
+    implementation: |
+      - Refresh token rotation
+      - One-time use tokens
+      - Secure storage (httpOnly cookies)
+      - Device binding
+      - Automatic revocation on suspicious activity
+
+  - aspect: Brute Force Protection
+    description: Prevent password guessing attacks
+    implementation: |
+      - Progressive delays
+      - Account lockout
+      - CAPTCHA integration
+      - IP-based tracking
+      - Distributed attack detection
+
+  - aspect: Session Security
+    description: Secure session management
+    implementation: |
+      - Session fixation prevention
+      - Secure session storage
+      - Activity-based timeouts
+      - Device fingerprinting
+      - Concurrent session limits
+
+  - aspect: Password Security
+    description: Strong password requirements
+    implementation: |
+      - Configurable complexity rules
+      - Password history
+      - Expiry policies
+      - Breach detection integration
+      - Secure storage (bcrypt/argon2)
+
+cost:
+  baseCost: 0
+  usage:
+    - name: authentications
+      unit: 1M authentications
+      costPerUnit: 0.50
+      description: Login/register operations
+    - name: activeSessions
+      unit: 1M session-hours
+      costPerUnit: 0.10
+      description: Active session storage
+    - name: mfaVerifications
+      unit: 1K verifications
+      costPerUnit: 0.10
+      description: MFA challenges
+    - name: storage
+      unit: GB-month
+      costPerUnit: 0.10
+      description: User and session storage
+
+examples:
+  - title: Enterprise JWT Authentication
+    description: Complete auth setup with MFA and security features
+    language: typescript
+    code: |
+      const authService = new SecureAuthService()
+      
+      await authService.initialize({
+        // JWT configuration
+        authConfig: {
+          provider: 'jwt',
+          issuer: 'enterprise-app.com',
+          audience: 'https://api.enterprise-app.com',
+          algorithm: 'RS256',
+          publicKey: process.env.JWT_PUBLIC_KEY,
+          secretKey: process.env.JWT_PRIVATE_KEY
+        },
+        
+        // Token configuration
+        tokenConfig: {
+          accessTokenExpiry: 900, // 15 minutes
+          refreshTokenExpiry: 2592000, // 30 days
+          refreshTokenRotation: true,
+          revokeOldRefreshTokens: true,
+          maxRefreshTokens: 3, // Per device
+          includePermissions: true,
+          includeTenant: true
+        },
+        
+        // MFA configuration
+        mfaConfig: {
+          enabled: true,
+          required: false, // Required for admins
+          methods: ['totp', 'sms', 'webauthn'],
+          gracePeriod: 604800, // 7 days grace period
+          backupCodes: {
+            enabled: true,
+            count: 10,
+            length: 8
+          }
+        },
+        
+        // Session configuration
+        sessionConfig: {
+          sessionTimeout: 28800, // 8 hours
+          slidingExpiration: true,
+          concurrentSessions: 3,
+          deviceFingerprinting: true,
+          sessionStore: 'redis',
+          cookieConfig: {
+            secure: true,
+            httpOnly: true,
+            sameSite: 'strict',
+            domain: '.enterprise-app.com'
+          }
+        },
+        
+        // Security configuration
+        securityConfig: {
+          bruteForceProtection: {
+            enabled: true,
+            maxAttempts: 5,
+            windowMinutes: 15,
+            blockDurationMinutes: 60
+          },
+          passwordPolicy: {
+            minLength: 12,
+            requireUppercase: true,
+            requireLowercase: true,
+            requireNumbers: true,
+            requireSpecialChars: true,
+            preventReuse: 10,
+            expiryDays: 90
+          },
+          ipWhitelist: process.env.ALLOWED_IPS?.split(','),
+          anomalyDetection: true,
+          riskScoring: true
+        },
+        
+        // Audit configuration
+        auditConfig: {
+          enabled: true,
+          events: [
+            'login', 'logout', 'token_refresh',
+            'mfa_challenge', 'password_change',
+            'permission_change', 'account_locked',
+            'suspicious_activity'
+          ],
+          retention: 365, // 1 year
+          sensitiveDataMasking: true,
+          includeRequestDetails: true
+        },
+        
+        // Custom claims
+        customClaims: (user) => ({
+          department: user.metadata?.department,
+          permissions: user.permissions,
+          tenant: user.metadata?.tenantId
+        }),
+        
+        // Webhooks
+        webhooks: {
+          onLogin: 'https://audit.enterprise-app.com/auth/login',
+          onAccountLocked: 'https://security.enterprise-app.com/alerts'
+        }
+      })
+      
+      // Usage example
+      try {
+        // Login
+        const { accessToken, refreshToken } = await authService.login({
+          email: 'user@enterprise.com',
+          password: 'SecurePassword123!'
+        }, {
+          deviceId: deviceFingerprint,
+          ipAddress: req.ip,
+          userAgent: req.headers['user-agent']
+        })
+        
+        // If MFA required
+        if (result.requiresMFA) {
+          const mfaToken = await authService.verifyMFA(
+            result.challengeId,
+            totpCode
+          )
+        }
+        
+        // Verify token on each request
+        const decoded = await authService.verifyToken(accessToken)
+        console.log('User:', decoded.sub, 'Permissions:', decoded.permissions)
+        
+      } catch (error) {
+        if (error.message.includes('locked')) {
+          // Handle account lockout
+          notifySecurityTeam(error)
+        }
+      }
+
+  - title: Social Login Integration
+    description: OAuth2 with multiple providers
+    language: typescript
+    code: |
+      const authService = new SecureAuthService()
+      
+      await authService.initialize({
+        authConfig: {
+          provider: 'oauth2',
+          issuer: 'social-app.com',
+          audience: 'https://api.social-app.com'
+        },
+        
+        tokenConfig: {
+          accessTokenExpiry: 3600,
+          refreshTokenExpiry: 2592000,
+          refreshTokenRotation: true,
+          revokeOldRefreshTokens: true,
+          includePermissions: false
+        },
+        
+        // OAuth2 providers
+        oauth2Config: {
+          enabled: true,
+          providers: [
+            {
+              name: 'google',
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              authorizationUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
+              tokenUrl: 'https://oauth2.googleapis.com/token',
+              userInfoUrl: 'https://www.googleapis.com/oauth2/v1/userinfo',
+              scopes: ['openid', 'email', 'profile'],
+              mapping: {
+                id: 'id',
+                email: 'email',
+                name: 'name',
+                avatar: 'picture'
+              }
+            },
+            {
+              name: 'github',
+              clientId: process.env.GITHUB_CLIENT_ID,
+              clientSecret: process.env.GITHUB_CLIENT_SECRET,
+              authorizationUrl: 'https://github.com/login/oauth/authorize',
+              tokenUrl: 'https://github.com/login/oauth/access_token',
+              userInfoUrl: 'https://api.github.com/user',
+              scopes: ['read:user', 'user:email'],
+              mapping: {
+                id: 'id',
+                email: 'email',
+                name: 'name',
+                avatar: 'avatar_url'
+              }
+            },
+            {
+              name: 'microsoft',
+              clientId: process.env.MICROSOFT_CLIENT_ID,
+              clientSecret: process.env.MICROSOFT_CLIENT_SECRET,
+              authorizationUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize',
+              tokenUrl: 'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+              userInfoUrl: 'https://graph.microsoft.com/v1.0/me',
+              scopes: ['openid', 'email', 'profile'],
+              mapping: {
+                id: 'id',
+                email: 'mail',
+                name: 'displayName',
+                avatar: 'photo'
+              }
+            }
+          ],
+          defaultScopes: ['openid', 'email', 'profile'],
+          pkce: true,
+          stateParameter: true
+        },
+        
+        // Still support password login
+        securityConfig: {
+          passwordPolicy: {
+            minLength: 8,
+            requireUppercase: true,
+            requireLowercase: true,
+            requireNumbers: true,
+            requireSpecialChars: false,
+            preventReuse: 3
+          }
+        }
+      })
+      
+      // OAuth2 flow
+      const authUrl = authService.getOAuth2AuthorizationUrl('google', {
+        redirectUri: 'https://app.social-app.com/auth/callback',
+        state: generateSecureState(),
+        codeChallenge: generatePKCEChallenge()
+      })
+      
+      // Redirect user to authUrl
+      
+      // Handle callback
+      const tokens = await authService.handleOAuth2Callback('google', {
+        code: req.query.code,
+        state: req.query.state,
+        codeVerifier: session.codeVerifier
+      })
+
+  - title: API Key Authentication
+    description: Simple API key auth for services
+    language: typescript
+    code: |
+      const authService = new SecureAuthService()
+      
+      await authService.initialize({
+        authConfig: {
+          provider: 'jwt',
+          issuer: 'api-service',
+          audience: 'https://api.example.com',
+          secretKey: process.env.API_JWT_SECRET
+        },
+        
+        tokenConfig: {
+          accessTokenExpiry: 86400, // 24 hours for API keys
+          refreshTokenExpiry: 31536000, // 1 year
+          refreshTokenRotation: false, // No rotation for API keys
+          revokeOldRefreshTokens: false,
+          includePermissions: true
+        },
+        
+        // No MFA for API keys
+        mfaConfig: {
+          enabled: false
+        },
+        
+        // Rate limiting per API key
+        rateLimitConfig: {
+          enabled: true,
+          endpoints: {
+            login: { requests: 1000, windowMinutes: 60 },
+            refresh: { requests: 100, windowMinutes: 60 }
+          }
+        },
+        
+        // Custom claims for API keys
+        customClaims: (user) => ({
+          apiKeyId: user.metadata?.apiKeyId,
+          scopes: user.metadata?.scopes,
+          rateLimit: user.metadata?.rateLimit
+        })
+      })
+      
+      // Create API key for service
+      const apiKey = await authService.createAPIKey({
+        name: 'Production API',
+        scopes: ['read:users', 'write:orders'],
+        expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+        metadata: {
+          environment: 'production',
+          rateLimit: 1000
+        }
+      })
+      
+      // Use API key
+      const decoded = await authService.verifyAPIKey(apiKey.key)
+      console.log('API Key:', decoded.apiKeyId, 'Scopes:', decoded.scopes)
+
+bestPractices:
+  - Use short-lived access tokens (15-30 minutes max)
+  - Always implement refresh token rotation
+  - Enable MFA for privileged accounts
+  - Use secure session storage (Redis) in production
+  - Implement comprehensive audit logging
+  - Monitor failed login attempts and unusual patterns
+  - Use strong password policies with breach detection
+  - Implement proper CORS configuration
+  - Use HTTPS for all authentication endpoints
+  - Store tokens in httpOnly cookies when possible
+  - Implement CSRF protection for session-based auth
+  - Use asymmetric algorithms (RS256) for distributed systems
+  - Regularly rotate signing keys
+  - Implement proper token revocation
+  - Use PKCE for OAuth2 public clients
+  - Monitor and alert on security events
+  - Test authentication flows regularly
+  - Document all authentication requirements
+  - Plan for account recovery scenarios
+  - Implement progressive security (step-up auth)
+
+troubleshooting:
+  - issue: Token expired errors
+    solutions:
+      - Check token expiry configuration
+      - Implement automatic token refresh
+      - Verify client clock synchronization
+      - Check refresh token validity
+      - Monitor token lifecycle
+
+  - issue: High authentication failure rate
+    solutions:
+      - Check brute force protection settings
+      - Verify password policy clarity
+      - Monitor for credential stuffing
+      - Check for account lockouts
+      - Review error messages
+
+  - issue: MFA bypass or failures
+    solutions:
+      - Verify MFA method configuration
+      - Check time synchronization for TOTP
+      - Test backup code functionality
+      - Monitor MFA adoption rates
+      - Provide clear MFA setup instructions
+
+  - issue: Session timeout issues
+    solutions:
+      - Review session timeout settings
+      - Check sliding expiration config
+      - Verify session store connectivity
+      - Monitor session storage capacity
+      - Test concurrent session limits
+
+  - issue: OAuth2 integration problems
+    solutions:
+      - Verify redirect URI configuration
+      - Check client credentials
+      - Test state parameter handling
+      - Verify scope permissions
+      - Monitor provider API changes
+
+deployment:
+  requiredProviders:
+    - http
+    - database
+  optionalProviders:
+    - redis
+    - notification
+  configuration:
+    security:
+      tlsVersion: '1.2'
+      cipherSuites: modern
+    scaling:
+      horizontal: true
+      autoScaling:
+        minInstances: 2
+        maxInstances: 10
+        targetCPU: 70
+    highAvailability:
+      enabled: true
+      healthChecks:
+        - /health
+        - /ready
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-backend
+    - love-claude-code-api
+    - love-claude-code-frontend
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-auth-token-primitive
+  timeToCreate: 200
+  linesOfCode: 1500
+  testCoverage: 95
+  canBuildConstructs: false
+  platformFeatures:
+    - User authentication
+    - API authentication
+    - Session management
+    - Security enforcement

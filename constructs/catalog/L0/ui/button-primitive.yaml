@@ -1,0 +1,205 @@
+id: platform-l0-button-primitive
+name: Button Primitive
+level: L0
+version: 1.0.0
+description: Raw button element with no styling, animations, or visual features. Just a clickable HTML button with text.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 15
+    builtWith: []
+
+categories:
+  - ui
+  - input
+  - interaction
+  - primitive
+
+tags:
+  - button
+  - click
+  - input
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  text:
+    type: string
+    description: Button text content
+    required: true
+    example: "Click Me"
+    
+  onClick:
+    type: function
+    description: Click handler function (event) => void
+    required: false
+    
+  disabled:
+    type: boolean
+    description: Whether the button is disabled
+    required: false
+    default: false
+    
+  type:
+    type: string
+    description: Button type attribute
+    required: false
+    default: button
+    validation:
+      enum:
+        - button
+        - submit
+        - reset
+
+outputs:
+  buttonElement:
+    type: HTMLButtonElement
+    description: The button DOM element reference
+    
+  clickCount:
+    type: number
+    description: Number of times the button has been clicked
+    
+  lastClickTime:
+    type: Date | null
+    description: Timestamp of the last click event
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/ButtonPrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: click-jacking
+    description: No protection against click-jacking at L0 level
+    severity: medium
+    recommendations:
+      - Use L1 SecureButton for production applications
+      - Implement frame-busting or X-Frame-Options in L1
+      
+  - aspect: event-validation
+    description: No event source validation or rate limiting
+    severity: low
+    recommendations:
+      - Add click rate limiting in L1
+      - Validate event sources in production
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 500
+    y: 100
+
+examples:
+  - title: Simple Button
+    description: Basic clickable button
+    language: typescript
+    code: |
+      import { ButtonPrimitive } from '@/constructs/L0/ui/ButtonPrimitive'
+      
+      const button = new ButtonPrimitive()
+      await button.initialize({
+        text: 'Click Me',
+        onClick: () => {
+          console.log('Button was clicked!')
+        }
+      })
+      
+      // Get the React component
+      const component = button.render()
+      
+  - title: Disabled Button
+    description: Button that cannot be clicked
+    language: typescript
+    code: |
+      const button = new ButtonPrimitive()
+      await button.initialize({
+        text: 'Disabled',
+        disabled: true,
+        onClick: () => {
+          // This won't be called
+        }
+      })
+      
+  - title: Form Submit Button
+    description: Button for form submission
+    language: typescript
+    code: |
+      const submitButton = new ButtonPrimitive()
+      await submitButton.initialize({
+        text: 'Submit Form',
+        type: 'submit',
+        onClick: (event) => {
+          event.preventDefault()
+          // Handle form submission
+          console.log('Form submitted')
+        }
+      })
+      
+  - title: Tracking Clicks
+    description: Monitor button usage
+    language: typescript
+    code: |
+      const button = new ButtonPrimitive()
+      await button.initialize({
+        text: 'Track Me',
+        onClick: () => {
+          const stats = button.getClickStats()
+          console.log(`Clicked ${stats.clickCount} times`)
+          console.log(`Last click: ${stats.lastClickTime}`)
+        }
+      })
+
+methods:
+  getClickStats:
+    description: Get click statistics for the button
+    parameters: []
+    returns:
+      type: object
+      properties:
+        clickCount: number
+        lastClickTime: Date | null
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No hover states, focus rings, or visual feedback
+  - No loading states or progress indicators
+  - Browser default styling only
+  - Used as a building block for higher-level button constructs
+  - Part of the Love Claude Code platform itself
+  - Keep click handlers simple and fast
+
+testing:
+  unit:
+    - Renders with provided text
+    - Handles click events
+    - Respects disabled state
+    - Tracks click count
+    - Records last click time
+    - Sets correct type attribute
+    - Provides button element reference
+    
+  integration:
+    - Used by L1 StyledButton
+    - Used by L2 ButtonGroup
+    - Part of L3 Love Claude Code UI

@@ -1,0 +1,348 @@
+id: platform-l0-storage-bucket-primitive
+name: Storage Bucket Primitive
+level: L0
+version: 1.0.0
+description: Raw in-memory file storage with no persistence, validation, or security. Just basic file upload/download operations.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 25
+    builtWith: []
+
+categories:
+  - infrastructure
+  - storage
+  - files
+  - primitive
+
+tags:
+  - storage
+  - bucket
+  - files
+  - upload
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  bucketName:
+    type: string
+    description: Name of the storage bucket
+    required: true
+    example: uploads
+    
+  maxFileSize:
+    type: number
+    description: Maximum file size in bytes (0 = unlimited)
+    required: false
+    default: 0
+    example: 10485760  # 10MB
+
+outputs:
+  bucketId:
+    type: string
+    description: Unique bucket identifier
+    
+  fileCount:
+    type: number
+    description: Number of files in bucket
+    
+  totalSize:
+    type: number
+    description: Total size of all files in bytes
+    
+  lastOperation:
+    type: StorageOperation
+    description: Information about last operation
+
+types:
+  FileUpload:
+    description: File upload input
+    properties:
+      name:
+        type: string
+        description: File name
+      content:
+        type: string | ArrayBuffer | Uint8Array
+        description: File content
+      type:
+        type: string
+        description: MIME type (optional)
+        default: application/octet-stream
+      metadata:
+        type: Record<string, any>
+        description: Custom metadata (optional)
+        
+  StoredFile:
+    description: Stored file with content
+    properties:
+      id:
+        type: string
+        description: Unique file ID
+      name:
+        type: string
+        description: File name
+      type:
+        type: string
+        description: MIME type
+      size:
+        type: number
+        description: File size in bytes
+      content:
+        type: string | ArrayBuffer | Uint8Array
+        description: File content
+      uploadedAt:
+        type: Date
+        description: Upload timestamp
+      metadata:
+        type: Record<string, any>
+        description: Custom metadata
+        
+  FileInfo:
+    description: File information without content
+    properties:
+      id:
+        type: string
+        description: Unique file ID
+      name:
+        type: string
+        description: File name
+      type:
+        type: string
+        description: MIME type
+      size:
+        type: number
+        description: File size in bytes
+      uploadedAt:
+        type: Date
+        description: Upload timestamp
+      metadata:
+        type: Record<string, any>
+        description: Custom metadata
+        
+  StorageOperation:
+    description: Storage operation tracking
+    properties:
+      type:
+        type: string
+        enum: [upload, download, delete, clear, list, update]
+        description: Operation type
+      timestamp:
+        type: Date
+        description: When operation occurred
+      fileId:
+        type: string
+        description: ID of affected file (optional)
+      fileName:
+        type: string
+        description: Name of affected file (optional)
+      success:
+        type: boolean
+        description: Whether operation succeeded
+      size:
+        type: number
+        description: File size in bytes (optional)
+      count:
+        type: number
+        description: Number of files affected (optional)
+
+implementation:
+  infrastructure: frontend/src/constructs/L0/infrastructure/StorageBucketPrimitive.ts
+  
+dependencies: []
+
+security:
+  - aspect: no-persistence
+    description: Files only stored in memory, lost on restart
+    severity: critical
+    recommendations:
+      - Use L1 CDNStorage for production
+      - Implement backup strategies at higher levels
+      
+  - aspect: no-validation
+    description: No file type validation or virus scanning
+    severity: high
+    recommendations:
+      - Validate file types at application level
+      - Implement virus scanning in L1+
+      
+  - aspect: no-access-control
+    description: No authentication or authorization
+    severity: critical
+    recommendations:
+      - Implement access control in L1
+      - Use signed URLs in production
+      
+  - aspect: no-encryption
+    description: Files stored in plain format
+    severity: high
+    recommendations:
+      - Use encrypted storage in L1+
+      - Never store sensitive files at L0
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs at L0
+    - In-memory storage only
+    - No bandwidth or storage charges
+
+c4:
+  type: Component
+  technology: In-Memory Storage
+  external: false
+  position:
+    x: 500
+    y: 500
+
+examples:
+  - title: Basic File Storage
+    description: Upload and download files
+    language: typescript
+    code: |
+      import { StorageBucketPrimitive } from '@/constructs/L0/infrastructure/StorageBucketPrimitive'
+      
+      const bucket = new StorageBucketPrimitive()
+      await bucket.initialize({
+        bucketName: 'user-uploads'
+      })
+      await bucket.deploy()
+      
+      // Upload text file
+      const fileId = await bucket.upload({
+        name: 'document.txt',
+        content: 'Hello World!',
+        type: 'text/plain'
+      })
+      
+      // Download file
+      const file = await bucket.download(fileId)
+      console.log(file.name)    // 'document.txt'
+      console.log(file.content) // 'Hello World!'
+      
+  - title: Binary File Handling
+    description: Working with binary data
+    language: typescript
+    code: |
+      const bucket = new StorageBucketPrimitive()
+      await bucket.initialize({
+        bucketName: 'images',
+        maxFileSize: 5 * 1024 * 1024 // 5MB limit
+      })
+      await bucket.deploy()
+      
+      // Upload binary data
+      const imageBuffer = new Uint8Array([/* image data */])
+      const imageId = await bucket.upload({
+        name: 'photo.jpg',
+        content: imageBuffer,
+        type: 'image/jpeg',
+        metadata: {
+          width: 800,
+          height: 600,
+          camera: 'iPhone'
+        }
+      })
+      
+      // Get metadata without downloading
+      const info = await bucket.getMetadata(imageId)
+      console.log(info.size)         // File size in bytes
+      console.log(info.metadata)     // { width: 800, height: 600, ... }
+      
+  - title: File Management
+    description: List, update, and delete files
+    language: typescript
+    code: |
+      const bucket = new StorageBucketPrimitive()
+      await bucket.initialize({ bucketName: 'documents' })
+      await bucket.deploy()
+      
+      // Upload multiple files
+      const ids = []
+      for (let i = 0; i < 5; i++) {
+        const id = await bucket.upload({
+          name: `file${i}.txt`,
+          content: `Content of file ${i}`
+        })
+        ids.push(id)
+      }
+      
+      // List all files
+      const files = await bucket.listFiles()
+      console.log(`Total files: ${files.length}`)
+      
+      // Update metadata
+      await bucket.updateMetadata(ids[0], {
+        tags: ['important', 'review'],
+        lastModified: new Date()
+      })
+      
+      // Delete specific file
+      await bucket.delete(ids[0])
+      
+      // Clear all files
+      const deleted = await bucket.clear()
+      console.log(`Deleted ${deleted} files`)
+      
+  - title: File Existence Check
+    description: Check if files exist
+    language: typescript
+    code: |
+      const bucket = new StorageBucketPrimitive()
+      await bucket.initialize({ bucketName: 'cache' })
+      await bucket.deploy()
+      
+      const fileId = await bucket.upload({
+        name: 'cached-data.json',
+        content: JSON.stringify({ data: 'value' }),
+        type: 'application/json'
+      })
+      
+      // Check existence
+      if (await bucket.exists(fileId)) {
+        const file = await bucket.download(fileId)
+        const data = JSON.parse(file.content)
+        console.log(data)
+      }
+      
+      // Get bucket stats
+      const stats = bucket.getStats()
+      console.log(`Files: ${stats.fileCount}`)
+      console.log(`Total size: ${stats.totalSize} bytes`)
+
+bestPractices:
+  - This is a primitive construct - use L1 CDNStorage for production
+  - No data persistence - all files lost on restart
+  - No file validation or virus scanning
+  - No access control or permissions
+  - No encryption or compression
+  - In-memory storage only
+  - Used as building block for higher-level constructs
+  - Part of the Love Claude Code platform itself
+
+testing:
+  unit:
+    - Validates required bucket name
+    - Handles text and binary uploads
+    - Respects file size limits
+    - Downloads files with content
+    - Lists files without content
+    - Manages file metadata
+    - Tracks storage operations
+    - Calculates total bucket size
+    
+  integration:
+    - Used by L1 CDNStorage
+    - Used by L2 AssetManagement
+    - Part of L3 Love Claude Code platform

@@ -1,0 +1,465 @@
+id: platform-l2-tool-orchestration-pattern
+name: Tool Orchestration Pattern
+type: pattern
+level: L2
+version: 1.0.0
+status: stable
+category: infrastructure
+subcategory: orchestration
+
+metadata:
+  author: Love Claude Code Team
+  created: 2024-01-20
+  updated: 2024-01-20
+  tags:
+    - orchestration
+    - workflow
+    - multi-tool
+    - parallel-execution
+    - dependency-resolution
+  complexity: high
+  maintenanceLevel: medium
+
+description:
+  short: Multi-tool coordination with dependency resolution and parallel execution
+  long: |
+    A sophisticated pattern that enables complex multi-tool workflows with features including:
+    - Directed Acyclic Graph (DAG) based dependency resolution
+    - Parallel execution with configurable concurrency limits
+    - Conditional execution based on tool results
+    - Comprehensive error handling and retry logic
+    - Real-time execution monitoring and visualization
+    - Workflow templates and reusable patterns
+
+capabilities:
+  - dependency-resolution
+  - parallel-execution
+  - workflow-management
+  - error-handling
+  - retry-logic
+  - conditional-execution
+  - execution-monitoring
+  - performance-metrics
+  - audit-logging
+  - rollback-support
+
+composition:
+  l1Components:
+    - id: platform-l1-authenticated-tool-registry
+      purpose: Secure tool registration and access control
+      configuration:
+        rbacConfig:
+          roles:
+            orchestrator:
+              permissions: ['tool:*', 'workflow:*']
+              quotas: { unlimited: true }
+    
+    - id: platform-l1-rate-limited-rpc
+      purpose: Controlled tool execution with rate limiting
+      configuration:
+        bucketConfig:
+          capacity: 1000
+          refillRate: 100
+          refillInterval: 1000
+        burstConfig:
+          enabled: true
+          burstCapacity: 1500
+    
+    - id: platform-l1-secure-mcp-server
+      purpose: Secure communication between tools
+      configuration:
+        auth:
+          type: jwt
+        security:
+          rateLimiting:
+            enabled: true
+            maxRequestsPerMinute: 1000
+
+  integration:
+    pattern: composite
+    communication: event-driven
+    dataFlow: bidirectional
+
+inputs:
+  - name: workflowDefinition
+    type: WorkflowDefinition
+    required: true
+    description: Workflow specification with tools and dependencies
+    schema:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique workflow identifier
+        name:
+          type: string
+          description: Human-readable workflow name
+        tools:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              dependencies:
+                type: array
+                items:
+                  type: string
+              params:
+                type: object
+        edges:
+          type: array
+          items:
+            type: object
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              condition:
+                type: string
+                required: false
+        config:
+          type: object
+          properties:
+            maxParallel:
+              type: number
+              default: 5
+            timeout:
+              type: number
+              default: 30000
+            errorHandling:
+              type: string
+              enum: [fail-fast, continue, rollback]
+              default: continue
+
+  - name: executionParams
+    type: object
+    required: false
+    description: Runtime parameters for workflow execution
+
+outputs:
+  - name: executeWorkflow
+    type: function
+    description: Execute a workflow with the given parameters
+    signature: (workflowId: string, params?: object) => Promise<ExecutionContext>
+  
+  - name: loadWorkflow
+    type: function
+    description: Load a workflow definition
+    signature: (definition: WorkflowDefinition) => Promise<void>
+  
+  - name: getMetrics
+    type: function
+    description: Get orchestration metrics
+    signature: () => OrchestrationMetrics
+  
+  - name: getExecutionStatus
+    type: function
+    description: Get status of a specific execution
+    signature: (executionId: string) => ExecutionContext | null
+
+configuration:
+  defaults:
+    maxParallelTools: 5
+    defaultTimeout: 30000
+    retryPolicy:
+      maxRetries: 3
+      backoffMultiplier: 2
+      maxBackoff: 10000
+    errorHandling: continue
+  
+  advanced:
+    enableMetrics: true
+    enableAuditLog: true
+    persistExecutions: true
+    cleanupInterval: 3600000
+
+examples:
+  - name: Sequential Data Pipeline
+    description: Process data through sequential transformations
+    code: |
+      const workflow: WorkflowDefinition = {
+        id: 'data-pipeline',
+        name: 'Data Processing Pipeline',
+        tools: [
+          {
+            id: 'fetch',
+            name: 'Fetch Data',
+            dependencies: [],
+            params: { source: 'api/data' }
+          },
+          {
+            id: 'validate',
+            name: 'Validate',
+            dependencies: ['fetch'],
+            params: { schema: 'v1' }
+          },
+          {
+            id: 'transform',
+            name: 'Transform',
+            dependencies: ['validate'],
+            params: { format: 'normalized' }
+          },
+          {
+            id: 'store',
+            name: 'Store',
+            dependencies: ['transform'],
+            params: { destination: 'db' }
+          }
+        ],
+        edges: [
+          { from: 'fetch', to: 'validate' },
+          { from: 'validate', to: 'transform' },
+          { from: 'transform', to: 'store' }
+        ],
+        config: {
+          maxParallel: 1,
+          timeout: 30000,
+          errorHandling: 'fail-fast'
+        }
+      }
+      
+      await orchestrator.loadWorkflow(workflow)
+      const execution = await orchestrator.executeWorkflow('data-pipeline')
+
+  - name: Parallel Analysis with Fan-out/Fan-in
+    description: Analyze data using multiple parallel processors
+    code: |
+      const workflow: WorkflowDefinition = {
+        id: 'parallel-analysis',
+        name: 'Multi-Analysis Pipeline',
+        tools: [
+          {
+            id: 'load',
+            name: 'Load Dataset',
+            dependencies: [],
+            params: { dataset: 'sales-2024' }
+          },
+          {
+            id: 'sentiment',
+            name: 'Sentiment Analysis',
+            dependencies: ['load'],
+            params: { model: 'bert' }
+          },
+          {
+            id: 'topics',
+            name: 'Topic Modeling',
+            dependencies: ['load'],
+            params: { algorithm: 'lda' }
+          },
+          {
+            id: 'entities',
+            name: 'Entity Extraction',
+            dependencies: ['load'],
+            params: { model: 'ner' }
+          },
+          {
+            id: 'merge',
+            name: 'Merge Results',
+            dependencies: ['sentiment', 'topics', 'entities'],
+            params: { format: 'report' }
+          }
+        ],
+        edges: [
+          { from: 'load', to: 'sentiment' },
+          { from: 'load', to: 'topics' },
+          { from: 'load', to: 'entities' },
+          { from: 'sentiment', to: 'merge' },
+          { from: 'topics', to: 'merge' },
+          { from: 'entities', to: 'merge' }
+        ],
+        config: {
+          maxParallel: 3,
+          timeout: 60000,
+          errorHandling: 'continue'
+        }
+      }
+
+  - name: Conditional Deployment Pipeline
+    description: Deploy with conditional paths based on test results
+    code: |
+      const workflow: WorkflowDefinition = {
+        id: 'conditional-deploy',
+        name: 'Smart Deployment',
+        tools: [
+          {
+            id: 'test',
+            name: 'Run Tests',
+            dependencies: [],
+            params: { suite: 'all' }
+          },
+          {
+            id: 'coverage',
+            name: 'Check Coverage',
+            dependencies: ['test'],
+            params: { threshold: 80 }
+          },
+          {
+            id: 'build',
+            name: 'Build',
+            dependencies: ['coverage'],
+            params: { target: 'prod' }
+          },
+          {
+            id: 'deploy',
+            name: 'Deploy',
+            dependencies: ['build'],
+            params: { env: 'production' }
+          },
+          {
+            id: 'rollback',
+            name: 'Rollback',
+            dependencies: [],
+            params: { version: 'previous' }
+          }
+        ],
+        edges: [
+          { from: 'test', to: 'coverage' },
+          { from: 'coverage', to: 'build', condition: 'coverage >= 80' },
+          { from: 'coverage', to: 'rollback', condition: 'coverage < 80' },
+          { from: 'build', to: 'deploy' }
+        ],
+        config: {
+          maxParallel: 2,
+          timeout: 300000,
+          errorHandling: 'rollback'
+        }
+      }
+
+testing:
+  unitTests:
+    - Dependency resolution algorithm
+    - Parallel execution scheduler
+    - Condition evaluation engine
+    - Retry logic with backoff
+    - Error handling strategies
+  
+  integrationTests:
+    - Multi-tool workflow execution
+    - Rate limiting enforcement
+    - Authentication and authorization
+    - Metrics collection
+    - Rollback functionality
+  
+  performanceTests:
+    - Parallel execution scaling
+    - Large workflow handling
+    - Memory usage optimization
+
+security:
+  authentication:
+    - JWT token validation for tool access
+    - Role-based permissions for workflow execution
+  
+  authorization:
+    - Tool execution permissions
+    - Workflow management permissions
+    - Metrics access control
+  
+  dataProtection:
+    - Secure tool communication
+    - Parameter encryption
+    - Audit log protection
+
+monitoring:
+  metrics:
+    - Total workflow executions
+    - Success/failure rates
+    - Average execution time
+    - Tool-level performance
+    - Parallel execution efficiency
+    - Error rates by tool
+  
+  logging:
+    - Workflow execution logs
+    - Tool execution details
+    - Error and retry logs
+    - Performance metrics
+  
+  alerts:
+    - High failure rate
+    - Execution timeout
+    - Rate limit exceeded
+    - Authentication failures
+
+bestPractices:
+  - Keep workflows focused and modular
+  - Use meaningful tool and workflow IDs
+  - Implement proper error handling
+  - Set appropriate timeouts
+  - Monitor execution metrics
+  - Version control workflow definitions
+  - Test workflows thoroughly
+  - Document tool dependencies
+  - Implement idempotent tools
+  - Use conditional execution sparingly
+
+limitations:
+  - No support for cyclic dependencies
+  - Maximum workflow size constraints
+  - Rate limiting may affect performance
+  - Conditional logic complexity limits
+  - Memory usage for large result sets
+
+troubleshooting:
+  commonIssues:
+    - name: Workflow Deadlock
+      symptoms:
+        - Execution hangs indefinitely
+        - No tools make progress
+      causes:
+        - Circular dependencies
+        - Impossible conditions
+      solutions:
+        - Validate workflow before execution
+        - Check dependency graph
+        - Review conditional logic
+    
+    - name: Rate Limit Exceeded
+      symptoms:
+        - Tools fail with rate limit errors
+        - Slow execution
+      causes:
+        - Too many parallel tools
+        - Insufficient rate limit capacity
+      solutions:
+        - Reduce parallel execution
+        - Increase rate limit capacity
+        - Implement backoff logic
+    
+    - name: Authentication Failures
+      symptoms:
+        - Tools fail with auth errors
+        - Access denied messages
+      causes:
+        - Expired tokens
+        - Insufficient permissions
+      solutions:
+        - Refresh authentication tokens
+        - Check role permissions
+        - Verify tool registry configuration
+
+selfReferential:
+  usedToBuildItself: true
+  vibecodingLevel: 85
+  reasoning: |
+    This pattern orchestrates the tool execution that builds and deploys
+    the Love Claude Code platform itself. The platform's build pipeline
+    uses this exact pattern for coordinating compilation, testing, and
+    deployment tasks.
+  
+  dependencies:
+    - Authenticated tool registry for secure tool management
+    - Rate-limited RPC for controlled execution
+    - Secure MCP server for inter-tool communication
+  
+  implementation:
+    primaryLanguage: TypeScript
+    framework: React
+    buildTools:
+      - Vite for bundling
+      - TypeScript for type safety
+      - React Flow for visualization

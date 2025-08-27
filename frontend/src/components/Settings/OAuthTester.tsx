@@ -23,11 +23,11 @@ export function OAuthTester() {
     
     try {
       // First get token info
-      const infoResponse = await api.client.get('/oauth-test/info')
+      const infoResponse = await (api as any).client.get('/oauth-test/info')
       setTokenInfo(infoResponse.data)
       
       // Then run authentication tests
-      const testResponse = await api.client.post('/oauth-test/test', {
+      const testResponse = await (api as any).client.post('/oauth-test/test', {
         message: 'Testing OAuth authentication'
       })
       

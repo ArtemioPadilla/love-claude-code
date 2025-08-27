@@ -1,0 +1,764 @@
+id: platform-l1-managed-container
+name: Managed Container
+level: L1
+version: 1.0.0
+author: Love Claude Code
+category: infrastructure
+tags:
+  - container
+  - docker
+  - health-check
+  - logging
+  - monitoring
+  - auto-recovery
+  - managed
+  - production-ready
+  - platform-construct
+
+description: |
+  Production-ready container with comprehensive management features including health checks,
+  logging, monitoring, auto-recovery, and resource management. Built upon the L0 Docker
+  Container Primitive, this L1 construct adds enterprise-grade features for reliable
+  container deployment and operation.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: image
+    type: string
+    required: true
+    description: Docker image name with tag (e.g., 'node:20-alpine')
+    example: node:20-alpine
+    validation:
+      pattern: '^[a-zA-Z0-9][a-zA-Z0-9._/-]+:[a-zA-Z0-9._-]+$'
+
+  - name: containerName
+    type: string
+    required: false
+    default: managed-container
+    description: Container name for identification
+    validation:
+      pattern: '^[a-zA-Z][a-zA-Z0-9_.-]*$'
+      maxLength: 63
+
+  - name: command
+    type: array
+    itemType: string
+    required: false
+    description: Container command override
+    example: ['npm', 'start']
+
+  - name: environment
+    type: object
+    required: false
+    description: Environment variables for the container
+    example:
+      NODE_ENV: production
+      PORT: '3000'
+      LOG_LEVEL: info
+
+  - name: ports
+    type: array
+    required: false
+    description: Port mappings between host and container
+    itemType:
+      type: object
+      properties:
+        host:
+          type: number
+          description: Host port number
+          validation:
+            min: 1
+            max: 65535
+        container:
+          type: number
+          description: Container port number
+          validation:
+            min: 1
+            max: 65535
+        protocol:
+          type: string
+          enum: ['tcp', 'udp']
+          default: tcp
+    example:
+      - host: 8080
+        container: 3000
+        protocol: tcp
+
+  - name: volumes
+    type: array
+    required: false
+    description: Volume mounts for persistent data
+    itemType:
+      type: object
+      properties:
+        host:
+          type: string
+          description: Host path or volume name
+        container:
+          type: string
+          description: Container mount path
+        readOnly:
+          type: boolean
+          default: false
+    example:
+      - host: ./data
+        container: /app/data
+        readOnly: false
+
+  - name: healthCheck
+    type: object
+    required: false
+    description: Health check configuration for container monitoring
+    default:
+      enabled: true
+      endpoint: /health
+      interval: 30
+      timeout: 10
+      retries: 3
+      startPeriod: 60
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      endpoint:
+        type: string
+        description: HTTP endpoint for health checks
+      command:
+        type: array
+        itemType: string
+        description: Command to run for health check
+      interval:
+        type: number
+        description: Seconds between health checks
+        validation:
+          min: 5
+          max: 300
+      timeout:
+        type: number
+        description: Seconds before health check times out
+        validation:
+          min: 1
+          max: 60
+      retries:
+        type: number
+        description: Number of retries before marking unhealthy
+        validation:
+          min: 1
+          max: 10
+      startPeriod:
+        type: number
+        description: Grace period before health checks start
+        validation:
+          min: 0
+          max: 600
+
+  - name: resources
+    type: object
+    required: false
+    description: Resource limits and reservations
+    default:
+      memory:
+        limit: 512m
+        reservation: 256m
+      cpu:
+        limit: 1
+        reservation: 0.5
+    properties:
+      memory:
+        type: object
+        properties:
+          limit:
+            type: string
+            description: Maximum memory (e.g., '512m', '1g')
+            validation:
+              pattern: '^\d+[kmg]?$'
+          reservation:
+            type: string
+            description: Reserved memory
+            validation:
+              pattern: '^\d+[kmg]?$'
+      cpu:
+        type: object
+        properties:
+          limit:
+            type: number
+            description: CPU limit (number of cores)
+            validation:
+              min: 0.1
+              max: 32
+          reservation:
+            type: number
+            description: Reserved CPU cores
+            validation:
+              min: 0.1
+              max: 32
+
+  - name: logging
+    type: object
+    required: false
+    description: Logging configuration
+    default:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'
+    properties:
+      driver:
+        type: string
+        enum: ['json-file', 'syslog', 'journald', 'fluentd', 'awslogs']
+      options:
+        type: object
+        description: Driver-specific options
+
+  - name: autoRecovery
+    type: object
+    required: false
+    description: Auto-recovery configuration for container failures
+    default:
+      enabled: true
+      restartPolicy: on-failure
+      maxRestarts: 3
+      restartDelay: 10
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      restartPolicy:
+        type: string
+        enum: ['no', 'on-failure', 'always', 'unless-stopped']
+        default: on-failure
+      maxRestarts:
+        type: number
+        description: Maximum restart attempts
+        validation:
+          min: 0
+          max: 100
+      restartDelay:
+        type: number
+        description: Seconds to wait between restarts
+        validation:
+          min: 0
+          max: 3600
+
+  - name: monitoring
+    type: object
+    required: false
+    description: Monitoring and metrics configuration
+    default:
+      enabled: true
+      metricsPort: 9090
+      metricsPath: /metrics
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      metricsPort:
+        type: number
+        description: Port for metrics endpoint
+        validation:
+          min: 1
+          max: 65535
+      metricsPath:
+        type: string
+        description: Path for metrics endpoint
+
+  - name: secrets
+    type: array
+    required: false
+    description: Secret mounts for sensitive data
+    itemType:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Secret name
+        mountPath:
+          type: string
+          description: Mount path in container
+    example:
+      - name: api-key
+        mountPath: /run/secrets/api-key
+
+  - name: labels
+    type: object
+    required: false
+    description: Container labels for organization and filtering
+    example:
+      app: web-service
+      environment: production
+      team: platform
+
+  - name: networkMode
+    type: string
+    required: false
+    default: bridge
+    description: Container network mode
+    enum: ['bridge', 'host', 'none', 'custom']
+
+  - name: onHealthChange
+    type: function
+    required: false
+    description: Callback function when health status changes
+    signature: (health: HealthStatus) => void
+
+  - name: onRestart
+    type: function
+    required: false
+    description: Callback function when container restarts
+    signature: (restartCount: number) => void
+
+outputs:
+  - name: containerId
+    type: string
+    description: Unique container identifier
+
+  - name: status
+    type: string
+    description: Current container status
+    enum: ['stopped', 'starting', 'running', 'stopping', 'error']
+
+  - name: health
+    type: object
+    description: Current health status
+    properties:
+      status:
+        type: string
+        enum: ['healthy', 'unhealthy', 'unknown', 'error']
+      lastCheck:
+        type: Date
+        description: Timestamp of last health check
+      message:
+        type: string
+        description: Health check message
+
+  - name: metrics
+    type: object
+    description: Container resource metrics
+    properties:
+      cpu:
+        type: object
+        properties:
+          usage:
+            type: number
+            description: CPU usage percentage
+          limit:
+            type: number
+            description: CPU limit percentage
+      memory:
+        type: object
+        properties:
+          usage:
+            type: number
+            description: Memory usage in bytes
+          limit:
+            type: number
+            description: Memory limit in bytes
+      network:
+        type: object
+        properties:
+          rx:
+            type: number
+            description: Bytes received
+          tx:
+            type: number
+            description: Bytes transmitted
+      disk:
+        type: object
+        properties:
+          read:
+            type: number
+            description: Bytes read
+          write:
+            type: number
+            description: Bytes written
+
+  - name: logs
+    type: array
+    description: Recent log entries
+    itemType:
+      type: object
+      properties:
+        timestamp:
+          type: Date
+        level:
+          type: string
+          enum: ['debug', 'info', 'warn', 'error']
+        message:
+          type: string
+        containerId:
+          type: string
+
+  - name: restartCount
+    type: number
+    description: Number of times container has been restarted
+
+  - name: uptime
+    type: number
+    description: Container uptime in seconds
+
+methods:
+  - name: stop
+    description: Stop the container gracefully
+    signature: () => Promise<void>
+
+  - name: restart
+    description: Restart the container
+    signature: () => Promise<void>
+
+  - name: getLogs
+    description: Retrieve container logs with filtering options
+    signature: (options?: LogOptions) => LogEntry[]
+    parameters:
+      - name: options
+        type: object
+        properties:
+          since:
+            type: Date
+            description: Get logs since this timestamp
+          level:
+            type: string
+            description: Filter by log level
+          tail:
+            type: number
+            description: Number of recent logs to return
+
+  - name: exec
+    description: Execute a command inside the container
+    signature: (command: string[]) => Promise<ExecResult>
+    parameters:
+      - name: command
+        type: array
+        itemType: string
+        description: Command and arguments to execute
+    returns:
+      type: object
+      properties:
+        exitCode:
+          type: number
+        stdout:
+          type: string
+        stderr:
+          type: string
+
+  - name: getUptime
+    description: Get container uptime in seconds
+    signature: () => number
+
+events:
+  - name: started
+    description: Container has started successfully
+    payload:
+      containerId: string
+
+  - name: stopped
+    description: Container has stopped
+    payload:
+      containerId: string
+
+  - name: restarted
+    description: Container has been restarted
+    payload:
+      containerId: string
+      count: number
+
+  - name: healthChange
+    description: Container health status has changed
+    payload: HealthStatus
+
+  - name: log
+    description: New log entry added
+    payload: LogEntry
+
+  - name: metrics
+    description: New metrics data available
+    payload: ContainerMetrics
+
+  - name: maxRestartsReached
+    description: Maximum restart attempts reached
+    payload:
+      containerId: string
+
+security:
+  - aspect: Container Isolation
+    description: Containers run with minimal privileges and security hardening
+    implementation: |
+      - User namespaces for privilege separation
+      - Capability dropping (CAP_DROP: ALL)
+      - Read-only root filesystem
+      - No new privileges flag
+      - Seccomp profiles
+
+  - aspect: Secret Management
+    description: Secrets are mounted securely without environment exposure
+    implementation: |
+      - Tmpfs mounts for secrets
+      - Never stored in environment variables
+      - Encrypted at rest
+      - Access controlled by container user
+
+  - aspect: Network Security
+    description: Network isolation and traffic filtering
+    implementation: |
+      - Custom network policies
+      - Firewall rules per container
+      - No privileged ports by default
+      - Network segmentation support
+
+cost:
+  baseCost: 0
+  usage:
+    - name: compute-hours
+      unit: hours
+      costPerUnit: 0.05
+      description: Container compute time
+    - name: storage-gb
+      unit: GB-month
+      costPerUnit: 0.10
+      description: Persistent volume storage
+    - name: network-gb
+      unit: GB
+      costPerUnit: 0.01
+      description: Network transfer
+
+examples:
+  - title: Basic Web Service Container
+    description: Deploy a Node.js web service with health checking
+    language: typescript
+    code: |
+      const container = new ManagedContainer()
+      
+      await container.initialize({
+        image: 'node:20-alpine',
+        containerName: 'web-service',
+        ports: [
+          { host: 8080, container: 3000 }
+        ],
+        environment: {
+          NODE_ENV: 'production',
+          PORT: '3000'
+        },
+        healthCheck: {
+          enabled: true,
+          endpoint: '/health',
+          interval: 30,
+          timeout: 5
+        },
+        resources: {
+          memory: { limit: '512m', reservation: '256m' },
+          cpu: { limit: 1, reservation: 0.5 }
+        }
+      })
+      
+      // Monitor health changes
+      container.on('healthChange', (health) => {
+        console.log(`Health status: ${health.status}`)
+        if (health.status === 'unhealthy') {
+          // Alert monitoring system
+        }
+      })
+      
+      // Track metrics
+      container.on('metrics', (metrics) => {
+        console.log(`CPU: ${metrics.cpu.usage}%`)
+        console.log(`Memory: ${metrics.memory.usage / 1024 / 1024}MB`)
+      })
+
+  - title: Database Container with Persistence
+    description: Managed PostgreSQL container with data persistence
+    language: typescript
+    code: |
+      const db = new ManagedContainer()
+      
+      await db.initialize({
+        image: 'postgres:15-alpine',
+        containerName: 'postgres-db',
+        ports: [
+          { host: 5432, container: 5432 }
+        ],
+        environment: {
+          POSTGRES_DB: 'myapp',
+          POSTGRES_USER: 'admin'
+        },
+        secrets: [
+          { name: 'postgres-password', mountPath: '/run/secrets/password' }
+        ],
+        volumes: [
+          { host: './postgres-data', container: '/var/lib/postgresql/data' }
+        ],
+        resources: {
+          memory: { limit: '1g', reservation: '512m' },
+          cpu: { limit: 2, reservation: 1 }
+        },
+        healthCheck: {
+          enabled: true,
+          command: ['pg_isready', '-U', 'admin'],
+          interval: 10,
+          retries: 5
+        },
+        autoRecovery: {
+          enabled: true,
+          restartPolicy: 'unless-stopped',
+          maxRestarts: 5
+        }
+      })
+      
+      // Monitor database status
+      db.on('restarted', (count) => {
+        console.log(`Database restarted ${count} times`)
+      })
+
+  - title: Microservice with Monitoring
+    description: Production microservice with full observability
+    language: typescript
+    code: |
+      const service = new ManagedContainer()
+      
+      await service.initialize({
+        image: 'myapp/payment-service:v2.1.0',
+        containerName: 'payment-service',
+        ports: [
+          { host: 8443, container: 8443 },
+          { host: 9090, container: 9090 } // Metrics port
+        ],
+        environment: {
+          SERVICE_NAME: 'payment-service',
+          LOG_LEVEL: 'info',
+          METRICS_ENABLED: 'true'
+        },
+        labels: {
+          app: 'payment-service',
+          version: 'v2.1.0',
+          team: 'payments',
+          environment: 'production'
+        },
+        healthCheck: {
+          enabled: true,
+          endpoint: '/healthz',
+          interval: 15,
+          timeout: 3,
+          startPeriod: 30
+        },
+        monitoring: {
+          enabled: true,
+          metricsPort: 9090,
+          metricsPath: '/metrics'
+        },
+        logging: {
+          driver: 'json-file',
+          options: {
+            'max-size': '50m',
+            'max-file': '5',
+            'labels': 'app,version,team'
+          }
+        },
+        autoRecovery: {
+          enabled: true,
+          restartPolicy: 'on-failure',
+          maxRestarts: 3,
+          restartDelay: 30
+        }
+      })
+      
+      // Export logs for analysis
+      setInterval(() => {
+        const recentLogs = service.getLogs({ 
+          tail: 100,
+          level: 'error' 
+        })
+        
+        if (recentLogs.length > 0) {
+          // Send to log aggregation service
+        }
+      }, 60000)
+
+bestPractices:
+  - Always configure health checks for production containers
+  - Set appropriate resource limits to prevent resource exhaustion
+  - Use secrets for sensitive data instead of environment variables
+  - Enable logging with proper rotation to prevent disk space issues
+  - Configure auto-recovery policies based on service criticality
+  - Monitor container metrics and set up alerts for anomalies
+  - Use specific image tags instead of 'latest' for reproducibility
+  - Run containers as non-root user when possible
+  - Keep container images minimal and regularly updated
+  - Use multi-stage builds to reduce final image size
+  - Implement graceful shutdown handling in applications
+  - Use volume mounts for persistent data that needs to survive restarts
+  - Label containers appropriately for easy filtering and management
+  - Test container restart behavior and recovery procedures
+  - Document container dependencies and startup order
+
+troubleshooting:
+  - issue: Container fails to start
+    solutions:
+      - Check image availability and pull permissions
+      - Verify port conflicts with host system
+      - Review resource limits vs available resources
+      - Check volume mount paths exist and have permissions
+  
+  - issue: Health checks always fail
+    solutions:
+      - Verify health check endpoint is correct
+      - Increase timeout or start period
+      - Check container logs for startup errors
+      - Test health check command manually
+  
+  - issue: Container keeps restarting
+    solutions:
+      - Review container logs for crash reasons
+      - Check if resources are sufficient
+      - Verify environment variables are correct
+      - Disable auto-recovery temporarily to debug
+  
+  - issue: High memory or CPU usage
+    solutions:
+      - Monitor metrics to identify patterns
+      - Adjust resource limits appropriately
+      - Check for memory leaks in application
+      - Profile application performance
+
+deployment:
+  requiredProviders:
+    - docker
+  optionalProviders:
+    - kubernetes
+    - ecs
+    - cloud-run
+  configuration:
+    docker:
+      version: '>=20.10'
+      features:
+        - buildkit
+        - compose
+    kubernetes:
+      apiVersion: 'apps/v1'
+      kind: 'Deployment'
+    aws:
+      services:
+        - ecs
+        - ecr
+        - cloudwatch
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-backend
+    - love-claude-code-mcp-server
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-docker-container-primitive
+  timeToCreate: 90
+  linesOfCode: 875
+  testCoverage: 95
+  canBuildConstructs: false
+  platformFeatures:
+    - Container lifecycle management
+    - Health monitoring
+    - Auto-recovery
+    - Resource management
+    - Logging and metrics

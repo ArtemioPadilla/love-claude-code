@@ -1,0 +1,374 @@
+id: playwright-mcp-integration
+name: Playwright MCP Integration
+level: L1
+type: Infrastructure
+version: 1.0.0
+description: Browser automation and testing through Playwright MCP server. Provides a secure, managed interface to Playwright's browser automation capabilities with authentication, error handling, and monitoring.
+author: Love Claude Code
+license: MIT
+
+categories:
+  - External Integration
+  - Testing
+  - Automation
+  - MCP
+
+tags:
+  - playwright
+  - mcp
+  - browser-automation
+  - testing
+  - e2e-testing
+  - web-scraping
+  - ui-testing
+  - integration-testing
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: config
+    type: PlaywrightMCPConfig
+    description: Configuration for Playwright MCP integration
+    required: false
+    defaultValue:
+      browser: chromium
+      headless: true
+      timeout: 30000
+    validation:
+      properties:
+        browser:
+          enum: [chromium, firefox, webkit]
+        headless:
+          type: boolean
+        timeout:
+          type: number
+          min: 1000
+          max: 300000
+
+outputs:
+  - name: browserInfo
+    type: object
+    description: Current browser information including type, version, and status
+  - name: pageInfo
+    type: object
+    description: Current page information including URL, title, and viewport
+  - name: actionHistory
+    type: array
+    description: History of actions performed in the browser
+  - name: metrics
+    type: object
+    description: Browser performance metrics
+
+dependencies:
+  - constructId: mcp-server-primitive
+    version: "^1.0.0"
+    optional: false
+  - constructId: external-construct-primitive
+    version: "^1.0.0"
+    optional: false
+
+security:
+  - aspect: browser-isolation
+    description: Runs browsers in isolated contexts to prevent cross-contamination
+    severity: medium
+    recommendations:
+      - Use headless mode in production environments
+      - Limit resource usage with appropriate timeouts
+      - Run in sandboxed environments when possible
+  
+  - aspect: script-injection
+    description: Can execute arbitrary JavaScript in page contexts
+    severity: high
+    recommendations:
+      - Validate and sanitize all scripts before execution
+      - Implement Content Security Policy (CSP) headers
+      - Use allow-lists for permitted domains
+      - Audit all evaluate() calls
+  
+  - aspect: authentication
+    description: Requires proper authentication to MCP server
+    severity: medium
+    recommendations:
+      - Use strong authentication tokens
+      - Rotate tokens regularly
+      - Implement rate limiting
+  
+  - aspect: data-exposure
+    description: Screenshots and page content may contain sensitive data
+    severity: high
+    recommendations:
+      - Encrypt screenshots at rest
+      - Implement data retention policies
+      - Mask sensitive information before capture
+      - Use secure storage for captured data
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: browser-hours
+      unit: hour
+      costPerUnit: 0.01
+      typicalUsage: 100
+    - name: screenshots
+      unit: screenshot
+      costPerUnit: 0.001
+      typicalUsage: 1000
+    - name: api-calls
+      unit: call
+      costPerUnit: 0.0001
+      typicalUsage: 10000
+  notes:
+    - Cost includes compute resources for browser instances
+    - Headless mode is more cost-effective than headed mode
+    - Consider using browser pooling for high-volume usage
+
+c4:
+  type: Container
+  technology: Node.js/Playwright
+  external: true
+  containerType: Custom
+  position:
+    x: 300
+    y: 400
+
+relationships:
+  - from: playwright-mcp-integration
+    to: mcp-server
+    description: Connects to MCP server for browser automation
+    technology: HTTP/WebSocket
+    type: sync
+  
+  - from: playwright-mcp-integration
+    to: browser-instance
+    description: Controls browser instances
+    technology: CDP (Chrome DevTools Protocol)
+    type: sync
+
+examples:
+  - title: Basic Navigation and Screenshot
+    description: Navigate to a website and capture a screenshot
+    language: typescript
+    code: |
+      import { PlaywrightMCPIntegration } from '@/constructs/L1/external/PlaywrightMCPIntegration'
+      
+      // Initialize the integration
+      const playwright = new PlaywrightMCPIntegration({
+        browser: 'chromium',
+        headless: true,
+        viewport: { width: 1920, height: 1080 }
+      })
+      
+      // Connect to MCP server
+      await playwright.connect()
+      
+      // Navigate to a page
+      await playwright.navigate('https://example.com', {
+        waitUntil: 'networkidle'
+      })
+      
+      // Take a full-page screenshot
+      const screenshot = await playwright.screenshot({
+        fullPage: true,
+        type: 'png'
+      })
+      
+      // Save or process the screenshot
+      console.log('Screenshot size:', screenshot.length)
+      
+      // Disconnect when done
+      await playwright.disconnect()
+  
+  - title: Form Interaction
+    description: Fill out and submit a form
+    language: typescript
+    code: |
+      const playwright = new PlaywrightMCPIntegration()
+      await playwright.connect()
+      
+      // Navigate to form page
+      await playwright.navigate('https://example.com/contact')
+      
+      // Fill form fields
+      await playwright.type('#name', 'John Doe')
+      await playwright.type('#email', 'john@example.com')
+      await playwright.type('#message', 'Hello, this is a test message.')
+      
+      // Submit the form
+      await playwright.click('button[type="submit"]')
+      
+      // Wait for success message
+      await playwright.waitFor('.success-message', {
+        visible: true,
+        timeout: 5000
+      })
+      
+      // Verify submission
+      const successText = await playwright.evaluate(
+        () => document.querySelector('.success-message')?.textContent
+      )
+      console.log('Success:', successText)
+  
+  - title: Web Scraping with Error Handling
+    description: Scrape data from a website with proper error handling
+    language: typescript
+    code: |
+      const playwright = new PlaywrightMCPIntegration({
+        browser: 'chromium',
+        headless: true,
+        timeout: 60000
+      })
+      
+      try {
+        await playwright.connect()
+        
+        // Navigate to the target page
+        await playwright.navigate('https://example.com/products')
+        
+        // Wait for products to load
+        await playwright.waitFor('.product-item', {
+          visible: true
+        })
+        
+        // Extract product data
+        const products = await playwright.evaluate(() => {
+          const items = document.querySelectorAll('.product-item')
+          return Array.from(items).map(item => ({
+            name: item.querySelector('.product-name')?.textContent,
+            price: item.querySelector('.product-price')?.textContent,
+            image: item.querySelector('img')?.src
+          }))
+        })
+        
+        console.log(`Found ${products.length} products`)
+        return products
+        
+      } catch (error) {
+        console.error('Scraping failed:', error)
+        throw error
+      } finally {
+        await playwright.disconnect()
+      }
+  
+  - title: React Component Usage
+    description: Using the Playwright MCP integration in a React component
+    language: tsx
+    code: |
+      import { PlaywrightMCPIntegrationComponent } from '@/constructs/L1/external/PlaywrightMCPIntegration'
+      
+      export function BrowserAutomationPanel() {
+        const handleAction = (action, result) => {
+          console.log(`Action performed: ${action.type}`, result)
+        }
+        
+        const handleError = (error) => {
+          console.error('Playwright error:', error)
+        }
+        
+        return (
+          <div className="p-4">
+            <h2>Browser Automation</h2>
+            <PlaywrightMCPIntegrationComponent
+              config={{
+                browser: 'chromium',
+                headless: false,
+                viewport: { width: 1280, height: 720 }
+              }}
+              onAction={handleAction}
+              onError={handleError}
+              debug={true}
+            />
+          </div>
+        )
+      }
+
+bestPractices:
+  - Always use try-catch blocks for browser operations
+  - Implement proper cleanup with disconnect() in finally blocks
+  - Use waitFor() to ensure elements are ready before interaction
+  - Set appropriate timeouts for different operations
+  - Use headless mode in production for better performance
+  - Implement rate limiting to avoid overwhelming target sites
+  - Cache selectors and reuse them when possible
+  - Use page.evaluate() sparingly as it crosses process boundaries
+  - Monitor memory usage and close unused browser contexts
+  - Implement retry logic for flaky operations
+  - Use viewport sizes that match your target audience
+  - Test across different browser types (Chromium, Firefox, WebKit)
+  - Implement proper logging for debugging automation flows
+  - Use screenshot captures for visual regression testing
+  - Consider using browser pooling for concurrent operations
+
+deployment:
+  requiredProviders:
+    - mcp-server
+    - playwright
+  
+  configSchema:
+    type: object
+    properties:
+      mcpEndpoint:
+        type: string
+        description: MCP server endpoint URL
+      authToken:
+        type: string
+        description: Authentication token for MCP server
+      browserOptions:
+        type: object
+        properties:
+          executable:
+            type: string
+            description: Path to browser executable
+          args:
+            type: array
+            items:
+              type: string
+            description: Browser launch arguments
+      resourceLimits:
+        type: object
+        properties:
+          maxBrowsers:
+            type: number
+            default: 5
+          maxMemoryMB:
+            type: number
+            default: 2048
+    required:
+      - mcpEndpoint
+      - authToken
+  
+  environmentVariables:
+    - MCP_AUTH_TOKEN
+    - PLAYWRIGHT_BROWSERS_PATH
+    - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD
+  
+  preDeploymentChecks:
+    - Verify MCP server is accessible
+    - Check authentication token validity
+    - Ensure browser binaries are available
+    - Validate network connectivity
+  
+  postDeploymentChecks:
+    - Test browser launch capability
+    - Verify screenshot functionality
+    - Check navigation to test URL
+    - Validate cleanup processes
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: vibe-coded
+  vibeCodingPercentage: 95
+  conversationId: playwright-mcp-integration-2025-01
+  builtWith:
+    - l1-external-construct
+    - mcp-base-patterns
+  timeToCreate: 30
+  canBuildConstructs: false
+  
+platformCapabilities:
+  canSelfDeploy: false
+  canSelfUpdate: false
+  canSelfTest: true
+  platformVersion: "1.0.0"

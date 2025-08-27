@@ -1,0 +1,160 @@
+id: platform-l1-connected-edge
+name: Connected Edge
+level: L1
+type: ui
+description: Enhanced edge with automatic path recalculation and connection anchors
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - ui
+  - diagram
+  - connection
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - edge
+  - connection
+  - diagram
+  - path
+
+inputs:
+  - name: id
+    type: string
+    description: Unique identifier for the edge
+    required: true
+  
+  - name: source
+    type: object
+    description: Source node connection info
+    required: true
+  
+  - name: target
+    type: object
+    description: Target node connection info
+    required: true
+  
+  - name: label
+    type: string
+    description: Edge label text
+    required: false
+  
+  - name: edgeType
+    type: string
+    description: Type of edge path
+    required: false
+    defaultValue: bezier
+    validation:
+      enum: [straight, bezier, step, smooth]
+  
+  - name: sourceAnchor
+    type: object
+    description: Source connection anchor {side, offset}
+    required: false
+    defaultValue:
+      side: right
+      offset: 0.5
+  
+  - name: targetAnchor
+    type: object
+    description: Target connection anchor {side, offset}
+    required: false
+    defaultValue:
+      side: left
+      offset: 0.5
+  
+  - name: labelStyle
+    type: object
+    description: Label styling options
+    required: false
+    defaultValue:
+      background: white
+      padding: 4px 8px
+      borderRadius: 4px
+      fontSize: 12px
+  
+  - name: startDecoration
+    type: string
+    description: Decoration at edge start
+    required: false
+    defaultValue: none
+    validation:
+      enum: [none, arrow, circle, square, diamond]
+  
+  - name: endDecoration
+    type: string
+    description: Decoration at edge end
+    required: false
+    defaultValue: arrow
+    validation:
+      enum: [none, arrow, circle, square, diamond]
+  
+  - name: curvature
+    type: number
+    description: Curvature factor for bezier edges
+    required: false
+    defaultValue: 0.25
+  
+  - name: updateOnNodeMove
+    type: boolean
+    description: Auto-update path when nodes move
+    required: false
+    defaultValue: true
+
+outputs:
+  - name: path
+    type: string
+    description: Calculated SVG path
+  
+  - name: bounds
+    type: object
+    description: Edge bounding box
+  
+  - name: connectionPoints
+    type: object
+    description: Calculated connection points
+  
+  - name: pathData
+    type: object
+    description: Detailed path information
+
+security:
+  - type: input-sanitization
+    description: Sanitizes label content to prevent XSS
+
+examples:
+  - title: Connected Bezier Edge
+    description: Create a curved edge with decorations
+    code: |
+      const edge = new ConnectedEdge()
+      await edge.initialize({
+        id: 'edge-1',
+        source: { nodeId: 'node-1', x: 200, y: 100 },
+        target: { nodeId: 'node-2', x: 400, y: 200 },
+        edgeType: 'bezier',
+        label: 'Connection',
+        sourceAnchor: { side: 'right', offset: 0.5 },
+        targetAnchor: { side: 'left', offset: 0.5 },
+        endDecoration: 'arrow',
+        style: {
+          stroke: '#007bff',
+          strokeWidth: 2
+        }
+      })
+
+bestPractices:
+  - Use appropriate edge types for different diagram styles
+  - Provide clear labels for complex relationships
+  - Use decorations to show directionality
+  - Consider performance with many edges
+  - Implement smooth path transitions
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 25
+  builtWith:
+    - platform-l0-edge-primitive
+  timeToCreate: 40
+  canBuildConstructs: false

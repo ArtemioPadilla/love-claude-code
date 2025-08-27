@@ -17,7 +17,7 @@ interface ImportOptions {
 }
 
 export function ProjectImport({ isOpen, onClose }: ProjectImportProps) {
-  const { addProject, refreshProjects } = useProjectStore()
+  const { addProject } = useProjectStore()
   
   const [isImporting, setIsImporting] = useState(false)
   const [isValidating, setIsValidating] = useState(false)
@@ -116,7 +116,7 @@ export function ProjectImport({ isOpen, onClose }: ProjectImportProps) {
         }
         
         await addProject(newProject)
-        await refreshProjects()
+        // Note: No need to refresh as addProject updates the store
         
         setSuccess(true)
         setTimeout(() => {

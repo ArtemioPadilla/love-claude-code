@@ -1,0 +1,276 @@
+id: platform-l0-docker-container-primitive
+name: Docker Container Primitive
+level: L0
+version: 1.0.0
+description: Raw Docker container with no management, monitoring, or health checks. Direct Docker API usage only.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 35
+    builtWith: []
+
+categories:
+  - infrastructure
+  - container
+  - runtime
+  - primitive
+
+tags:
+  - docker
+  - container
+  - runtime
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  image:
+    type: string
+    description: Docker image name (e.g., nginx:latest)
+    required: true
+    example: nginx:latest
+    
+  command:
+    type: string[]
+    description: Command to run in container
+    required: false
+    example: ["node", "server.js"]
+    
+  environment:
+    type: Record<string, string>
+    description: Environment variables for the container
+    required: false
+    default: {}
+    example:
+      NODE_ENV: production
+      PORT: "3000"
+    
+  ports:
+    type: PortMapping[]
+    description: Port mappings between host and container
+    required: false
+    default: []
+    example:
+      - host: 8080
+        container: 80
+        protocol: tcp
+    
+  volumes:
+    type: VolumeMount[]
+    description: Volume mounts for persistent data
+    required: false
+    default: []
+    example:
+      - host: ./data
+        container: /data
+        readOnly: false
+
+outputs:
+  containerId:
+    type: string
+    description: Unique Docker container ID
+    
+  status:
+    type: ContainerStatus
+    description: Current container status (created, running, stopped, removed)
+    
+  logs:
+    type: string[]
+    description: Container output logs
+
+types:
+  PortMapping:
+    description: Port mapping configuration
+    properties:
+      host:
+        type: number
+        description: Host port number
+      container:
+        type: number
+        description: Container port number
+      protocol:
+        type: string
+        enum: [tcp, udp]
+        description: Network protocol
+        default: tcp
+        
+  VolumeMount:
+    description: Volume mount configuration
+    properties:
+      host:
+        type: string
+        description: Host path or volume name
+      container:
+        type: string
+        description: Container mount path
+      readOnly:
+        type: boolean
+        description: Whether the volume is read-only
+        default: false
+        
+  ContainerStatus:
+    description: Container lifecycle status
+    enum: [created, running, stopped, removed]
+
+implementation:
+  infrastructure: frontend/src/constructs/L0/infrastructure/DockerContainerPrimitive.ts
+  
+dependencies: []
+
+security:
+  - aspect: no-isolation
+    description: No security isolation or sandboxing at L0 level
+    severity: high
+    recommendations:
+      - Use L1 ManagedContainer for production workloads
+      - Implement security policies at higher levels
+      
+  - aspect: no-resource-limits
+    description: No CPU or memory limits enforced
+    severity: medium
+    recommendations:
+      - Set resource limits in L1 constructs
+      - Monitor resource usage externally
+      
+  - aspect: exposed-environment
+    description: Environment variables not encrypted
+    severity: medium
+    recommendations:
+      - Use secrets management in L1+
+      - Never store sensitive data in plain env vars
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs at L0
+    - Requires Docker daemon to be running
+    - Resource usage not tracked or limited
+
+c4:
+  type: Container
+  technology: Docker
+  external: false
+  position:
+    x: 100
+    y: 500
+
+examples:
+  - title: Basic Web Server
+    description: Simple nginx container
+    language: typescript
+    code: |
+      import { DockerContainerPrimitive } from '@/constructs/L0/infrastructure/DockerContainerPrimitive'
+      
+      const webServer = new DockerContainerPrimitive()
+      await webServer.initialize({
+        image: 'nginx:alpine',
+        ports: [{ host: 8080, container: 80 }]
+      })
+      
+      await webServer.deploy()
+      // Container is now running on port 8080
+      
+  - title: Node.js Application
+    description: Node app with environment and volumes
+    language: typescript
+    code: |
+      const app = new DockerContainerPrimitive()
+      await app.initialize({
+        image: 'node:18-alpine',
+        command: ['node', 'server.js'],
+        environment: {
+          NODE_ENV: 'production',
+          PORT: '3000'
+        },
+        ports: [{ host: 3000, container: 3000 }],
+        volumes: [
+          { host: './app', container: '/app' },
+          { host: './logs', container: '/var/log/app' }
+        ]
+      })
+      
+      await app.deploy()
+      
+  - title: Database Container
+    description: PostgreSQL with persistent storage
+    language: typescript
+    code: |
+      const database = new DockerContainerPrimitive()
+      await database.initialize({
+        image: 'postgres:15',
+        environment: {
+          POSTGRES_DB: 'myapp',
+          POSTGRES_USER: 'appuser',
+          POSTGRES_PASSWORD: 'secret'
+        },
+        ports: [{ host: 5432, container: 5432 }],
+        volumes: [
+          { host: './pgdata', container: '/var/lib/postgresql/data' }
+        ]
+      })
+      
+      await database.deploy()
+      
+  - title: Container Lifecycle
+    description: Managing container state
+    language: typescript
+    code: |
+      const container = new DockerContainerPrimitive()
+      await container.initialize({
+        image: 'redis:alpine',
+        ports: [{ host: 6379, container: 6379 }]
+      })
+      
+      // Deploy and start
+      await container.deploy()
+      console.log(container.getOutputs().status) // 'running'
+      
+      // Stop container
+      await container.stop()
+      console.log(container.getOutputs().status) // 'stopped'
+      
+      // Restart container
+      await container.start()
+      
+      // Execute command
+      const output = await container.exec(['redis-cli', 'ping'])
+      console.log(output) // 'Output from: redis-cli ping'
+      
+      // Clean up
+      await container.remove()
+
+bestPractices:
+  - This is a primitive construct - use L1 ManagedContainer for production
+  - No health checks, monitoring, or auto-restart
+  - No resource limits or quotas
+  - Direct Docker API calls only
+  - No networking configuration beyond port mapping
+  - Used as building block for higher-level constructs
+  - Part of the Love Claude Code platform itself
+  - Keep container configurations simple
+
+testing:
+  unit:
+    - Validates required image parameter
+    - Handles all input configurations
+    - Manages container lifecycle states
+    - Executes commands in running containers
+    - Accumulates logs throughout lifecycle
+    - Generates unique container IDs
+    - Returns immutable log copies
+    
+  integration:
+    - Used by L1 ManagedContainer
+    - Used by L2 ContainerOrchestration
+    - Part of L3 Love Claude Code platform

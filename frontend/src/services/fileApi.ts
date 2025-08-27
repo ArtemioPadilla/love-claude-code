@@ -1,5 +1,6 @@
 import { isElectron } from '@utils/electronDetection'
 import { fileApiElectron } from './fileApiElectron'
+import { performanceMonitor } from './monitoring/performanceMonitor'
 
 export interface FileNode {
   id: string
@@ -88,70 +89,170 @@ export class FileApiService {
   }
 
   async readFile(path: string): Promise<string> {
-    if (isElectron()) {
-      return fileApiElectron.readFile(path)
-    }
+    const startTime = performance.now()
     
     try {
+      if (isElectron()) {
+        const content = await fileApiElectron.readFile(path)
+        const duration = performance.now() - startTime
+        performanceMonitor.trackUserInteraction('Read File', duration, {
+          path,
+          size: content.length,
+          source: 'electron'
+        })
+        return content
+      }
+      
       const response = await this.fetchWithRetry(`${this.baseUrl}/files/read?path=${encodeURIComponent(path)}`)
       if (!response.ok) {
         throw new Error(`Failed to read file: ${response.statusText}`)
       }
       const data = await response.json()
-      return data.content || ''
+      const content = data.content || ''
+      
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Read File', duration, {
+        path,
+        size: content.length,
+        source: 'web'
+      })
+      
+      return content
     } catch (error) {
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Read File', duration, {
+        path,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        source: isElectron() ? 'electron' : 'web'
+      })
       console.error('Failed to read file:', error)
       throw error
     }
   }
 
   async createFile(path: string, content: string = ''): Promise<FileNode> {
-    if (isElectron()) {
-      return fileApiElectron.createFile(path, content)
-    }
+    const startTime = performance.now()
     
-    const response = await fetch(`${this.baseUrl}/files`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ path, content }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to create file')
+    try {
+      if (isElectron()) {
+        const result = await fileApiElectron.createFile(path, content)
+        const duration = performance.now() - startTime
+        performanceMonitor.trackUserInteraction('Create File', duration, {
+          path,
+          size: content.length,
+          source: 'electron'
+        })
+        return result
+      }
+      
+      const response = await fetch(`${this.baseUrl}/files`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path, content }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to create file')
+      }
+      const data = await response.json()
+      
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Create File', duration, {
+        path,
+        size: content.length,
+        source: 'web'
+      })
+      
+      return data.file
+    } catch (error) {
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Create File', duration, {
+        path,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        source: isElectron() ? 'electron' : 'web'
+      })
+      throw error
     }
-    const data = await response.json()
-    return data.file
   }
 
   async updateFile(path: string, content: string): Promise<void> {
-    if (isElectron()) {
-      await fileApiElectron.updateFile(path, content)
-      return
-    }
+    const startTime = performance.now()
     
-    const response = await fetch(`${this.baseUrl}/files`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ path, content }),
-    })
-    if (!response.ok) {
-      throw new Error('Failed to update file')
+    try {
+      if (isElectron()) {
+        await fileApiElectron.updateFile(path, content)
+        const duration = performance.now() - startTime
+        performanceMonitor.trackUserInteraction('Update File', duration, {
+          path,
+          size: content.length,
+          source: 'electron'
+        })
+        return
+      }
+      
+      const response = await fetch(`${this.baseUrl}/files`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ path, content }),
+      })
+      if (!response.ok) {
+        throw new Error('Failed to update file')
+      }
+      
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Update File', duration, {
+        path,
+        size: content.length,
+        source: 'web'
+      })
+    } catch (error) {
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Update File', duration, {
+        path,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        source: isElectron() ? 'electron' : 'web'
+      })
+      throw error
     }
   }
 
   async deleteFile(path: string): Promise<void> {
-    if (isElectron()) {
-      return fileApiElectron.deleteFile(path)
-    }
+    const startTime = performance.now()
     
-    const response = await fetch(`${this.baseUrl}/files?path=${encodeURIComponent(path)}`, {
-      method: 'DELETE',
-    })
-    if (!response.ok) {
-      throw new Error('Failed to delete file')
+    try {
+      if (isElectron()) {
+        await fileApiElectron.deleteFile(path)
+        const duration = performance.now() - startTime
+        performanceMonitor.trackUserInteraction('Delete File', duration, {
+          path,
+          source: 'electron'
+        })
+        return
+      }
+      
+      const response = await fetch(`${this.baseUrl}/files?path=${encodeURIComponent(path)}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete file')
+      }
+      
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Delete File', duration, {
+        path,
+        source: 'web'
+      })
+    } catch (error) {
+      const duration = performance.now() - startTime
+      performanceMonitor.trackUserInteraction('Delete File', duration, {
+        path,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        source: isElectron() ? 'electron' : 'web'
+      })
+      throw error
     }
   }
 

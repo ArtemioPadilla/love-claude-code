@@ -5,7 +5,6 @@ import {
   FiFile,
   FiChevronRight,
   FiSearch,
-  FiPlus,
   FiMoreVertical,
   FiRefreshCw,
   FiX,
@@ -46,6 +45,7 @@ interface FileExplorerProps {
   onCopyPath?: (path: string) => void
   onRefresh?: () => void
   onClose?: () => void
+  isLoading?: boolean
 }
 
 interface ContextMenuProps {

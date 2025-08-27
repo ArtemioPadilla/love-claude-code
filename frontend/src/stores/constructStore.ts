@@ -5,8 +5,17 @@ import {
   ConstructDeploymentState,
   DeploymentConfiguration,
   ConstructComposition,
-  CommunityContribution
+  CommunityContribution,
+  ConstructPhase,
+  TestResult,
+  ConstructLevel,
+  ValidationResult,
+  ConstructSpecification,
+  Construct
 } from '../constructs/types'
+import { getAllConstructsDisplay } from '../constructs/registry'
+import { validateConstructSpecification, validateConstructImplementation, validateConstructTests } from '../services/validation/ConstructValidator'
+import { performanceMonitor } from '../services/monitoring/performanceMonitor'
 
 interface ConstructStore {
   // Constructs catalog
@@ -27,10 +36,24 @@ interface ConstructStore {
   // Community
   contributions: CommunityContribution[]
   
+  // Construct Builder
+  currentConstruct: Construct | null
+  currentPhase: ConstructPhase
+  phaseProgress: Record<ConstructPhase, number>
+  validationResults: ValidationResult
+  testResults: { suites: TestResult[] } | null
+  isGeneratingWithAI: boolean
+  isRunningTests: boolean
+  testCoverage: { percentage: number } | null
+  previewProps: Record<string, any>
+  resolvedDependencies: Array<{ name: string; version: string }>
+  
   // Actions
   fetchConstructs: () => Promise<void>
   setFilters: (filters: ConstructFilters) => void
   setSelectedConstruct: (construct: ConstructDisplay | null) => void
+  getAllConstructs: () => ConstructDisplay[]
+  reloadConstruct: (constructId: string) => Promise<void>
   
   // Deployment actions
   deployConstruct: (constructId: string, config: DeploymentConfiguration) => Promise<void>
@@ -44,6 +67,19 @@ interface ConstructStore {
   // Community actions
   submitContribution: (contribution: Omit<CommunityContribution, 'id' | 'status' | 'submittedAt'>) => Promise<void>
   fetchContributions: () => Promise<void>
+  
+  // Construct Builder actions
+  loadConstruct: (constructId: string) => Promise<void>
+  saveConstruct: () => Promise<void>
+  transitionPhase: (phase: ConstructPhase) => void
+  updateSpecification: (spec: string) => void
+  updateImplementation: (code: string) => void
+  updateTests: (tests: string) => void
+  generateSpecFromDescription: (description: string) => Promise<void>
+  generateImplementation: () => Promise<void>
+  generateTests: () => Promise<void>
+  runTests: () => Promise<void>
+  updatePreviewProps: (props: Record<string, any>) => void
 }
 
 export const useConstructStore = create<ConstructStore>((set, get) => ({
@@ -59,212 +95,35 @@ export const useConstructStore = create<ConstructStore>((set, get) => ({
   currentComposition: null,
   contributions: [],
   
+  // Construct Builder state
+  currentConstruct: null,
+  currentPhase: 'specification',
+  phaseProgress: {
+    specification: 0,
+    test: 0,
+    implementation: 0,
+    certification: 0
+  },
+  validationResults: { valid: true, errors: [], warnings: [] },
+  testResults: null,
+  isGeneratingWithAI: false,
+  isRunningTests: false,
+  testCoverage: null,
+  previewProps: {},
+  resolvedDependencies: [],
+  
   // Fetch constructs from catalog
   fetchConstructs: async () => {
     set({ loading: true, error: null })
     
     try {
-      // In real implementation, this would fetch from API
-      // For now, we'll use mock data
-      const mockConstructs: ConstructDisplay[] = [
-        {
-          definition: {
-            id: 'secure-s3-bucket',
-            name: 'Secure S3 Bucket',
-            level: 'L1' as any,
-            description: 'S3 bucket with encryption, versioning, and secure access policies',
-            version: '1.0.0',
-            author: 'Love Claude Code',
-            categories: ['storage'],
-            providers: ['aws' as any],
-            tags: ['s3', 'storage', 'security'],
-            inputs: [
-              {
-                name: 'bucketName',
-                type: 'string',
-                description: 'Name of the S3 bucket',
-                required: true
-              },
-              {
-                name: 'enableVersioning',
-                type: 'boolean',
-                description: 'Enable versioning for the bucket',
-                required: false,
-                defaultValue: true
-              }
-            ],
-            outputs: [
-              {
-                name: 'bucketArn',
-                type: 'string',
-                description: 'ARN of the created bucket'
-              },
-              {
-                name: 'bucketUrl',
-                type: 'string',
-                description: 'URL of the bucket'
-              }
-            ],
-            security: [
-              {
-                aspect: 'Encryption',
-                description: 'AES-256 encryption enabled by default',
-                severity: 'low',
-                recommendations: ['Consider using KMS for additional control']
-              }
-            ],
-            cost: {
-              baseMonthly: 0.023,
-              usageFactors: [
-                {
-                  name: 'storage-gb',
-                  unit: 'GB',
-                  costPerUnit: 0.023
-                },
-                {
-                  name: 'requests',
-                  unit: '1000 requests',
-                  costPerUnit: 0.0004
-                }
-              ]
-            },
-            c4: {
-              type: 'Component'
-            },
-            examples: [
-              {
-                title: 'Basic Usage',
-                description: 'Create a secure S3 bucket',
-                code: `const bucket = new SecureS3Bucket('my-bucket', {
-  bucketName: 'my-secure-bucket',
-  enableVersioning: true
-})`,
-                language: 'typescript'
-              }
-            ],
-            bestPractices: [
-              'Always enable encryption',
-              'Use versioning for important data',
-              'Implement lifecycle policies',
-              'Enable access logging'
-            ],
-            deployment: {
-              requiredProviders: ['aws'],
-              configSchema: {}
-            }
-          },
-          icon: '🪣',
-          featured: true,
-          popularity: 95,
-          rating: 4.8,
-          deploymentCount: 1250,
-          lastUpdated: new Date('2024-01-15')
-        },
-        {
-          definition: {
-            id: 'serverless-api',
-            name: 'Serverless API Pattern',
-            level: 'L2' as any,
-            description: 'Complete serverless API with Lambda, API Gateway, and DynamoDB',
-            version: '2.1.0',
-            author: 'Love Claude Code',
-            categories: ['api', 'pattern'],
-            providers: ['aws' as any],
-            tags: ['api', 'lambda', 'dynamodb', 'serverless'],
-            inputs: [
-              {
-                name: 'apiName',
-                type: 'string',
-                description: 'Name of the API',
-                required: true
-              },
-              {
-                name: 'tableName',
-                type: 'string',
-                description: 'DynamoDB table name',
-                required: true
-              },
-              {
-                name: 'enableCors',
-                type: 'boolean',
-                description: 'Enable CORS',
-                required: false,
-                defaultValue: true
-              }
-            ],
-            outputs: [
-              {
-                name: 'apiUrl',
-                type: 'string',
-                description: 'API Gateway URL'
-              },
-              {
-                name: 'functionArn',
-                type: 'string',
-                description: 'Lambda function ARN'
-              }
-            ],
-            security: [
-              {
-                aspect: 'API Authentication',
-                description: 'API Key authentication enabled',
-                severity: 'medium',
-                recommendations: [
-                  'Consider adding OAuth2 or JWT authentication',
-                  'Implement rate limiting'
-                ]
-              }
-            ],
-            cost: {
-              baseMonthly: 10,
-              usageFactors: [
-                {
-                  name: 'api-requests',
-                  unit: 'million requests',
-                  costPerUnit: 3.50
-                },
-                {
-                  name: 'lambda-invocations',
-                  unit: 'million invocations',
-                  costPerUnit: 0.20
-                }
-              ]
-            },
-            c4: {
-              type: 'Container'
-            },
-            examples: [
-              {
-                title: 'REST API Example',
-                description: 'Create a complete REST API',
-                code: `const api = new ServerlessApiPattern('my-api', {
-  apiName: 'user-service',
-  tableName: 'users',
-  enableCors: true
-})`,
-                language: 'typescript'
-              }
-            ],
-            bestPractices: [
-              'Use API Gateway request validation',
-              'Implement proper error handling',
-              'Enable CloudWatch logging',
-              'Use environment variables for configuration'
-            ],
-            deployment: {
-              requiredProviders: ['aws'],
-              configSchema: {}
-            }
-          },
-          featured: true,
-          popularity: 87,
-          rating: 4.6,
-          deploymentCount: 890,
-          lastUpdated: new Date('2024-01-20')
-        }
-      ]
+      // Load all constructs from the registry
+      const constructs = getAllConstructsDisplay()
       
-      set({ constructs: mockConstructs, loading: false })
+      // In a real implementation, this might also fetch from an API
+      // to get community constructs, ratings, deployment counts, etc.
+      
+      set({ constructs, loading: false })
     } catch (error) {
       set({ error: (error as Error).message, loading: false })
     }
@@ -277,7 +136,7 @@ export const useConstructStore = create<ConstructStore>((set, get) => ({
   setSelectedConstruct: (construct) => set({ selectedConstruct: construct }),
   
   // Deploy a construct
-  deployConstruct: async (constructId, config) => {
+  deployConstruct: async (constructId, _config) => {
     const deploymentId = Date.now().toString()
     const deployment: ConstructDeploymentState = {
       id: deploymentId,
@@ -383,5 +242,346 @@ export const useConstructStore = create<ConstructStore>((set, get) => ({
   fetchContributions: async () => {
     // In real implementation, this would fetch from API
     set({ contributions: [] })
+  },
+  
+  // Construct Builder actions
+  loadConstruct: async (constructId) => {
+    const startTime = performance.now()
+    try {
+      // In real implementation, load from file system or API
+      const mockConstruct: Construct = {
+        id: constructId,
+        metadata: {
+          name: 'MyConstruct',
+          level: ConstructLevel.L0,
+          category: 'ui',
+          tags: [],
+          author: 'user',
+          version: '1.0.0',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        },
+        specification: '',
+        implementation: '',
+        tests: '',
+        documentation: '',
+        examples: []
+      }
+      set({ currentConstruct: mockConstruct })
+      
+      const duration = performance.now() - startTime
+      performanceMonitor.trackConstructOperation('Load Construct', duration, {
+        constructId,
+        success: true
+      })
+    } catch (error) {
+      const duration = performance.now() - startTime
+      performanceMonitor.trackConstructOperation('Load Construct', duration, {
+        constructId,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+      throw error
+    }
+  },
+  
+  saveConstruct: async () => {
+    const startTime = performance.now()
+    const construct = get().currentConstruct
+    
+    try {
+      // In real implementation, save to file system or API
+      console.log('Saving construct...', construct)
+      
+      // Simulate some async work
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      const duration = performance.now() - startTime
+      performanceMonitor.trackConstructOperation('Save Construct', duration, {
+        constructId: construct?.id,
+        constructName: construct?.metadata.name,
+        success: true
+      })
+    } catch (error) {
+      const duration = performance.now() - startTime
+      performanceMonitor.trackConstructOperation('Save Construct', duration, {
+        constructId: construct?.id,
+        constructName: construct?.metadata.name,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+      throw error
+    }
+  },
+  
+  transitionPhase: (phase) => {
+    set({ currentPhase: phase })
+  },
+  
+  updateSpecification: (spec) => {
+    const validationResults = validateConstructSpecification(spec)
+    const progress = spec.trim() ? (validationResults.valid ? 100 : 50) : 0
+    
+    set(state => ({
+      currentConstruct: state.currentConstruct ? {
+        ...state.currentConstruct,
+        specification: spec
+      } : null,
+      validationResults,
+      phaseProgress: {
+        ...state.phaseProgress,
+        specification: progress
+      }
+    }))
+  },
+  
+  updateImplementation: (code) => {
+    const construct = get().currentConstruct
+    if (!construct) return
+    
+    let spec: ConstructSpecification | null = null
+    try {
+      spec = JSON.parse(construct.specification) as ConstructSpecification
+    } catch {
+      // Invalid JSON specification - will be handled downstream
+    }
+    
+    const validationResults = spec 
+      ? validateConstructImplementation(code, spec)
+      : { valid: true, errors: [], warnings: [] }
+    
+    const progress = code.trim() ? (validationResults.valid ? 100 : 50) : 0
+    
+    set(state => ({
+      currentConstruct: {
+        ...construct,
+        implementation: code
+      },
+      validationResults,
+      phaseProgress: {
+        ...state.phaseProgress,
+        implementation: progress
+      }
+    }))
+  },
+  
+  updateTests: (tests) => {
+    const construct = get().currentConstruct
+    if (!construct) return
+    
+    let spec: ConstructSpecification | null = null
+    try {
+      spec = JSON.parse(construct.specification) as ConstructSpecification
+    } catch {
+      // Invalid JSON specification - will be handled downstream
+    }
+    
+    const validationResults = spec
+      ? validateConstructTests(tests, spec)
+      : { valid: true, errors: [], warnings: [] }
+    
+    const progress = tests.trim() ? (validationResults.valid ? 50 : 25) : 0
+    
+    set(state => ({
+      currentConstruct: {
+        ...construct,
+        tests
+      },
+      validationResults,
+      phaseProgress: {
+        ...state.phaseProgress,
+        test: progress
+      }
+    }))
+  },
+  
+  generateSpecFromDescription: async (description) => {
+    set({ isGeneratingWithAI: true })
+    
+    // In real implementation, call AI service
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const mockSpec = `name: MyGeneratedConstruct
+level: L0
+category: ui
+description: |
+  ${description}
+
+props:
+  - name: label
+    type: string
+    required: true
+    description: Button label text
+  - name: onClick
+    type: function
+    required: true
+    description: Click handler function
+  - name: disabled
+    type: boolean
+    required: false
+    default: false
+    description: Whether button is disabled
+
+dependencies:
+  - react
+
+examples:
+  - title: Basic Usage
+    code: |
+      <MyGeneratedConstruct 
+        label="Click me" 
+        onClick={() => console.log('clicked')} 
+      />`
+    
+    get().updateSpecification(mockSpec)
+    set({ isGeneratingWithAI: false })
+  },
+  
+  generateImplementation: async () => {
+    set({ isGeneratingWithAI: true })
+    
+    // In real implementation, call AI service with spec
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const mockImplementation = `import React from 'react';
+
+export const MyGeneratedConstruct = ({ label, onClick, disabled = false }) => {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+    >
+      {label}
+    </button>
+  );
+};`
+    
+    get().updateImplementation(mockImplementation)
+    set({ isGeneratingWithAI: false })
+  },
+  
+  generateTests: async () => {
+    set({ isGeneratingWithAI: true })
+    
+    // In real implementation, generate from spec
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    
+    const mockTests = `import { render, screen, fireEvent } from '@testing-library/react';
+import { MyGeneratedConstruct } from './implementation';
+
+describe('MyGeneratedConstruct', () => {
+  test('renders with label', () => {
+    render(<MyGeneratedConstruct label="Test Button" onClick={() => {}} />);
+    expect(screen.getByText('Test Button')).toBeInTheDocument();
+  });
+  
+  test('calls onClick when clicked', () => {
+    const handleClick = jest.fn();
+    render(<MyGeneratedConstruct label="Click me" onClick={handleClick} />);
+    
+    fireEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+  
+  test('is disabled when disabled prop is true', () => {
+    render(<MyGeneratedConstruct label="Disabled" onClick={() => {}} disabled />);
+    
+    const button = screen.getByText('Disabled');
+    expect(button).toBeDisabled();
+  });
+});`
+    
+    get().updateTests(mockTests)
+    set({ isGeneratingWithAI: false })
+  },
+  
+  runTests: async () => {
+    set({ isRunningTests: true })
+    
+    // In real implementation, run tests in sandbox
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    
+    const mockResults: TestResult[] = [
+      {
+        name: 'MyGeneratedConstruct',
+        tests: [
+          {
+            name: 'renders with label',
+            status: 'passed',
+            duration: 25
+          },
+          {
+            name: 'calls onClick when clicked',
+            status: 'passed',
+            duration: 18
+          },
+          {
+            name: 'is disabled when disabled prop is true',
+            status: 'passed',
+            duration: 12
+          }
+        ]
+      }
+    ]
+    
+    set(state => ({
+      testResults: { suites: mockResults },
+      isRunningTests: false,
+      testCoverage: { percentage: 95 },
+      phaseProgress: {
+        ...state.phaseProgress,
+        test: 100
+      }
+    }))
+  },
+  
+  updatePreviewProps: (props) => {
+    set({ previewProps: props })
+  },
+  
+  // Get all constructs
+  getAllConstructs: () => {
+    return get().constructs
+  },
+  
+  // Reload a specific construct
+  reloadConstruct: async (constructId) => {
+    set({ loading: true })
+    
+    try {
+      // In a real implementation, this would fetch the latest version
+      // of the construct from the file system or API
+      const constructs = getAllConstructsDisplay()
+      const updatedConstruct = constructs.find(c => c.definition.id === constructId)
+      
+      if (updatedConstruct) {
+        set(state => ({
+          constructs: state.constructs.map(c => 
+            c.definition.id === constructId ? updatedConstruct : c
+          ),
+          loading: false
+        }))
+        
+        // If this is the selected construct, update it too
+        if (get().selectedConstruct?.definition.id === constructId) {
+          set({ selectedConstruct: updatedConstruct })
+        }
+        
+        // If this is the current construct in the builder, reload it
+        if (get().currentConstruct?.id === constructId) {
+          await get().loadConstruct(constructId)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to reload construct:', error)
+      set({ loading: false })
+    }
   }
 }))
+
+// Export store instance for direct access
+export const constructStore = {
+  getAllConstructs: () => useConstructStore.getState().getAllConstructs(),
+  reloadConstruct: (constructId: string) => useConstructStore.getState().reloadConstruct(constructId)
+}

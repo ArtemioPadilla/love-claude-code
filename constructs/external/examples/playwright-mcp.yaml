@@ -1,0 +1,211 @@
+# External Construct Definition Example
+# Playwright MCP Server Integration
+
+id: external-playwright-mcp
+name: Playwright MCP Server
+type: external
+level: L1  # External constructs wrap at L1 level
+version: 1.0.0
+author: Love Claude Code Community
+
+# External source configuration
+source:
+  type: npm
+  package: '@microsoft/playwright-mcp'
+  version: '^1.0.0'
+  repository: https://github.com/microsoft/playwright-mcp
+
+# Construct metadata
+metadata:
+  description: Browser automation through MCP protocol using Playwright
+  categories:
+    - testing
+    - browser-automation
+    - e2e
+  tags:
+    - playwright
+    - mcp
+    - testing
+    - automation
+  license: MIT
+  external: true
+
+# Provider support
+providers:
+  - local
+  - aws
+  - firebase
+
+# Dependencies
+dependencies:
+  external:
+    - playwright: '^1.40.0'
+    - '@modelcontextprotocol/sdk': '^0.5.0'
+  internal:
+    - id: mcp-client-primitive
+      level: L0
+      optional: false
+    - id: websocket-primitive
+      level: L0
+      optional: false
+
+# Interface exposed by this external construct
+interface:
+  methods:
+    - name: launchBrowser
+      description: Launch a browser instance
+      parameters:
+        browserType:
+          type: enum
+          values: [chromium, firefox, webkit]
+          default: chromium
+        headless:
+          type: boolean
+          default: true
+      returns: BrowserContext
+    
+    - name: navigateTo
+      description: Navigate to a URL
+      parameters:
+        url:
+          type: string
+          required: true
+        waitUntil:
+          type: enum
+          values: [load, domcontentloaded, networkidle]
+          default: load
+      returns: Page
+    
+    - name: captureScreenshot
+      description: Take a screenshot
+      parameters:
+        fullPage:
+          type: boolean
+          default: false
+        path:
+          type: string
+          optional: true
+      returns: Buffer
+    
+    - name: executeScript
+      description: Execute JavaScript in the browser
+      parameters:
+        script:
+          type: string
+          required: true
+        args:
+          type: array
+          optional: true
+      returns: any
+
+  events:
+    - name: onPageLoad
+      description: Fired when a page loads
+      payload:
+        url: string
+        title: string
+        loadTime: number
+    
+    - name: onError
+      description: Fired when an error occurs
+      payload:
+        error: string
+        stack: string
+        context: object
+
+# Security configuration
+security:
+  sandbox: true
+  resourceLimits:
+    memory: 1GB
+    cpu: 2
+    timeout: 300s
+  permissions:
+    network: restricted  # Only allowed domains
+    filesystem: none
+    process: none
+
+# Configuration options
+configuration:
+  # Browser launch options
+  browserOptions:
+    type: object
+    properties:
+      downloadsPath:
+        type: string
+        default: ./downloads
+      viewport:
+        type: object
+        properties:
+          width:
+            type: number
+            default: 1280
+          height:
+            type: number
+            default: 720
+  
+  # MCP connection options
+  mcpOptions:
+    type: object
+    properties:
+      timeout:
+        type: number
+        default: 30000
+      retries:
+        type: number
+        default: 3
+
+# Usage example
+examples:
+  - title: Basic E2E Test
+    description: Use Playwright MCP for end-to-end testing
+    code: |
+      import { PlaywrightMCPConstruct } from '@love-claude-code/external/playwright-mcp'
+      
+      const browser = new PlaywrightMCPConstruct({
+        name: 'e2e-browser',
+        config: {
+          browserOptions: {
+            headless: false
+          }
+        }
+      })
+      
+      // Launch browser
+      await browser.launchBrowser({ browserType: 'chromium' })
+      
+      // Navigate and test
+      const page = await browser.navigateTo({ 
+        url: 'https://example.com' 
+      })
+      
+      // Take screenshot
+      const screenshot = await browser.captureScreenshot({ 
+        fullPage: true 
+      })
+      
+  - title: Integration with Love Claude Code
+    description: Use in test patterns
+    code: |
+      // In your L2 test pattern
+      export class E2ETestPattern extends L2Construct {
+        private browser: PlaywrightMCPConstruct
+        
+        async runTests(testSuite: TestSuite) {
+          // Browser is managed by the construct
+          await this.browser.launchBrowser()
+          
+          for (const test of testSuite.tests) {
+            await this.browser.navigateTo({ url: test.url })
+            // Run test assertions
+          }
+        }
+      }
+
+# Integration notes
+notes:
+  - Requires Playwright to be installed in the environment
+  - MCP server runs as a separate process
+  - Browser instances are automatically cleaned up
+  - Supports parallel test execution
+  - Can be used with existing Playwright scripts

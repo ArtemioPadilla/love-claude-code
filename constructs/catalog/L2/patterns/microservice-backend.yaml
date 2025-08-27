@@ -1,0 +1,1047 @@
+id: platform-l2-microservice-backend
+name: Microservice Backend
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - microservices
+  - backend
+  - api-gateway
+  - service-mesh
+  - distributed
+  - scalable
+  - pattern
+  - platform-construct
+
+description: |
+  Complete microservice architecture pattern with API gateway, service mesh, distributed
+  tracing, and automated scaling. This pattern enables building production-ready
+  microservices backends with service discovery, load balancing, circuit breaking,
+  and comprehensive monitoring. It composes multiple L1 infrastructure constructs
+  to provide a full microservices platform with real-time metrics and management.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-managed-container
+  - platform-l1-rest-api-service
+  - platform-l1-encrypted-database
+  - platform-l1-secure-auth-service
+  - platform-l1-authenticated-websocket
+  - platform-l1-cdn-storage
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: name
+    type: string
+    required: true
+    description: Backend name
+    example: my-microservices
+    validation:
+      pattern: '^[a-zA-Z0-9-]+$'
+
+  - name: domain
+    type: string
+    required: false
+    description: Custom domain for API gateway
+    example: api.example.com
+
+  - name: services
+    type: array
+    required: true
+    description: Microservice definitions
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Service name
+          example: auth-service
+        version:
+          type: string
+          description: Service version
+          example: 1.0.0
+        port:
+          type: number
+          description: Service port
+          example: 3000
+        replicas:
+          type: number
+          default: 1
+          description: Number of replicas
+          validation:
+            min: 1
+            max: 100
+        resources:
+          type: object
+          description: Resource requirements
+          properties:
+            cpu:
+              type: string
+              example: 500m
+            memory:
+              type: string
+              example: 512Mi
+        environment:
+          type: object
+          description: Environment variables
+        healthCheck:
+          type: object
+          description: Health check configuration
+          properties:
+            path:
+              type: string
+              default: /health
+            interval:
+              type: number
+              default: 30000
+            timeout:
+              type: number
+              default: 5000
+        dependencies:
+          type: array
+          description: Service dependencies
+          items:
+            type: string
+
+  - name: gateway
+    type: object
+    required: true
+    description: API Gateway configuration
+    properties:
+      routes:
+        type: array
+        description: Route definitions
+        items:
+          type: object
+          properties:
+            path:
+              type: string
+              description: Route path pattern
+              example: /api/v1/*
+            service:
+              type: string
+              description: Target service name
+            methods:
+              type: array
+              description: HTTP methods
+              items:
+                type: string
+                enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS']
+            rateLimit:
+              type: number
+              description: Requests per minute
+              default: 100
+            authentication:
+              type: boolean
+              default: false
+              description: Require authentication
+      cors:
+        type: object
+        description: CORS configuration
+        properties:
+          origins:
+            type: array
+            default: ['*']
+            items:
+              type: string
+          credentials:
+            type: boolean
+            default: false
+      timeout:
+        type: number
+        default: 30000
+        description: Request timeout in ms
+      retries:
+        type: number
+        default: 3
+        description: Retry attempts
+
+  - name: serviceMesh
+    type: object
+    required: false
+    description: Service mesh configuration
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      provider:
+        type: string
+        enum: ['istio', 'linkerd', 'consul']
+        default: istio
+      tracing:
+        type: boolean
+        default: true
+        description: Enable distributed tracing
+      mtls:
+        type: boolean
+        default: true
+        description: Enable mutual TLS
+      circuitBreaker:
+        type: object
+        description: Circuit breaker config
+        properties:
+          threshold:
+            type: number
+            default: 5
+            description: Failure threshold
+          timeout:
+            type: number
+            default: 60000
+            description: Reset timeout in ms
+
+  - name: database
+    type: object
+    required: false
+    description: Database configuration
+    properties:
+      type:
+        type: string
+        enum: ['postgres', 'mongodb', 'dynamodb']
+        default: postgres
+      sharding:
+        type: boolean
+        default: false
+        description: Enable database sharding
+
+  - name: messaging
+    type: object
+    required: false
+    description: Message queue configuration
+    properties:
+      type:
+        type: string
+        enum: ['rabbitmq', 'kafka', 'sqs']
+        default: rabbitmq
+      topics:
+        type: array
+        description: Message topics
+        items:
+          type: string
+
+  - name: monitoring
+    type: object
+    required: false
+    description: Monitoring configuration
+    properties:
+      provider:
+        type: string
+        enum: ['prometheus', 'datadog', 'cloudwatch']
+        default: prometheus
+      dashboards:
+        type: array
+        description: Dashboard names
+        items:
+          type: string
+
+  - name: autoscaling
+    type: object
+    required: false
+    description: Autoscaling configuration
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      minReplicas:
+        type: number
+        default: 1
+        validation:
+          min: 1
+      maxReplicas:
+        type: number
+        default: 10
+        validation:
+          max: 100
+      targetCPU:
+        type: number
+        default: 70
+        description: Target CPU percentage
+        validation:
+          min: 1
+          max: 100
+      targetMemory:
+        type: number
+        default: 80
+        description: Target memory percentage
+        validation:
+          min: 1
+          max: 100
+
+outputs:
+  - name: backendId
+    type: string
+    description: Unique backend identifier
+
+  - name: status
+    type: string
+    description: Backend status
+    enum: ['initializing', 'running', 'degraded', 'stopped']
+
+  - name: apiGatewayUrl
+    type: string
+    description: API Gateway URL
+
+  - name: services
+    type: array
+    description: Service instances
+    items:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+        health:
+          type: string
+        url:
+          type: string
+        metrics:
+          type: object
+
+  - name: metrics
+    type: object
+    description: Overall metrics
+    properties:
+      totalRequests:
+        type: number
+      errorRate:
+        type: number
+      avgLatency:
+        type: number
+      uptime:
+        type: number
+
+  - name: capabilities
+    type: object
+    description: Enabled capabilities
+    properties:
+      serviceMesh:
+        type: boolean
+      tracing:
+        type: boolean
+      autoscaling:
+        type: boolean
+      messaging:
+        type: boolean
+
+methods:
+  - name: deployService
+    description: Deploy a new or updated service
+    signature: (config: MicroserviceConfig) => Promise<string>
+    parameters:
+      - name: config
+        type: object
+        description: Service configuration
+    returns:
+      type: string
+      description: Deployment ID
+
+  - name: scaleService
+    description: Scale a service to specific replicas
+    signature: (serviceName: string, replicas: number) => Promise<void>
+    parameters:
+      - name: serviceName
+        type: string
+        description: Service to scale
+      - name: replicas
+        type: number
+        description: Target replica count
+
+  - name: stopService
+    description: Stop a running service
+    signature: (serviceName: string) => Promise<void>
+    parameters:
+      - name: serviceName
+        type: string
+        description: Service to stop
+
+  - name: restartService
+    description: Restart a service
+    signature: (serviceName: string) => Promise<void>
+    parameters:
+      - name: serviceName
+        type: string
+        description: Service to restart
+
+  - name: getServiceLogs
+    description: Get service logs
+    signature: (serviceName: string, lines?: number) => Promise<string[]>
+    parameters:
+      - name: serviceName
+        type: string
+        description: Service name
+      - name: lines
+        type: number
+        default: 100
+        description: Number of lines
+    returns:
+      type: array
+      description: Log lines
+
+  - name: executeCommand
+    description: Execute command in service container
+    signature: (serviceName: string, command: string) => Promise<string>
+    parameters:
+      - name: serviceName
+        type: string
+        description: Service name
+      - name: command
+        type: string
+        description: Command to execute
+    returns:
+      type: string
+      description: Command output
+
+  - name: getServiceMetrics
+    description: Get metrics for a specific service
+    signature: (serviceName: string) => any
+    parameters:
+      - name: serviceName
+        type: string
+        description: Service name
+    returns:
+      type: object
+      description: Service metrics
+
+  - name: getAllMetrics
+    description: Get all backend metrics
+    signature: () => any
+    returns:
+      type: object
+      description: All metrics
+
+  - name: enableServiceMesh
+    description: Enable service mesh features
+    signature: (config: ServiceMeshConfig) => Promise<void>
+    parameters:
+      - name: config
+        type: object
+        description: Service mesh configuration
+
+  - name: enableAutoscaling
+    description: Enable autoscaling features
+    signature: (config: any) => Promise<void>
+    parameters:
+      - name: config
+        type: object
+        description: Autoscaling configuration
+
+events:
+  - name: initialized
+    description: Backend initialized
+    payload:
+      backendId: string
+      status: string
+
+  - name: serviceStarted
+    description: Service started
+    payload:
+      service: object
+
+  - name: serviceStatusChanged
+    description: Service status changed
+    payload:
+      name: string
+      status: string
+
+  - name: serviceHealthChanged
+    description: Service health changed
+    payload:
+      name: string
+      health: string
+
+  - name: serviceStopped
+    description: Service stopped
+    payload:
+      service: string
+
+  - name: serviceRestarted
+    description: Service restarted
+    payload:
+      service: string
+
+  - name: deploymentStarted
+    description: Deployment started
+    payload:
+      deploymentId: string
+      service: string
+
+  - name: deploymentCompleted
+    description: Deployment completed
+    payload:
+      deploymentId: string
+      service: string
+
+  - name: deploymentFailed
+    description: Deployment failed
+    payload:
+      deploymentId: string
+      service: string
+      error: string
+
+  - name: scalingStarted
+    description: Scaling started
+    payload:
+      service: string
+      replicas: number
+
+  - name: scalingCompleted
+    description: Scaling completed
+    payload:
+      service: string
+      replicas: number
+
+  - name: scalingFailed
+    description: Scaling failed
+    payload:
+      service: string
+      replicas: number
+      error: string
+
+  - name: healthCheckCompleted
+    description: Health check completed
+    payload:
+      name: string
+      health: string
+      metrics: object
+
+  - name: metricsCollected
+    description: Metrics collected
+    payload:
+      metrics: object
+
+  - name: messageRouted
+    description: Message routed to service
+    payload:
+      service: string
+      message: object
+
+  - name: gatewayUpdated
+    description: API Gateway routes updated
+    payload:
+      routes: array
+
+  - name: serviceMeshEnabled
+    description: Service mesh enabled
+    payload:
+      config: object
+
+  - name: autoscalingEnabled
+    description: Autoscaling enabled
+    payload:
+      config: object
+
+  - name: request
+    description: API request received
+    payload:
+      path: string
+      method: string
+      service: string
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+  - name: statusChanged
+    description: Overall status changed
+    payload:
+      status: string
+
+  - name: destroyed
+    description: Backend destroyed
+    payload: {}
+
+patterns:
+  - name: Service Discovery
+    description: |
+      Automatic service discovery and registration allowing services
+      to find and communicate with each other dynamically.
+
+  - name: Circuit Breaking
+    description: |
+      Prevents cascading failures by monitoring service health and
+      temporarily blocking requests to unhealthy services.
+
+  - name: Load Balancing
+    description: |
+      Distributes incoming requests across multiple service instances
+      using various algorithms (round-robin, least-connections, etc.).
+
+  - name: Distributed Tracing
+    description: |
+      Tracks requests as they flow through multiple microservices,
+      enabling debugging and performance optimization.
+
+  - name: Service Mesh
+    description: |
+      Provides infrastructure layer for service-to-service communication
+      with traffic management, security, and observability.
+
+examples:
+  - title: Basic Microservices Backend
+    description: Simple backend with two services
+    language: typescript
+    code: |
+      const backend = new MicroserviceBackend()
+      
+      await backend.initialize({
+        name: 'my-backend',
+        services: [
+          {
+            name: 'auth-service',
+            version: '1.0.0',
+            port: 3001,
+            replicas: 2,
+            resources: { cpu: '500m', memory: '512Mi' },
+            environment: { NODE_ENV: 'production' }
+          },
+          {
+            name: 'api-service',
+            version: '1.0.0',
+            port: 3002,
+            replicas: 3,
+            resources: { cpu: '1000m', memory: '1Gi' },
+            environment: { NODE_ENV: 'production' }
+          }
+        ],
+        gateway: {
+          routes: [
+            {
+              path: '/auth/*',
+              service: 'auth-service',
+              methods: ['POST', 'GET']
+            },
+            {
+              path: '/api/*',
+              service: 'api-service',
+              methods: ['GET', 'POST', 'PUT', 'DELETE']
+            }
+          ],
+          cors: { origins: ['https://example.com'], credentials: true },
+          timeout: 30000,
+          retries: 3
+        }
+      })
+      
+      // Monitor service health
+      backend.on('serviceHealthChanged', ({ name, health }) => {
+        console.log(`Service ${name} is ${health}`)
+      })
+
+  - title: Microservices with Service Mesh
+    description: Advanced setup with Istio service mesh
+    language: typescript
+    code: |
+      const backend = new MicroserviceBackend()
+      
+      await backend.initialize({
+        name: 'mesh-backend',
+        domain: 'api.mycompany.com',
+        services: [
+          {
+            name: 'user-service',
+            version: '2.0.0',
+            port: 8080,
+            replicas: 3,
+            resources: { cpu: '750m', memory: '768Mi' },
+            environment: { 
+              SERVICE_NAME: 'user-service',
+              LOG_LEVEL: 'info'
+            },
+            healthCheck: {
+              path: '/health',
+              interval: 10000,
+              timeout: 3000
+            }
+          },
+          {
+            name: 'order-service',
+            version: '2.0.0',
+            port: 8081,
+            replicas: 3,
+            resources: { cpu: '1000m', memory: '1Gi' },
+            environment: { 
+              SERVICE_NAME: 'order-service',
+              LOG_LEVEL: 'info'
+            },
+            dependencies: ['user-service', 'inventory-service']
+          },
+          {
+            name: 'inventory-service',
+            version: '1.5.0',
+            port: 8082,
+            replicas: 2,
+            resources: { cpu: '500m', memory: '512Mi' },
+            environment: { 
+              SERVICE_NAME: 'inventory-service',
+              LOG_LEVEL: 'info'
+            }
+          }
+        ],
+        gateway: {
+          routes: [
+            {
+              path: '/users/*',
+              service: 'user-service',
+              methods: ['GET', 'POST', 'PUT', 'DELETE'],
+              authentication: true,
+              rateLimit: 1000
+            },
+            {
+              path: '/orders/*',
+              service: 'order-service',
+              methods: ['GET', 'POST', 'PUT'],
+              authentication: true,
+              rateLimit: 500
+            },
+            {
+              path: '/inventory/*',
+              service: 'inventory-service',
+              methods: ['GET'],
+              rateLimit: 2000
+            }
+          ],
+          cors: {
+            origins: ['https://app.mycompany.com'],
+            credentials: true
+          },
+          timeout: 30000,
+          retries: 3
+        },
+        serviceMesh: {
+          enabled: true,
+          provider: 'istio',
+          tracing: true,
+          mtls: true,
+          circuitBreaker: {
+            threshold: 5,
+            timeout: 60000
+          }
+        },
+        database: {
+          type: 'postgres',
+          sharding: true
+        },
+        monitoring: {
+          provider: 'prometheus',
+          dashboards: ['services', 'gateway', 'mesh']
+        }
+      })
+      
+      // Monitor distributed traces
+      backend.on('request', ({ path, service }) => {
+        console.log(`Request to ${path} routed to ${service}`)
+      })
+
+  - title: Event-Driven Microservices
+    description: Microservices with message queue integration
+    language: typescript
+    code: |
+      const backend = new MicroserviceBackend()
+      
+      await backend.initialize({
+        name: 'event-driven-backend',
+        services: [
+          {
+            name: 'payment-service',
+            version: '1.0.0',
+            port: 4001,
+            replicas: 2,
+            resources: { cpu: '1000m', memory: '1Gi' },
+            environment: { 
+              KAFKA_BROKERS: 'localhost:9092',
+              TOPIC_PAYMENTS: 'payments'
+            }
+          },
+          {
+            name: 'notification-service',
+            version: '1.0.0',
+            port: 4002,
+            replicas: 2,
+            resources: { cpu: '500m', memory: '512Mi' },
+            environment: { 
+              KAFKA_BROKERS: 'localhost:9092',
+              TOPIC_NOTIFICATIONS: 'notifications'
+            }
+          },
+          {
+            name: 'analytics-service',
+            version: '1.0.0',
+            port: 4003,
+            replicas: 1,
+            resources: { cpu: '2000m', memory: '2Gi' },
+            environment: { 
+              KAFKA_BROKERS: 'localhost:9092',
+              TOPICS: 'payments,notifications,events'
+            }
+          }
+        ],
+        gateway: {
+          routes: [
+            {
+              path: '/payments/*',
+              service: 'payment-service',
+              methods: ['POST'],
+              authentication: true
+            },
+            {
+              path: '/analytics/*',
+              service: 'analytics-service',
+              methods: ['GET'],
+              authentication: true
+            }
+          ],
+          cors: { origins: ['*'], credentials: false },
+          timeout: 30000,
+          retries: 3
+        },
+        messaging: {
+          type: 'kafka',
+          topics: ['payments', 'notifications', 'events']
+        }
+      })
+      
+      // Handle async events
+      backend.on('messageRouted', ({ service, message }) => {
+        console.log(`Message routed to ${service}:`, message)
+      })
+
+  - title: Auto-Scaling Microservices
+    description: Backend with automatic scaling based on load
+    language: typescript
+    code: |
+      const backend = new MicroserviceBackend()
+      
+      await backend.initialize({
+        name: 'autoscale-backend',
+        services: [
+          {
+            name: 'web-api',
+            version: '3.0.0',
+            port: 8000,
+            replicas: 2,
+            resources: { cpu: '500m', memory: '512Mi' },
+            environment: { NODE_ENV: 'production' },
+            healthCheck: {
+              path: '/health',
+              interval: 5000,
+              timeout: 2000
+            }
+          },
+          {
+            name: 'worker-service',
+            version: '3.0.0',
+            port: 8001,
+            replicas: 1,
+            resources: { cpu: '1000m', memory: '1Gi' },
+            environment: { 
+              NODE_ENV: 'production',
+              WORKER_CONCURRENCY: '10'
+            }
+          }
+        ],
+        gateway: {
+          routes: [
+            {
+              path: '/*',
+              service: 'web-api',
+              methods: ['GET', 'POST', 'PUT', 'DELETE']
+            }
+          ],
+          cors: { origins: ['*'], credentials: false },
+          timeout: 30000,
+          retries: 3
+        },
+        autoscaling: {
+          enabled: true,
+          minReplicas: 1,
+          maxReplicas: 10,
+          targetCPU: 70,
+          targetMemory: 80
+        }
+      })
+      
+      // Monitor scaling events
+      backend.on('scalingCompleted', ({ service, replicas }) => {
+        console.log(`Service ${service} scaled to ${replicas} replicas`)
+      })
+      
+      // Simulate load and watch auto-scaling
+      setInterval(async () => {
+        const metrics = backend.getAllMetrics()
+        console.log('Current metrics:', metrics.overall)
+      }, 60000)
+
+  - title: Multi-Region Microservices
+    description: Globally distributed microservices
+    language: typescript
+    code: |
+      const backend = new MicroserviceBackend()
+      
+      await backend.initialize({
+        name: 'global-backend',
+        domain: 'api.global.com',
+        services: [
+          {
+            name: 'edge-service',
+            version: '1.0.0',
+            port: 8080,
+            replicas: 5,
+            resources: { cpu: '250m', memory: '256Mi' },
+            environment: { 
+              REGION: process.env.AWS_REGION,
+              CACHE_TTL: '300'
+            }
+          },
+          {
+            name: 'core-service',
+            version: '1.0.0',
+            port: 8081,
+            replicas: 3,
+            resources: { cpu: '1000m', memory: '1Gi' },
+            environment: { 
+              REGION: process.env.AWS_REGION,
+              DB_REGION: 'us-east-1'
+            }
+          }
+        ],
+        gateway: {
+          routes: [
+            {
+              path: '/cdn/*',
+              service: 'edge-service',
+              methods: ['GET'],
+              rateLimit: 10000
+            },
+            {
+              path: '/api/*',
+              service: 'core-service',
+              methods: ['GET', 'POST', 'PUT', 'DELETE'],
+              authentication: true,
+              rateLimit: 1000
+            }
+          ],
+          cors: {
+            origins: ['https://*.global.com'],
+            credentials: true
+          },
+          timeout: 30000,
+          retries: 3
+        },
+        database: {
+          type: 'dynamodb',
+          sharding: true
+        }
+      })
+
+bestPractices:
+  - Design services around business capabilities
+  - Keep services small and focused on single responsibility
+  - Use API Gateway for centralized routing and security
+  - Implement proper service discovery mechanisms
+  - Use circuit breakers to prevent cascading failures
+  - Enable distributed tracing for debugging
+  - Implement health checks for all services
+  - Use service mesh for advanced traffic management
+  - Monitor and alert on key metrics
+  - Implement proper logging and log aggregation
+  - Use message queues for async communication
+  - Design for failure and implement retry logic
+  - Use container orchestration for deployment
+  - Implement proper secrets management
+  - Version your APIs and maintain backward compatibility
+
+troubleshooting:
+  - issue: Service not responding
+    solutions:
+      - Check service health status
+      - Verify network connectivity
+      - Check resource limits (CPU/memory)
+      - Review service logs for errors
+
+  - issue: High latency between services
+    solutions:
+      - Enable service mesh for better routing
+      - Check for network bottlenecks
+      - Optimize service communication patterns
+      - Consider caching frequently accessed data
+
+  - issue: Service discovery not working
+    solutions:
+      - Verify service registration
+      - Check DNS resolution
+      - Review service mesh configuration
+      - Ensure proper network policies
+
+  - issue: Circuit breaker triggering frequently
+    solutions:
+      - Review failure threshold settings
+      - Check downstream service health
+      - Analyze error patterns
+      - Increase timeout values if appropriate
+
+  - issue: Message queue backlog
+    solutions:
+      - Scale consumer services
+      - Check message processing logic
+      - Review queue configuration
+      - Implement proper error handling
+
+deployment:
+  requiredProviders:
+    - container-orchestration
+    - api-gateway
+    - service-registry
+  optionalProviders:
+    - service-mesh
+    - message-queue
+    - monitoring-service
+  configuration:
+    containers:
+      defaultResources:
+        cpu: 500m
+        memory: 512Mi
+      maxResources:
+        cpu: 4000m
+        memory: 8Gi
+    networking:
+      serviceDiscovery: true
+      loadBalancing: round-robin
+      healthChecks: true
+    security:
+      networkPolicies: true
+      mtls: false
+      secretsManagement: true
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-backend
+    - construct-marketplace-backend
+  developmentMethod: manual
+  vibeCodingPercentage: 20
+  builtWith:
+    - platform-l1-managed-container
+    - platform-l1-rest-api-service
+    - platform-l1-encrypted-database
+    - platform-l1-secure-auth-service
+    - platform-l1-authenticated-websocket
+    - platform-l1-cdn-storage
+  timeToCreate: 600
+  linesOfCode: 2000
+  testCoverage: 85
+  canHostConstructs: true
+  platformFeatures:
+    - Service orchestration
+    - API gateway
+    - Service mesh
+    - Auto-scaling
+    - Distributed tracing

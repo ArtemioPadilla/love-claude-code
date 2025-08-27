@@ -1,0 +1,226 @@
+/**
+ * TodoList Component Styles
+ * Clean, accessible styling for the TDD example component
+ */
+
+.todo-list-container {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: var(--bg-secondary, #f9fafb);
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.todo-list-container h1 {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-primary, #111827);
+  font-size: 1.875rem;
+  font-weight: 700;
+}
+
+.todo-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.todo-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.todo-input:focus {
+  outline: none;
+  border-color: var(--primary-color, #3b82f6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.add-button {
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.add-button:hover {
+  background: var(--primary-hover, #2563eb);
+}
+
+.add-button:active {
+  transform: translateY(1px);
+}
+
+.todo-stats {
+  margin-bottom: 1rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 6px;
+  text-align: center;
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.875rem;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.filter-buttons button {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  background: white;
+  color: var(--text-secondary, #6b7280);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-buttons button:hover {
+  background: var(--bg-hover, #f3f4f6);
+}
+
+.filter-buttons button.active {
+  background: var(--primary-color, #3b82f6);
+  color: white;
+  border-color: var(--primary-color, #3b82f6);
+}
+
+.todo-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+  margin-bottom: 0.5rem;
+  background: white;
+  border-radius: 8px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.todo-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.todo-text {
+  flex: 1;
+  color: var(--text-primary, #111827);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s;
+}
+
+.todo-text:hover {
+  color: var(--primary-color, #3b82f6);
+}
+
+.todo-text.completed {
+  text-decoration: line-through;
+  color: var(--text-muted, #9ca3af);
+  opacity: 0.7;
+}
+
+.delete-button {
+  padding: 0.25rem 0.75rem;
+  background: var(--danger-color, #ef4444);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.delete-button:hover {
+  background: var(--danger-hover, #dc2626);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted, #9ca3af);
+  font-style: italic;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .todo-list-container {
+    background: #1f2937;
+  }
+
+  .todo-list-container h1 {
+    color: #f9fafb;
+  }
+
+  .todo-input {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+
+  .todo-stats {
+    background: #374151;
+    color: #9ca3af;
+  }
+
+  .filter-buttons button {
+    background: #374151;
+    border-color: #4b5563;
+    color: #9ca3af;
+  }
+
+  .todo-item {
+    background: #374151;
+  }
+
+  .todo-text {
+    color: #f9fafb;
+  }
+
+  .empty-state {
+    color: #6b7280;
+  }
+}
+
+/* Mobile responsive */
+@media (max-width: 640px) {
+  .todo-list-container {
+    margin: 1rem;
+    padding: 1rem;
+  }
+
+  .todo-form {
+    flex-direction: column;
+  }
+
+  .filter-buttons {
+    flex-direction: column;
+  }
+}

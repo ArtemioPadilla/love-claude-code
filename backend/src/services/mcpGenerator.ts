@@ -173,7 +173,7 @@ export class MCPGeneratorService {
       if (!acc[tool.category]) {
         acc[tool.category] = []
       }
-      acc[tool.category].push(tool)
+      acc[tool.category]?.push(tool)
       return acc
     }, {} as Record<string, typeof customTools>)
     

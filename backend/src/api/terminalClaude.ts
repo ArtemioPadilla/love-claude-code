@@ -1,6 +1,6 @@
 import { Request, Response } from 'express'
 import { claudeCodeCLI } from '../services/claudeCodeCLI.js'
-import { createError } from '../middleware/error.js'
+// Removed unused import: createError
 
 interface ClaudeTerminalRequest {
   command: string[]
@@ -61,6 +61,7 @@ export async function executeClaudeTerminal(req: Request, res: Response) {
       // Send completion message
       res.write('data: {"type":"done"}\n\n')
       res.end()
+      return
     } catch (streamError: any) {
       console.error('Claude CLI streaming error:', streamError)
       res.write(`data: ${JSON.stringify({ 
@@ -68,13 +69,14 @@ export async function executeClaudeTerminal(req: Request, res: Response) {
         message: streamError.message || 'Claude CLI streaming failed' 
       })}\n\n`)
       res.end()
+      return
     }
   } catch (error: any) {
     console.error('Claude terminal error:', error)
     
     // If headers haven't been sent, send error response
     if (!res.headersSent) {
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Terminal execution failed',
         message: error.message || 'Failed to execute Claude command',
         code: error.code || 'TERMINAL_ERROR'
@@ -86,6 +88,7 @@ export async function executeClaudeTerminal(req: Request, res: Response) {
         message: error.message || 'Terminal execution failed' 
       })}\n\n`)
       res.end()
+      return
     }
   }
 }
@@ -122,19 +125,27 @@ function parseClaudeCommand(
         break
         
       case '-t':
-      case '--temperature':
-        const temp = parseFloat(command[++i])
-        if (!isNaN(temp)) {
-          result.temperature = temp
+      case '--temperature': {
+        const tempStr = command[++i]
+        if (tempStr) {
+          const temp = parseFloat(tempStr)
+          if (!isNaN(temp)) {
+            result.temperature = temp
+          }
         }
         break
+      }
         
-      case '--max-tokens':
-        const tokens = parseInt(command[++i])
-        if (!isNaN(tokens)) {
-          result.maxTokens = tokens
+      case '--max-tokens': {
+        const tokensStr = command[++i]
+        if (tokensStr) {
+          const tokens = parseInt(tokensStr, 10)
+          if (!isNaN(tokens)) {
+            result.maxTokens = tokens
+          }
         }
         break
+      }
         
       case '-f':
       case '--file':
@@ -142,7 +153,7 @@ function parseClaudeCommand(
         const fileName = command[++i]
         if (context?.files) {
           const file = context.files.find(f => f.name === fileName)
-          if (file) {
+          if (file && file.name) {
             if (!result.prompt) result.prompt = ''
             result.prompt += `\n\nFile: ${file.name}\n\`\`\`${file.language || ''}\n${file.content}\n\`\`\`\n`
           }
@@ -167,8 +178,10 @@ function parseClaudeCommand(
   // Add context files if no specific file was requested
   if (context?.files && context.files.length > 0 && !command.includes('-f') && !command.includes('--file')) {
     const file = context.files[0] // Use first file as context
-    if (!result.prompt) result.prompt = ''
-    result.prompt = `Context file: ${file.name}\n\`\`\`${file.language || ''}\n${file.content}\n\`\`\`\n\n${result.prompt}`
+    if (file && file.name) {
+      if (!result.prompt) result.prompt = ''
+      result.prompt = `Context file: ${file.name}\n\`\`\`${file.language || ''}\n${file.content}\n\`\`\`\n\n${result.prompt}`
+    }
   }
   
   // Default prompt if none provided
@@ -182,7 +195,7 @@ function parseClaudeCommand(
 /**
  * Get Claude CLI status and configuration
  */
-export async function getClaudeTerminalStatus(req: Request, res: Response) {
+export async function getClaudeTerminalStatus(_req: Request, res: Response) {
   try {
     const isInstalled = await claudeCodeCLI.isInstalled()
     

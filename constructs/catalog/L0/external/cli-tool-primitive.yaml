@@ -1,0 +1,205 @@
+id: platform-l0-cli-tool-primitive
+name: CLI Tool Primitive
+level: L0
+type: Pattern
+description: Command line tool wrapper with process spawning, I/O streaming, and environment control
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - external
+  - integration
+  - cli
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - cli
+  - process
+  - command
+  - terminal
+  - shell
+  - subprocess
+  - execution
+
+inputs:
+  - name: command
+    type: string
+    description: CLI command to execute
+    required: true
+  - name: defaultArgs
+    type: array
+    description: Default command arguments
+    required: false
+    defaultValue: []
+  - name: defaultEnv
+    type: object
+    description: Default environment variables
+    required: false
+    defaultValue: {}
+  - name: defaultCwd
+    type: string
+    description: Default working directory
+    required: false
+    defaultValue: process.cwd()
+  - name: maxOutputSize
+    type: number
+    description: Maximum output buffer size in bytes
+    required: false
+    defaultValue: 1048576
+
+outputs:
+  - name: executor
+    type: object
+    description: CLI executor for running commands
+  - name: process
+    type: object
+    description: Current process state
+  - name: streams
+    type: object
+    description: I/O stream data (stdout, stderr, combined)
+  - name: state
+    type: object
+    description: Complete CLI tool state
+
+security:
+  - aspect: command-injection
+    description: Risk of command injection attacks
+    severity: critical
+    recommendations:
+      - Validate and sanitize all inputs
+      - Use argument arrays instead of shell strings
+      - Restrict allowed commands via whitelist
+      - Run in sandboxed environment
+  - aspect: resource-consumption
+    description: Processes can consume system resources
+    severity: high
+    recommendations:
+      - Implement timeouts for all executions
+      - Monitor resource usage
+      - Limit concurrent processes
+      - Set memory and CPU limits
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: cpu-seconds
+      unit: seconds
+      costPerUnit: 0.00001
+      typicalUsage: 36000
+
+c4:
+  type: Component
+  technology: Process Manager
+
+examples:
+  - title: Basic Command Execution
+    description: Execute a simple CLI command
+    code: |
+      const cli = new CLIToolPrimitive()
+      await cli.initialize({
+        command: 'git',
+        defaultArgs: ['--version']
+      })
+      
+      const executor = cli.getOutput('executor')
+      const result = await executor.run()
+      console.log('Git version:', result.stdout)
+    language: typescript
+
+  - title: Advanced Execution with Options
+    description: Execute with custom environment and working directory
+    code: |
+      const cli = new CLIToolPrimitive()
+      await cli.initialize({
+        command: 'npm'
+      })
+      
+      const executor = cli.getOutput('executor')
+      const result = await executor.run({
+        args: ['install', '--production'],
+        cwd: '/path/to/project',
+        env: {
+          NODE_ENV: 'production',
+          NPM_CONFIG_LOGLEVEL: 'warn'
+        },
+        timeout: 60000 // 1 minute
+      })
+    language: typescript
+
+  - title: Streaming Output
+    description: Handle streaming output as it arrives
+    code: |
+      const executor = cli.getOutput('executor')
+      
+      // Stream output line by line
+      for await (const line of executor.runWithStreaming({
+        args: ['log', '--oneline', '-n', '100']
+      })) {
+        if (line.type === 'stdout') {
+          console.log('Git log:', line.data)
+        } else if (line.type === 'stderr') {
+          console.error('Error:', line.data)
+        }
+      }
+    language: typescript
+
+  - title: Process Management
+    description: Kill long-running processes
+    code: |
+      const executor = cli.getOutput('executor')
+      
+      // Start a long-running process
+      const processPromise = executor.run({
+        args: ['watch', 'src/**/*.js']
+      })
+      
+      // Kill it after 5 seconds
+      setTimeout(() => {
+        const killed = executor.kill('SIGTERM')
+        console.log('Process killed:', killed)
+      }, 5000)
+      
+      try {
+        await processPromise
+      } catch (error) {
+        console.log('Process terminated')
+      }
+    language: typescript
+
+bestPractices:
+  - Always validate command inputs to prevent injection
+  - Use timeouts to prevent hanging processes
+  - Handle both stdout and stderr streams
+  - Clean up resources after execution
+  - Log command executions for audit trails
+  - Use argument arrays instead of shell command strings
+  - Set appropriate working directories
+  - Monitor process resource usage
+  - Implement proper error handling for exit codes
+
+deployment:
+  requiredProviders: []
+  configSchema:
+    type: object
+    properties:
+      maxConcurrentProcesses:
+        type: number
+        default: 5
+      defaultTimeout:
+        type: number
+        default: 30000
+      allowedCommands:
+        type: array
+        items:
+          type: string
+        default: []
+  environmentVariables: []
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith: []
+  timeToCreate: 40
+  canBuildConstructs: false

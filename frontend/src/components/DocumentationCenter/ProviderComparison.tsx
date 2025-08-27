@@ -5,7 +5,7 @@ import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer
 } from 'recharts'
-import { Check, X, AlertCircle, DollarSign, Zap, Shield, Cloud, Database, Users } from 'lucide-react'
+import { Check, X, AlertCircle, DollarSign, Zap, Cloud, Database, Users } from 'lucide-react'
 
 const ProviderComparison: React.FC = () => {
   const [selectedMetric, setSelectedMetric] = useState<'cost' | 'performance' | 'features'>('features')

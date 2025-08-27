@@ -6,6 +6,7 @@ import {
   Shield, Zap, Database, Cloud, DollarSign
 } from 'lucide-react'
 import { ConstructDisplay, ConstructLevel, CloudProvider } from '../types'
+import { dependencyResolver } from '../utils/dependencyResolver'
 
 interface ConstructExplorerProps {
   constructs: ConstructDisplay[]
@@ -98,7 +99,14 @@ const ConstructCard: React.FC<{
   onClick: () => void
 }> = ({ construct, onClick }) => {
   const levelConfig = getLevelConfig(construct.definition.level)
-  const Icon = getConstructIcon(construct.definition.categories[0])
+  const Icon = getConstructIcon(construct.definition.categories?.[0])
+  
+  // Get dependency information
+  const graph = dependencyResolver.resolveDependencies(construct.definition.id)
+  const dependencyInfo = graph ? {
+    total: graph.totalDependencies,
+    byLevel: graph.dependenciesByLevel
+  } : null
   
   return (
     <motion.div
@@ -133,13 +141,27 @@ const ConstructCard: React.FC<{
         {construct.definition.description}
       </p>
       
-      {/* Providers */}
-      <div className="flex items-center gap-2 mb-4">
-        {construct.definition.providers.map(provider => (
-          <span key={provider} className="text-lg" title={provider}>
-            {getProviderIcon(provider)}
-          </span>
-        ))}
+      {/* Dependencies & Providers */}
+      <div className="flex items-center justify-between gap-2 mb-4">
+        {/* Providers */}
+        <div className="flex items-center gap-2">
+          {Array.isArray(construct.definition.providers) && construct.definition.providers.map(provider => (
+            <span key={provider} className="text-lg" title={provider}>
+              {getProviderIcon(provider)}
+            </span>
+          ))}
+        </div>
+        
+        {/* Dependency Badge */}
+        {dependencyInfo && dependencyInfo.total > 0 && (
+          <div className="flex items-center gap-1 text-xs bg-gray-700 px-2 py-1 rounded-full">
+            <GitBranch className="w-3 h-3" />
+            <span>{dependencyInfo.total}</span>
+            {dependencyInfo.byLevel.L0 > 0 && (
+              <span className="text-gray-400">• {dependencyInfo.byLevel.L0} L0</span>
+            )}
+          </div>
+        )}
       </div>
       
       {/* Stats */}
@@ -172,7 +194,14 @@ const ConstructListItem: React.FC<{
   onClick: () => void
 }> = ({ construct, onClick }) => {
   const levelConfig = getLevelConfig(construct.definition.level)
-  const Icon = getConstructIcon(construct.definition.categories[0])
+  const Icon = getConstructIcon(construct.definition.categories?.[0])
+  
+  // Get dependency information
+  const graph = dependencyResolver.resolveDependencies(construct.definition.id)
+  const dependencyInfo = graph ? {
+    total: graph.totalDependencies,
+    byLevel: graph.dependenciesByLevel
+  } : null
   
   return (
     <motion.div
@@ -204,7 +233,7 @@ const ConstructListItem: React.FC<{
           </p>
           <div className="flex items-center gap-4 text-xs text-gray-500">
             <span className="flex items-center gap-2">
-              Providers: {construct.definition.providers.map(p => getProviderIcon(p)).join(' ')}
+              Providers: {Array.isArray(construct.definition.providers) ? construct.definition.providers.map(p => getProviderIcon(p)).join(' ') : 'N/A'}
             </span>
             {construct.rating && (
               <span className="flex items-center gap-1">
@@ -220,8 +249,15 @@ const ConstructListItem: React.FC<{
             )}
             <span className="flex items-center gap-1">
               <DollarSign className="w-3 h-3" />
-              ${construct.definition.cost.baseMonthly}/mo base
+              ${construct.definition.cost?.baseMonthly || 0}/mo base
             </span>
+            {dependencyInfo && dependencyInfo.total > 0 && (
+              <span className="flex items-center gap-1">
+                <GitBranch className="w-3 h-3" />
+                {dependencyInfo.total} deps
+                {dependencyInfo.byLevel.L0 > 0 && ` (${dependencyInfo.byLevel.L0} L0)`}
+              </span>
+            )}
           </div>
         </div>
         

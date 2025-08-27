@@ -97,7 +97,7 @@ export class LocalStorageProvider implements StorageProvider {
     return await fs.readFile(fullPath)
   }
   
-  async getUrl(filePath: string, options?: { expiresIn?: number }): Promise<string> {
+  async getUrl(filePath: string, _options?: { expiresIn?: number }): Promise<string> {
     // For local storage, return a URL that the backend can serve
     const baseUrl = process.env.API_URL || `http://localhost:${process.env.API_PORT || 8000}`
     return `${baseUrl}/api/v1/storage/${this.config.projectId}/${encodeURIComponent(filePath)}`
@@ -245,7 +245,7 @@ export class LocalStorageProvider implements StorageProvider {
   async healthCheck(): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }> {
     try {
       await fs.access(this.storagePath)
-      const stats = await fs.stat(this.storagePath)
+      await fs.stat(this.storagePath) // Check if path exists and is readable
       return {
         status: 'healthy',
         details: { 

@@ -15,13 +15,13 @@ import crypto from 'crypto'
  * Each collection is stored as a separate JSON file
  */
 export class LocalDatabaseProvider implements DatabaseProvider {
-  private config: ProviderConfig
+  // Config removed as it was unused
   private dataPath: string
   private collections: Map<string, Map<string, any>> = new Map()
   private locks: Map<string, Promise<void>> = new Map()
   
   constructor(config: ProviderConfig) {
-    this.config = config
+    // Store dataPath directly from config
     this.dataPath = path.join(
       config.options?.databasePath || './data/db',
       config.projectId,
@@ -110,7 +110,7 @@ export class LocalDatabaseProvider implements DatabaseProvider {
       collection.set(id, item)
       await this.saveCollection(collectionName, collection)
       
-      return item as T & { id: string }
+      return item as unknown as T & { id: string }
     })
   }
   
@@ -198,7 +198,7 @@ export class LocalDatabaseProvider implements DatabaseProvider {
         const id = crypto.randomUUID()
         const item = { ...data, id, createdAt: new Date(), updatedAt: new Date() }
         collection.set(id, item)
-        created.push(item as T & { id: string })
+        created.push(item as unknown as T & { id: string })
       }
       
       await this.saveCollection(collectionName, collection)

@@ -1,0 +1,152 @@
+id: platform-l1-draggable-node
+name: Draggable Node
+level: L1
+type: ui
+description: Enhanced node with drag-and-drop functionality and position constraints
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - ui
+  - diagram
+  - interaction
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - node
+  - draggable
+  - diagram
+  - interactive
+
+inputs:
+  - name: id
+    type: string
+    description: Unique identifier for the node
+    required: true
+  
+  - name: position
+    type: object
+    description: Node position {x, y}
+    required: true
+    defaultValue:
+      x: 100
+      y: 100
+  
+  - name: size
+    type: object
+    description: Node size {width, height}
+    required: false
+    defaultValue:
+      width: 100
+      height: 50
+  
+  - name: shape
+    type: string
+    description: Node shape
+    required: false
+    defaultValue: rect
+    validation:
+      enum: [rect, circle, ellipse, diamond, hexagon]
+  
+  - name: text
+    type: string
+    description: Node label text
+    required: false
+  
+  - name: constraints
+    type: object
+    description: Position constraints {minX, maxX, minY, maxY}
+    required: false
+    defaultValue:
+      minX: 0
+      maxX: Infinity
+      minY: 0
+      maxY: Infinity
+  
+  - name: snapToGrid
+    type: boolean
+    description: Enable grid snapping
+    required: false
+    defaultValue: false
+  
+  - name: gridSize
+    type: number
+    description: Grid size for snapping
+    required: false
+    defaultValue: 10
+  
+  - name: dragPreview
+    type: boolean
+    description: Show preview while dragging
+    required: false
+    defaultValue: true
+  
+  - name: touchEnabled
+    type: boolean
+    description: Enable touch support
+    required: false
+    defaultValue: true
+
+outputs:
+  - name: bounds
+    type: object
+    description: Node bounding box
+  
+  - name: isDragging
+    type: boolean
+    description: Whether node is being dragged
+  
+  - name: dragPosition
+    type: object
+    description: Current drag position
+  
+  - name: snapPosition
+    type: object
+    description: Snapped position
+
+security:
+  - type: input-sanitization
+    description: Sanitizes position inputs to prevent XSS
+  
+  - type: event-validation
+    description: Validates drag events to prevent injection
+
+examples:
+  - title: Basic Draggable Node
+    description: Create a draggable node with constraints
+    code: |
+      const node = new DraggableNode()
+      await node.initialize({
+        id: 'node-1',
+        position: { x: 100, y: 100 },
+        size: { width: 120, height: 60 },
+        text: 'Draggable',
+        constraints: {
+          minX: 0,
+          maxX: 800,
+          minY: 0,
+          maxY: 600
+        },
+        snapToGrid: true,
+        gridSize: 20,
+        onDragEnd: (position) => {
+          console.log('Node moved to:', position)
+        }
+      })
+
+bestPractices:
+  - Use constraints to keep nodes within viewport
+  - Enable grid snapping for alignment
+  - Provide visual feedback during drag
+  - Support both mouse and touch events
+  - Throttle drag events for performance
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 30
+  builtWith:
+    - platform-l0-node-primitive
+  timeToCreate: 45
+  canBuildConstructs: false

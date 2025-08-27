@@ -1,6 +1,6 @@
 // Authentication types for Love Claude Code
 
-export type AuthMethod = 'api-key' | 'oauth-max' | 'claude-code-cli' | 'claude-cli'
+export type AuthMethod = 'api-key' | 'oauth-max' | 'claude-cli' | 'claude-code-cli'
 
 export interface APIKeyAuth {
   type: 'api-key'

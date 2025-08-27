@@ -1,0 +1,302 @@
+id: platform-l0-api-endpoint-primitive
+name: API Endpoint Primitive
+level: L0
+version: 1.0.0
+description: Raw HTTP API endpoint with no validation, authentication, or error handling. Just basic request/response handling.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 25
+    builtWith: []
+
+categories:
+  - infrastructure
+  - api
+  - networking
+  - primitive
+
+tags:
+  - api
+  - endpoint
+  - http
+  - rest
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  path:
+    type: string
+    description: API endpoint path (e.g., /api/users)
+    required: true
+    example: /api/hello
+    
+  method:
+    type: HttpMethod
+    description: HTTP method (GET, POST, PUT, DELETE, PATCH)
+    required: true
+    example: GET
+    
+  handler:
+    type: function
+    description: Request handler function - async (request) => response
+    required: true
+    
+  port:
+    type: number
+    description: Port number for local server
+    required: false
+    default: 3000
+    example: 8080
+
+outputs:
+  endpointId:
+    type: string
+    description: Unique endpoint identifier
+    
+  url:
+    type: string
+    description: Full endpoint URL
+    
+  requestCount:
+    type: number
+    description: Total requests handled
+    
+  lastRequest:
+    type: RequestInfo
+    description: Information about the last request
+
+types:
+  HttpMethod:
+    description: Supported HTTP methods
+    enum: [GET, POST, PUT, DELETE, PATCH]
+    
+  ApiRequest:
+    description: Incoming API request
+    properties:
+      method:
+        type: HttpMethod
+        description: HTTP method
+      path:
+        type: string
+        description: Request path
+      headers:
+        type: Record<string, string>
+        description: Request headers
+      query:
+        type: Record<string, string>
+        description: Query parameters
+      body:
+        type: any
+        description: Request body (optional)
+        
+  ApiResponse:
+    description: API response
+    properties:
+      status:
+        type: number
+        description: HTTP status code
+      body:
+        type: any
+        description: Response body
+      headers:
+        type: Record<string, string>
+        description: Response headers (optional)
+        
+  RequestInfo:
+    description: Request tracking information
+    properties:
+      method:
+        type: HttpMethod
+        description: HTTP method used
+      path:
+        type: string
+        description: Request path
+      timestamp:
+        type: Date
+        description: When request was received
+      headers:
+        type: Record<string, string>
+        description: Request headers
+      hasBody:
+        type: boolean
+        description: Whether request had a body
+
+implementation:
+  infrastructure: frontend/src/constructs/L0/infrastructure/ApiEndpointPrimitive.ts
+  
+dependencies: []
+
+security:
+  - aspect: no-authentication
+    description: No authentication or authorization checks
+    severity: critical
+    recommendations:
+      - Use L1 RestApiService for production
+      - Implement auth at application level
+      
+  - aspect: no-validation
+    description: No input validation or sanitization
+    severity: high
+    recommendations:
+      - Validate all inputs in L1+
+      - Use schema validation libraries
+      
+  - aspect: no-rate-limiting
+    description: No rate limiting or DDoS protection
+    severity: high
+    recommendations:
+      - Implement rate limiting in L1
+      - Use API gateway in production
+      
+  - aspect: no-cors
+    description: No CORS headers or origin validation
+    severity: medium
+    recommendations:
+      - Configure CORS in L1 constructs
+      - Validate origins for security
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs at L0
+    - Simulated endpoint only
+    - Real implementation would use Express/Fastify
+
+c4:
+  type: Component
+  technology: HTTP/REST
+  external: false
+  position:
+    x: 300
+    y: 500
+
+examples:
+  - title: Hello World Endpoint
+    description: Simple GET endpoint
+    language: typescript
+    code: |
+      import { ApiEndpointPrimitive } from '@/constructs/L0/infrastructure/ApiEndpointPrimitive'
+      
+      const endpoint = new ApiEndpointPrimitive()
+      await endpoint.initialize({
+        path: '/api/hello',
+        method: 'GET',
+        handler: async (request) => {
+          return { 
+            message: 'Hello World',
+            timestamp: new Date()
+          }
+        }
+      })
+      
+      await endpoint.deploy()
+      // Endpoint available at http://localhost:3000/api/hello
+      
+  - title: User Creation Endpoint
+    description: POST endpoint with body handling
+    language: typescript
+    code: |
+      const createUser = new ApiEndpointPrimitive()
+      await createUser.initialize({
+        path: '/api/users',
+        method: 'POST',
+        handler: async (request) => {
+          const { name, email } = request.body
+          
+          // Simulate user creation
+          return {
+            id: Date.now(),
+            name,
+            email,
+            created: new Date()
+          }
+        }
+      })
+      
+      await createUser.deploy()
+      
+  - title: Dynamic Response Endpoint
+    description: Endpoint using query parameters
+    language: typescript
+    code: |
+      const search = new ApiEndpointPrimitive()
+      await search.initialize({
+        path: '/api/search',
+        method: 'GET',
+        handler: async (request) => {
+          const { q, limit = '10' } = request.query
+          
+          // Simulate search
+          return {
+            query: q,
+            results: [],
+            count: 0,
+            limit: parseInt(limit)
+          }
+        }
+      })
+      
+      await search.deploy()
+      
+  - title: Testing Endpoints
+    description: Using the makeRequest helper
+    language: typescript
+    code: |
+      const endpoint = new ApiEndpointPrimitive()
+      await endpoint.initialize({
+        path: '/api/echo',
+        method: 'POST',
+        handler: async (request) => ({
+          received: request.body,
+          headers: request.headers
+        })
+      })
+      
+      await endpoint.deploy()
+      
+      // Test the endpoint
+      const response = await endpoint.makeRequest('POST', '/api/echo', {
+        body: { test: true },
+        headers: { 'x-custom': 'value' }
+      })
+      
+      console.log(response.status) // 200
+      console.log(response.body)   // { received: { test: true }, headers: {...} }
+
+bestPractices:
+  - This is a primitive construct - use L1 RestApiService for production
+  - No input validation or sanitization
+  - No authentication or authorization
+  - No error handling beyond basic 500 errors
+  - Exact path matching only (no patterns)
+  - Raw HTTP endpoint simulation
+  - Used as building block for higher-level constructs
+  - Part of the Love Claude Code platform itself
+
+testing:
+  unit:
+    - Validates required inputs (path, method, handler)
+    - Handles requests with correct method/path
+    - Returns 404 for wrong path
+    - Returns 405 for wrong method
+    - Executes handler and returns response
+    - Tracks request count and last request
+    - Handles handler errors with 500 status
+    - Supports all HTTP methods
+    
+  integration:
+    - Used by L1 RestApiService
+    - Used by L2 MicroserviceBackend
+    - Part of L3 Love Claude Code platform

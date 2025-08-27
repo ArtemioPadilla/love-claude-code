@@ -19,18 +19,18 @@ export function UpdateNotification() {
     const electronAPI = getElectronAPI()
     
     // Set up update event listeners
-    const unsubscribeAvailable = electronAPI.update.onUpdateAvailable((info) => {
+    const unsubscribeAvailable = electronAPI.update.onUpdateAvailable((info: any) => {
       setUpdateInfo(info)
       setDismissed(false)
       setError(null)
     })
 
-    const unsubscribeProgress = electronAPI.update.onDownloadProgress((progress) => {
+    const unsubscribeProgress = electronAPI.update.onDownloadProgress((progress: any) => {
       setDownloadProgress(progress.percent)
       setIsDownloading(true)
     })
 
-    const unsubscribeDownloaded = electronAPI.update.onUpdateDownloaded((info) => {
+    const unsubscribeDownloaded = electronAPI.update.onUpdateDownloaded((info: any) => {
       setIsDownloading(false)
       setIsDownloaded(true)
       setUpdateInfo(info)

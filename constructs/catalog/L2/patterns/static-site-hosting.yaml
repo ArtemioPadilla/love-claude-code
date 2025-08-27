@@ -1,0 +1,913 @@
+id: platform-l2-static-site-hosting
+name: Static Site Hosting
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - hosting
+  - static-site
+  - cdn
+  - deployment
+  - ssl
+  - web
+  - pattern
+  - platform-construct
+
+description: |
+  Complete static website hosting pattern with CDN distribution, SSL/TLS, custom domains,
+  and automatic deployment. This pattern enables hosting production-ready static websites
+  with global content delivery, automatic HTTPS, custom domain support, and continuous
+  deployment from various sources. It composes infrastructure constructs to provide a
+  fully managed static site hosting solution with analytics and performance optimization.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-cdn-storage
+  - platform-l1-rest-api-service
+  - platform-l1-managed-container
+  - platform-l1-secure-auth-service
+  - platform-l1-project-file-explorer
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: name
+    type: string
+    required: true
+    description: Site name
+    example: my-website
+    validation:
+      pattern: '^[a-zA-Z0-9-]+$'
+
+  - name: domain
+    type: string
+    required: false
+    description: Primary custom domain
+    example: example.com
+
+  - name: customDomains
+    type: array
+    required: false
+    description: Additional custom domains
+    items:
+      type: string
+      example: www.example.com
+
+  - name: source
+    type: object
+    required: true
+    description: Source configuration
+    properties:
+      type:
+        type: string
+        enum: ['local', 'git', 's3', 'upload']
+        default: local
+        description: Source type
+      path:
+        type: string
+        description: Local path (for local sources)
+        example: ./dist
+      repository:
+        type: string
+        description: Git repository URL
+        example: github.com/user/repo
+      branch:
+        type: string
+        default: main
+        description: Git branch
+      bucket:
+        type: string
+        description: S3 bucket (for s3 sources)
+
+  - name: build
+    type: object
+    required: false
+    description: Build configuration
+    properties:
+      enabled:
+        type: boolean
+        default: false
+        description: Enable build step
+      command:
+        type: string
+        description: Build command
+        example: npm run build
+      outputDir:
+        type: string
+        default: dist
+        description: Build output directory
+      environment:
+        type: object
+        description: Environment variables
+
+  - name: cdn
+    type: object
+    required: true
+    description: CDN configuration
+    properties:
+      provider:
+        type: string
+        enum: ['cloudfront', 'cloudflare', 'fastly', 'bunny', 'firebase']
+        default: cloudflare
+        description: CDN provider
+      caching:
+        type: object
+        description: Cache configuration
+        properties:
+          defaultTTL:
+            type: number
+            default: 3600
+            description: Default TTL in seconds
+          maxTTL:
+            type: number
+            default: 86400
+            description: Maximum TTL in seconds
+          patterns:
+            type: array
+            description: Path-specific cache rules
+            items:
+              type: object
+              properties:
+                path:
+                  type: string
+                  example: '*.css'
+                ttl:
+                  type: number
+                  example: 86400
+                compress:
+                  type: boolean
+                  default: true
+      compression:
+        type: boolean
+        default: true
+        description: Enable compression
+      minification:
+        type: boolean
+        default: true
+        description: Enable minification
+
+  - name: ssl
+    type: object
+    required: false
+    description: SSL/TLS configuration
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: Enable HTTPS
+      certificate:
+        type: string
+        enum: ['auto', 'custom']
+        default: auto
+        description: Certificate type
+      customCert:
+        type: string
+        description: Custom certificate (PEM format)
+      customKey:
+        type: string
+        description: Custom private key (PEM format)
+
+  - name: redirects
+    type: array
+    required: false
+    description: URL redirects
+    items:
+      type: object
+      properties:
+        from:
+          type: string
+          example: /old-page
+        to:
+          type: string
+          example: /new-page
+        type:
+          type: number
+          enum: [301, 302]
+          default: 301
+
+  - name: headers
+    type: array
+    required: false
+    description: Custom headers
+    items:
+      type: object
+      properties:
+        path:
+          type: string
+          example: /*
+        headers:
+          type: object
+          example:
+            X-Frame-Options: DENY
+            X-Content-Type-Options: nosniff
+
+  - name: errorPages
+    type: object
+    required: false
+    description: Custom error pages
+    properties:
+      '404':
+        type: string
+        description: 404 error page path
+        example: /404.html
+      '500':
+        type: string
+        description: 500 error page path
+        example: /error.html
+
+  - name: authentication
+    type: object
+    required: false
+    description: Access control
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      type:
+        type: string
+        enum: ['basic', 'oauth', 'custom']
+        default: basic
+      config:
+        type: object
+        description: Auth configuration
+
+  - name: analytics
+    type: object
+    required: false
+    description: Analytics configuration
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      provider:
+        type: string
+        enum: ['google', 'plausible', 'matomo', 'custom']
+        default: google
+      config:
+        type: object
+        description: Provider configuration
+
+outputs:
+  - name: siteId
+    type: string
+    description: Unique site identifier
+
+  - name: status
+    type: string
+    description: Site status
+    enum: ['initializing', 'building', 'deploying', 'live', 'error']
+
+  - name: primaryUrl
+    type: string
+    description: Primary site URL
+
+  - name: cdnUrl
+    type: string
+    description: CDN URL
+
+  - name: customUrls
+    type: array
+    description: All custom domain URLs
+    items:
+      type: string
+
+  - name: currentDeployment
+    type: object
+    description: Current deployment info
+    properties:
+      id:
+        type: string
+      version:
+        type: string
+      timestamp:
+        type: string
+      status:
+        type: string
+      url:
+        type: string
+      size:
+        type: number
+      fileCount:
+        type: number
+      buildTime:
+        type: number
+      deployTime:
+        type: number
+
+  - name: deploymentHistory
+    type: array
+    description: Deployment history
+    items:
+      type: object
+
+  - name: metrics
+    type: object
+    description: Site metrics
+    properties:
+      views:
+        type: number
+      visitors:
+        type: number
+      bandwidth:
+        type: number
+      requests:
+        type: number
+      cacheHitRate:
+        type: number
+      avgResponseTime:
+        type: number
+      errorRate:
+        type: number
+
+  - name: capabilities
+    type: object
+    description: Enabled features
+    properties:
+      ssl:
+        type: boolean
+      customDomains:
+        type: boolean
+      authentication:
+        type: boolean
+      analytics:
+        type: boolean
+      building:
+        type: boolean
+
+methods:
+  - name: deploy
+    description: Deploy site with optional build
+    signature: (options?: { source?: string; skipBuild?: boolean }) => Promise<string>
+    parameters:
+      - name: options
+        type: object
+        description: Deployment options
+    returns:
+      type: string
+      description: Deployment ID
+
+  - name: rollback
+    description: Rollback to previous version
+    signature: (version: string) => Promise<void>
+    parameters:
+      - name: version
+        type: string
+        description: Version to rollback to
+
+  - name: updateDomain
+    description: Update primary domain
+    signature: (domain: string) => Promise<void>
+    parameters:
+      - name: domain
+        type: string
+        description: New primary domain
+
+  - name: addCustomDomain
+    description: Add custom domain
+    signature: (domain: string) => Promise<void>
+    parameters:
+      - name: domain
+        type: string
+        description: Domain to add
+
+  - name: enableSSL
+    description: Enable SSL/TLS
+    signature: (certificate?: { cert: string; key: string }) => Promise<void>
+    parameters:
+      - name: certificate
+        type: object
+        description: Custom certificate (optional)
+
+  - name: setRedirect
+    description: Add URL redirect
+    signature: (from: string, to: string, type?: 301 | 302) => Promise<void>
+    parameters:
+      - name: from
+        type: string
+        description: Source path
+      - name: to
+        type: string
+        description: Destination path
+      - name: type
+        type: number
+        default: 301
+        description: Redirect type
+
+  - name: setHeaders
+    description: Set custom headers for path
+    signature: (path: string, headers: Record<string, string>) => Promise<void>
+    parameters:
+      - name: path
+        type: string
+        description: Path pattern
+      - name: headers
+        type: object
+        description: Headers to set
+
+  - name: setErrorPage
+    description: Set custom error page
+    signature: (code: '404' | '500', path: string) => Promise<void>
+    parameters:
+      - name: code
+        type: string
+        description: Error code
+      - name: path
+        type: string
+        description: Error page path
+
+  - name: getDeploymentHistory
+    description: Get deployment history
+    signature: (limit?: number) => DeploymentInfo[]
+    parameters:
+      - name: limit
+        type: number
+        default: 10
+        description: Maximum results
+    returns:
+      type: array
+      description: Deployment history
+
+  - name: getMetrics
+    description: Get current metrics
+    signature: () => SiteMetrics
+    returns:
+      type: object
+      description: Site metrics
+
+  - name: purgeCache
+    description: Purge CDN cache
+    signature: (paths?: string[]) => Promise<void>
+    parameters:
+      - name: paths
+        type: array
+        description: Paths to purge (all if not specified)
+
+events:
+  - name: initialized
+    description: Site initialized
+    payload:
+      siteId: string
+      status: string
+
+  - name: deploymentStarted
+    description: Deployment started
+    payload:
+      deploymentId: string
+
+  - name: buildStarted
+    description: Build started
+    payload: {}
+
+  - name: buildCompleted
+    description: Build completed
+    payload: {}
+
+  - name: buildFailed
+    description: Build failed
+    payload:
+      error: string
+
+  - name: deploymentCompleted
+    description: Deployment completed
+    payload:
+      deployment: object
+
+  - name: deploymentFailed
+    description: Deployment failed
+    payload:
+      deploymentId: string
+      error: string
+
+  - name: rollbackStarted
+    description: Rollback started
+    payload:
+      version: string
+
+  - name: rollbackCompleted
+    description: Rollback completed
+    payload:
+      version: string
+
+  - name: rollbackFailed
+    description: Rollback failed
+    payload:
+      version: string
+      error: string
+
+  - name: fileUploaded
+    description: File uploaded to CDN
+    payload:
+      path: string
+      url: string
+
+  - name: fileChanged
+    description: Source file changed
+    payload:
+      path: string
+      action: string
+
+  - name: cacheInvalidated
+    description: CDN cache invalidated
+    payload:
+      paths: array
+
+  - name: domainUpdated
+    description: Domain updated
+    payload:
+      domain: string
+
+  - name: customDomainAdded
+    description: Custom domain added
+    payload:
+      domain: string
+
+  - name: sslEnabled
+    description: SSL enabled
+    payload:
+      type: string
+
+  - name: redirectAdded
+    description: Redirect added
+    payload:
+      from: string
+      to: string
+      type: number
+
+  - name: headersUpdated
+    description: Headers updated
+    payload:
+      path: string
+      headers: object
+
+  - name: errorPageSet
+    description: Error page configured
+    payload:
+      code: string
+      path: string
+
+  - name: metricsUpdated
+    description: Metrics updated
+    payload:
+      metrics: object
+
+  - name: analyticsUpdated
+    description: Analytics data updated
+    payload:
+      analytics: object
+
+  - name: cachePurged
+    description: Cache purged
+    payload:
+      paths: array
+
+  - name: configurationApplied
+    description: Configuration applied
+    payload:
+      redirects: number
+      headers: number
+      errorPages: number
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+  - name: destroyed
+    description: Site destroyed
+    payload: {}
+
+patterns:
+  - name: Continuous Deployment
+    description: |
+      Automatically deploy changes when source is updated. Supports Git
+      webhooks, file watchers, and scheduled deployments.
+
+  - name: Blue-Green Deployment
+    description: |
+      Deploy to staging URL first, then swap with production after
+      validation. Enables zero-downtime deployments.
+
+  - name: A/B Testing
+    description: |
+      Serve different versions to different users based on cookies,
+      headers, or geographic location.
+
+  - name: Progressive Web App
+    description: |
+      Host PWAs with service worker support, offline functionality,
+      and app manifest serving.
+
+  - name: JAMstack Sites
+    description: |
+      Perfect for Gatsby, Next.js, Hugo, Jekyll and other static
+      site generators with build support.
+
+examples:
+  - title: Basic Static Site
+    description: Simple static website hosting
+    language: typescript
+    code: |
+      const site = new StaticSiteHosting()
+      
+      await site.initialize({
+        name: 'my-portfolio',
+        source: {
+          type: 'local',
+          path: './public'
+        },
+        cdn: {
+          provider: 'cloudflare',
+          compression: true,
+          minification: true
+        }
+      })
+      
+      // Deploy the site
+      const deploymentId = await site.deploy()
+      console.log(`Site deployed: ${site.getOutputs().primaryUrl}`)
+      
+      // Monitor deployment
+      site.on('deploymentCompleted', (deployment) => {
+        console.log(`Deployment ${deployment.version} is live!`)
+      })
+
+  - title: Static Site with Build Pipeline
+    description: Site with automated build process
+    language: typescript
+    code: |
+      const site = new StaticSiteHosting()
+      
+      await site.initialize({
+        name: 'react-app',
+        domain: 'myapp.com',
+        source: {
+          type: 'git',
+          repository: 'github.com/user/my-react-app',
+          branch: 'main'
+        },
+        build: {
+          enabled: true,
+          command: 'npm ci && npm run build',
+          outputDir: 'build',
+          environment: {
+            NODE_ENV: 'production',
+            REACT_APP_API_URL: 'https://api.myapp.com'
+          }
+        },
+        cdn: {
+          provider: 'cloudfront',
+          caching: {
+            patterns: [
+              { path: '*.html', ttl: 300 },
+              { path: '*.js', ttl: 86400, compress: true },
+              { path: '*.css', ttl: 86400, compress: true },
+              { path: 'images/*', ttl: 604800 }
+            ]
+          }
+        },
+        ssl: {
+          enabled: true,
+          certificate: 'auto'
+        }
+      })
+      
+      // Set up custom headers
+      await site.setHeaders('/*', {
+        'X-Frame-Options': 'SAMEORIGIN',
+        'X-Content-Type-Options': 'nosniff',
+        'Referrer-Policy': 'strict-origin-when-cross-origin'
+      })
+      
+      // Add redirects
+      await site.setRedirect('/old-blog/*', '/blog/*', 301)
+      await site.setRedirect('/admin', 'https://admin.myapp.com', 302)
+
+  - title: Multi-Domain Static Site
+    description: Site with multiple custom domains
+    language: typescript
+    code: |
+      const site = new StaticSiteHosting()
+      
+      await site.initialize({
+        name: 'multi-domain-site',
+        domain: 'example.com',
+        customDomains: ['www.example.com', 'example.org'],
+        source: {
+          type: 'local',
+          path: './dist'
+        },
+        cdn: {
+          provider: 'fastly',
+          compression: true
+        }
+      })
+      
+      // Add more domains
+      await site.addCustomDomain('example.net')
+      await site.addCustomDomain('blog.example.com')
+      
+      // Enable SSL for all domains
+      await site.enableSSL()
+      
+      // Monitor metrics
+      site.on('metricsUpdated', (metrics) => {
+        console.log(`Total views: ${metrics.views}`)
+        console.log(`Cache hit rate: ${(metrics.cacheHitRate * 100).toFixed(2)}%`)
+      })
+
+  - title: Protected Static Site
+    description: Site with authentication
+    language: typescript
+    code: |
+      const site = new StaticSiteHosting()
+      
+      await site.initialize({
+        name: 'docs-site',
+        domain: 'docs.company.com',
+        source: {
+          type: 'local',
+          path: './docs'
+        },
+        cdn: {
+          provider: 'cloudflare'
+        },
+        authentication: {
+          enabled: true,
+          type: 'basic',
+          config: {
+            users: [
+              { username: 'admin', password: 'secure123' },
+              { username: 'viewer', password: 'readonly' }
+            ]
+          }
+        },
+        errorPages: {
+          '404': '/404.html',
+          '500': '/error.html'
+        }
+      })
+      
+      // Set security headers
+      await site.setHeaders('/*', {
+        'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+        'Content-Security-Policy': "default-src 'self'",
+        'X-Frame-Options': 'DENY'
+      })
+
+  - title: JAMstack Blog with Analytics
+    description: Static blog with build pipeline and analytics
+    language: typescript
+    code: |
+      const site = new StaticSiteHosting()
+      
+      await site.initialize({
+        name: 'gatsby-blog',
+        domain: 'blog.example.com',
+        source: {
+          type: 'git',
+          repository: 'github.com/user/gatsby-blog',
+          branch: 'main'
+        },
+        build: {
+          enabled: true,
+          command: 'gatsby build',
+          outputDir: 'public',
+          environment: {
+            GATSBY_GA_ID: 'UA-123456789-1'
+          }
+        },
+        cdn: {
+          provider: 'cloudflare',
+          caching: {
+            patterns: [
+              { path: '*.html', ttl: 300 },
+              { path: 'page-data/*', ttl: 300 },
+              { path: 'static/*', ttl: 604800 },
+              { path: '*.js', ttl: 86400 },
+              { path: '*.css', ttl: 86400 }
+            ]
+          }
+        },
+        analytics: {
+          enabled: true,
+          provider: 'plausible',
+          config: {
+            domain: 'blog.example.com'
+          }
+        }
+      })
+      
+      // Deploy on content changes
+      site.on('fileChanged', async ({ path }) => {
+        if (path.startsWith('content/')) {
+          console.log('Content changed, triggering deployment...')
+          await site.deploy()
+        }
+      })
+      
+      // Monitor analytics
+      site.on('analyticsUpdated', (data) => {
+        console.log('Top pages:', data.topPages)
+        console.log('Traffic sources:', data.referrers)
+      })
+
+bestPractices:
+  - Use appropriate cache TTLs for different file types
+  - Enable compression for text-based assets
+  - Set security headers for all responses
+  - Use CDN providers close to your users
+  - Implement proper error pages
+  - Monitor bandwidth usage and costs
+  - Use build caching to speed up deployments
+  - Version your deployments for easy rollbacks
+  - Test deployments on staging domains first
+  - Implement proper redirects for moved content
+  - Use analytics to understand user behavior
+  - Optimize images before deployment
+  - Minify CSS and JavaScript in production
+  - Use immutable caching for versioned assets
+  - Monitor Core Web Vitals metrics
+
+troubleshooting:
+  - issue: Deployment fails
+    solutions:
+      - Check build logs for errors
+      - Verify source files exist
+      - Ensure build command is correct
+      - Check available disk space
+
+  - issue: Site not accessible
+    solutions:
+      - Verify DNS configuration
+      - Check SSL certificate status
+      - Ensure CDN is properly configured
+      - Review authentication settings
+
+  - issue: Poor performance
+    solutions:
+      - Enable compression and minification
+      - Optimize cache headers
+      - Use appropriate CDN locations
+      - Reduce asset sizes
+
+  - issue: High bandwidth costs
+    solutions:
+      - Implement proper caching
+      - Optimize image formats
+      - Use CDN compression
+      - Monitor traffic patterns
+
+  - issue: SSL errors
+    solutions:
+      - Verify domain ownership
+      - Check certificate validity
+      - Ensure proper DNS records
+      - Wait for propagation
+
+deployment:
+  requiredProviders:
+    - cdn-service
+    - storage-service
+  optionalProviders:
+    - build-service
+    - auth-service
+    - analytics-service
+  configuration:
+    cdn:
+      locations: global
+      compression: true
+      http2: true
+      http3: true
+    storage:
+      redundancy: high
+      versioning: true
+    security:
+      ddosProtection: true
+      waf: optional
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-documentation
+    - construct-marketplace-frontend
+  developmentMethod: manual
+  vibeCodingPercentage: 15
+  builtWith:
+    - platform-l1-cdn-storage
+    - platform-l1-rest-api-service
+    - platform-l1-managed-container
+  timeToCreate: 540
+  linesOfCode: 1800
+  testCoverage: 90
+  canHostConstructs: false
+  platformFeatures:
+    - Global CDN distribution
+    - Automatic HTTPS
+    - Continuous deployment
+    - Custom domains
+    - Build pipelines

@@ -1,0 +1,168 @@
+id: platform-l0-chat-message-primitive
+name: Chat Message Primitive
+level: L0
+version: 1.0.0
+description: Raw chat message display with no styling, avatars, or features. Just text and sender information.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 20
+    builtWith: []
+
+categories:
+  - ui
+  - chat
+  - messaging
+  - primitive
+
+tags:
+  - chat
+  - message
+  - L0
+  - primitive
+  - communication
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  content:
+    type: string
+    description: Message content text
+    required: true
+    
+  sender:
+    type: string
+    description: Name or ID of the message sender
+    required: true
+    
+  timestamp:
+    type: Date | string
+    description: When the message was sent
+    required: false
+    default: new Date()
+    
+  isUser:
+    type: boolean
+    description: Whether this message is from the current user
+    required: false
+    default: false
+
+outputs:
+  messageElement:
+    type: HTMLElement
+    description: The rendered message DOM element
+    
+  messageData:
+    type: object
+    description: The message data object containing content, sender, timestamp, and isUser
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/ChatMessagePrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: content-sanitization
+    description: No HTML sanitization or XSS protection at L0 level
+    severity: high
+    recommendations:
+      - Use L1 SecureChatMessage for production applications
+      - L0 constructs have no security features by design
+      
+  - aspect: injection-protection
+    description: No protection against script injection in messages
+    severity: high
+    recommendations:
+      - Never use L0 constructs directly with untrusted content
+      - Always wrap with L1 security features
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 200
+    y: 100
+
+examples:
+  - title: Basic User Message
+    description: Display a message from the current user
+    language: typescript
+    code: |
+      import { ChatMessagePrimitive } from '@/constructs/L0/ui/ChatMessagePrimitive'
+      
+      const message = new ChatMessagePrimitive()
+      await message.initialize({
+        content: 'Hello, can you help me with this code?',
+        sender: 'User',
+        isUser: true,
+        timestamp: new Date()
+      })
+      
+      // Get the React component
+      const component = message.render()
+      
+  - title: AI Assistant Message
+    description: Display a response from Claude
+    language: typescript
+    code: |
+      const aiMessage = new ChatMessagePrimitive()
+      await aiMessage.initialize({
+        content: 'I\'d be happy to help! Could you share the code you\'re working with?',
+        sender: 'Claude',
+        isUser: false
+      })
+      
+  - title: Accessing Message Data
+    description: Get the message data for further processing
+    language: typescript
+    code: |
+      const message = new ChatMessagePrimitive()
+      await message.initialize({
+        content: 'Test message',
+        sender: 'System',
+        timestamp: '2025-01-22T10:30:00Z'
+      })
+      
+      // Get outputs after render
+      const outputs = message.getOutputs()
+      const messageData = outputs.messageData
+      console.log(messageData.timestamp) // Date object
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No styling, formatting, or rich text support
+  - No user avatar or presence indicators
+  - Used as a building block for higher-level chat constructs
+  - Part of the Love Claude Code platform itself
+  - Keep messages simple - this is just raw text display
+
+testing:
+  unit:
+    - Initializes with required content and sender
+    - Handles optional timestamp parameter
+    - Correctly sets isUser flag
+    - Outputs message data object
+    - Provides DOM element reference
+    - Aligns text based on isUser flag
+    
+  integration:
+    - Used by L1 SecureChatMessage
+    - Used by L2 ConversationSystem
+    - Part of L3 Love Claude Code Chat Interface

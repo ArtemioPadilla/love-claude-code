@@ -1,13 +1,11 @@
 import { motion } from 'framer-motion'
 import { 
   Download, 
-  Terminal, 
   GitBranch, 
   Package, 
   Key, 
   Search,
   HardDrive,
-  Wifi,
   WifiOff,
   Command,
   Settings,

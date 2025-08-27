@@ -15,6 +15,16 @@
       "env": {
         "NODE_ENV": "development"
       }
+    },
+    "playwright-automation": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-playwright"],
+      "env": {
+        "PLAYWRIGHT_HEADLESS": "false",
+        "PLAYWRIGHT_BROWSER": "chromium",
+        "PLAYWRIGHT_TIMEOUT": "30000"
+      },
+      "description": "Playwright browser automation for E2E testing and UI validation"
     }
   }
 }

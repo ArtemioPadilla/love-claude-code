@@ -477,7 +477,17 @@ class ApiClient {
     try {
       const response = await this.client.get('/settings')
       return response.data.settings
-    } catch (error) {
+    } catch (error: any) {
+      // If unauthorized, try to get public settings
+      if (error.response?.status === 401) {
+        try {
+          const publicResponse = await this.client.get('/settings/public')
+          return publicResponse.data.settings
+        } catch (publicError) {
+          console.error('Failed to get public settings:', publicError)
+          return {}
+        }
+      }
       // Return empty settings if not found
       return {}
     }

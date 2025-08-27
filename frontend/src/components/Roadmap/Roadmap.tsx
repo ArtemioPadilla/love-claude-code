@@ -219,19 +219,35 @@ const Roadmap: React.FC = () => {
   
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': return 'bg-green-500/20 text-green-400 border-green-500/50'
-      case 'in-progress': return 'bg-blue-500/20 text-blue-400 border-blue-500/50'
-      case 'planned': return 'bg-gray-700/50 text-gray-400 border-gray-600'
-      default: return 'bg-gray-700/50 text-gray-400 border-gray-600'
+      case 'completed': {
+        return 'bg-green-500/20 text-green-400 border-green-500/50'
+      }
+      case 'in-progress': {
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/50'
+      }
+      case 'planned': {
+        return 'bg-gray-700/50 text-gray-400 border-gray-600'
+      }
+      default: {
+        return 'bg-gray-700/50 text-gray-400 border-gray-600'
+      }
     }
   }
   
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <Check className="w-4 h-4" />
-      case 'in-progress': return <PlayCircle className="w-4 h-4" />
-      case 'planned': return <Clock className="w-4 h-4" />
-      default: return <Clock className="w-4 h-4" />
+      case 'completed': {
+        return <Check className="w-4 h-4" />
+      }
+      case 'in-progress': {
+        return <PlayCircle className="w-4 h-4" />
+      }
+      case 'planned': {
+        return <Clock className="w-4 h-4" />
+      }
+      default: {
+        return <Clock className="w-4 h-4" />
+      }
     }
   }
   

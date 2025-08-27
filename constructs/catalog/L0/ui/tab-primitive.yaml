@@ -1,0 +1,226 @@
+id: platform-l0-tab-primitive
+name: Tab Primitive
+level: L0
+version: 1.0.0
+description: Raw tabbed interface with no styling, animations, or advanced features. Just clickable tab labels and content switching.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 25
+    builtWith: []
+
+categories:
+  - ui
+  - navigation
+  - layout
+  - primitive
+
+tags:
+  - tabs
+  - navigation
+  - tabbed-interface
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  tabs:
+    type: TabDefinition[]
+    description: Array of tab definitions with label and content
+    required: true
+    example:
+      - label: "Tab 1"
+        content: "Content for first tab"
+      - label: "Tab 2"
+        content: "<div>React content</div>"
+    
+  activeIndex:
+    type: number
+    description: Initially active tab index (0-based)
+    required: false
+    default: 0
+    
+  onTabChange:
+    type: function
+    description: Callback when active tab changes (index) => void
+    required: false
+
+outputs:
+  containerElement:
+    type: HTMLElement
+    description: The main tabs container DOM element
+    
+  tabElements:
+    type: HTMLElement[]
+    description: Array of tab label DOM elements
+    
+  contentElement:
+    type: HTMLElement
+    description: The currently active content DOM element
+    
+  activeTabIndex:
+    type: number
+    description: Currently active tab index
+
+types:
+  TabDefinition:
+    description: Structure for a single tab
+    properties:
+      label:
+        type: string
+        description: Tab label text
+      content:
+        type: React.ReactNode
+        description: Tab content (string or React elements)
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/TabPrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: content-injection
+    description: No content sanitization at L0 level
+    severity: medium
+    recommendations:
+      - Use L1 SecureTabs for production applications
+      - Sanitize user-provided content before display
+      
+  - aspect: input-validation
+    description: No validation of tab structure or indices
+    severity: low
+    recommendations:
+      - Validate tab array structure in L1
+      - Handle malformed data gracefully
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 800
+    y: 100
+
+examples:
+  - title: Simple Text Tabs
+    description: Basic tabs with text content
+    language: typescript
+    code: |
+      import { TabPrimitive } from '@/constructs/L0/ui/TabPrimitive'
+      
+      const tabs = new TabPrimitive()
+      await tabs.initialize({
+        tabs: [
+          { label: 'Overview', content: 'This is the overview tab.' },
+          { label: 'Details', content: 'Here are the details.' },
+          { label: 'Settings', content: 'Configure your settings here.' }
+        ]
+      })
+      
+      // Get the React component
+      const component = tabs.render()
+      
+  - title: Tabs with Components
+    description: Tabs containing React components
+    language: typescript
+    code: |
+      const tabs = new TabPrimitive()
+      await tabs.initialize({
+        tabs: [
+          {
+            label: 'Code',
+            content: <CodeEditor value={code} />
+          },
+          {
+            label: 'Preview',
+            content: <Preview html={html} />
+          },
+          {
+            label: 'Console',
+            content: <Console logs={logs} />
+          }
+        ],
+        activeIndex: 0
+      })
+      
+  - title: Controlled Tabs
+    description: Managing tab state externally
+    language: typescript
+    code: |
+      const tabs = new TabPrimitive()
+      let currentTab = 0
+      
+      await tabs.initialize({
+        tabs: tabData,
+        activeIndex: currentTab,
+        onTabChange: (index) => {
+          currentTab = index
+          console.log(`Switched to tab: ${tabData[index].label}`)
+          // Update other components based on tab
+        }
+      })
+      
+  - title: Dynamic Tab Content
+    description: Tabs with dynamically loaded content
+    language: typescript
+    code: |
+      const tabs = new TabPrimitive()
+      await tabs.initialize({
+        tabs: [
+          {
+            label: 'Users',
+            content: loading ? 'Loading...' : <UserList users={users} />
+          },
+          {
+            label: 'Posts',
+            content: loading ? 'Loading...' : <PostList posts={posts} />
+          }
+        ],
+        onTabChange: async (index) => {
+          // Load data for the selected tab
+          await loadTabData(index)
+        }
+      })
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No animations, transitions, or visual effects
+  - No keyboard navigation (Tab key, arrow keys)
+  - Basic click-to-switch functionality only
+  - Minimal styling - just active indicator
+  - Used as a building block for higher-level tab constructs
+  - Part of the Love Claude Code platform itself
+  - Keep tab structure simple and flat
+
+testing:
+  unit:
+    - Renders all tab labels
+    - Shows correct initial content
+    - Switches content on tab click
+    - Handles empty tabs array
+    - Validates activeIndex bounds
+    - Invokes onTabChange callback
+    - Sets output references correctly
+    - Updates activeTabIndex output
+    
+  integration:
+    - Used by L1 StyledTabs
+    - Used by L2 TabbedLayout
+    - Part of L3 Love Claude Code UI

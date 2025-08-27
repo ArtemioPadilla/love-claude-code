@@ -5,7 +5,22 @@
       "Bash(npm install:*)",
       "Bash(mkdir:*)",
       "Bash(ls:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(ls -1 L3/applications/*.tsx L3/applications/*.ts)",
+      "Bash(grep -E \"^import.*Definition.*from\" registry.ts)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run lint:*)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(tdd-guard:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run test:*)",
+      "Bash(sed:*)",
+      "mcp__ide__executeCode",
+      "Bash(curl:*)"
     ],
     "deny": []
   },

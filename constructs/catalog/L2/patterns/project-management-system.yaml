@@ -1,0 +1,719 @@
+id: platform-l2-project-management-system
+name: Project Management System
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - projects
+  - management
+  - storage
+  - permissions
+  - collaboration
+  - deployment
+  - pattern
+  - platform-construct
+
+description: |
+  Complete project management system with file storage, version control, permissions,
+  collaboration features, and deployment capabilities. This pattern provides everything
+  needed to manage development projects including file operations, user permissions,
+  team collaboration, activity tracking, and deployment workflows. Built with security
+  and scalability in mind, supporting both individual developers and teams.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-project-file-explorer
+  - platform-l1-secure-auth-service
+  - platform-l1-encrypted-database
+  - platform-l1-cdn-storage
+  - platform-l1-rest-api-service
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: userId
+    type: string
+    required: true
+    description: User identifier for project ownership
+    example: user-123
+    validation:
+      pattern: '^[a-zA-Z0-9-_]+$'
+
+  - name: organizationId
+    type: string
+    required: false
+    description: Organization identifier for team projects
+    example: org-456
+
+  - name: features
+    type: object
+    required: false
+    description: Feature configuration
+    default:
+      versionControl: false
+      collaboration: false
+      deployment: false
+      analytics: false
+      backups: false
+      templates: false
+    properties:
+      versionControl:
+        type: boolean
+        default: false
+        description: Enable version control for files
+      collaboration:
+        type: boolean
+        default: false
+        description: Enable team collaboration features
+      deployment:
+        type: boolean
+        default: false
+        description: Enable deployment capabilities
+      analytics:
+        type: boolean
+        default: false
+        description: Enable project analytics
+      backups:
+        type: boolean
+        default: false
+        description: Enable automatic backups
+      templates:
+        type: boolean
+        default: false
+        description: Enable project templates
+
+  - name: permissions
+    type: object
+    required: false
+    description: Permission configuration
+    properties:
+      defaultRole:
+        type: string
+        default: viewer
+        enum: ['viewer', 'editor', 'admin']
+        description: Default role for new collaborators
+      publicProjects:
+        type: boolean
+        default: false
+        description: Allow public projects
+      maxCollaborators:
+        type: number
+        default: 10
+        description: Maximum collaborators per project
+        validation:
+          min: 1
+          max: 100
+      guestAccess:
+        type: boolean
+        default: false
+        description: Allow guest access to public projects
+
+  - name: storage
+    type: object
+    required: false
+    description: Storage configuration
+    properties:
+      maxProjectSize:
+        type: number
+        default: 1000
+        description: Maximum project size in MB
+        validation:
+          min: 100
+          max: 10000
+      maxFileSize:
+        type: number
+        default: 100
+        description: Maximum file size in MB
+        validation:
+          min: 1
+          max: 1000
+      allowedFileTypes:
+        type: array
+        itemType: string
+        default: ['text/*', 'application/*', 'image/*']
+        description: Allowed MIME types
+      cdnEnabled:
+        type: boolean
+        default: true
+        description: Enable CDN for file delivery
+
+  - name: ui
+    type: object
+    required: false
+    description: UI configuration
+    properties:
+      theme:
+        type: string
+        default: dark
+        enum: ['light', 'dark', 'auto']
+        description: UI theme
+      layout:
+        type: string
+        default: grid
+        enum: ['grid', 'list', 'kanban']
+        description: Project display layout
+      defaultView:
+        type: string
+        default: recent
+        enum: ['recent', 'all', 'shared', 'archived']
+        description: Default project view
+
+outputs:
+  - name: systemId
+    type: string
+    description: Unique system identifier
+
+  - name: status
+    type: string
+    description: System status
+    enum: ['ready', 'loading', 'error']
+
+  - name: capabilities
+    type: object
+    description: Enabled capabilities
+    properties:
+      versionControl:
+        type: boolean
+      collaboration:
+        type: boolean
+      deployment:
+        type: boolean
+      analytics:
+        type: boolean
+      templates:
+        type: boolean
+
+  - name: statistics
+    type: object
+    description: Usage statistics
+    properties:
+      totalProjects:
+        type: number
+        description: Total number of projects
+      activeProjects:
+        type: number
+        description: Number of active projects
+      totalStorage:
+        type: number
+        description: Total storage used in bytes
+      collaborators:
+        type: number
+        description: Total unique collaborators
+
+  - name: currentProject
+    type: object
+    description: Currently active project
+    properties:
+      id:
+        type: string
+        description: Project ID
+      name:
+        type: string
+        description: Project name
+      type:
+        type: string
+        description: Project type
+      files:
+        type: number
+        description: Number of files
+
+methods:
+  - name: createProject
+    description: Create a new project
+    signature: (data: Partial<Project>) => Promise<string>
+    parameters:
+      - name: data
+        type: object
+        description: Project data
+    returns:
+      type: string
+      description: Project ID
+
+  - name: loadProject
+    description: Load a project by ID
+    signature: (projectId: string) => Promise<void>
+    parameters:
+      - name: projectId
+        type: string
+        description: Project ID
+
+  - name: updateProject
+    description: Update project details
+    signature: (projectId: string, updates: Partial<Project>) => Promise<void>
+    parameters:
+      - name: projectId
+        type: string
+        description: Project ID
+      - name: updates
+        type: object
+        description: Updates to apply
+
+  - name: deleteProject
+    description: Delete a project
+    signature: (projectId: string) => Promise<void>
+    parameters:
+      - name: projectId
+        type: string
+        description: Project ID
+
+  - name: archiveProject
+    description: Archive a project
+    signature: (projectId: string) => Promise<void>
+    parameters:
+      - name: projectId
+        type: string
+        description: Project ID
+
+  - name: createFile
+    description: Create a file in the active project
+    signature: (path: string, content: string) => Promise<void>
+    parameters:
+      - name: path
+        type: string
+        description: File path relative to project
+      - name: content
+        type: string
+        description: File content
+
+  - name: updateFile
+    description: Update a file
+    signature: (path: string, content: string) => Promise<void>
+    parameters:
+      - name: path
+        type: string
+        description: File path
+      - name: content
+        type: string
+        description: New content
+
+  - name: deleteFile
+    description: Delete a file
+    signature: (path: string) => Promise<void>
+    parameters:
+      - name: path
+        type: string
+        description: File path
+
+  - name: addCollaborator
+    description: Add a collaborator to a project
+    signature: (projectId: string, userId: string, role: string) => Promise<void>
+    parameters:
+      - name: projectId
+        type: string
+        description: Project ID
+      - name: userId
+        type: string
+        description: User ID
+      - name: role
+        type: string
+        enum: ['viewer', 'editor', 'admin']
+        description: User role
+
+  - name: deployProject
+    description: Deploy a project
+    signature: (projectId: string, target: string) => Promise<void>
+    parameters:
+      - name: projectId
+        type: string
+        description: Project ID
+      - name: target
+        type: string
+        enum: ['production', 'staging']
+        description: Deployment target
+
+  - name: searchProjects
+    description: Search projects
+    signature: (query: string) => Promise<Project[]>
+    parameters:
+      - name: query
+        type: string
+        description: Search query
+    returns:
+      type: array
+      description: Matching projects
+
+events:
+  - name: initialized
+    description: System initialized successfully
+    payload:
+      systemId: string
+
+  - name: projectCreated
+    description: New project created
+    payload:
+      id: string
+      name: string
+      type: string
+      owner: string
+
+  - name: projectLoaded
+    description: Project loaded
+    payload:
+      id: string
+      name: string
+
+  - name: projectUpdated
+    description: Project updated
+    payload:
+      id: string
+      updates: object
+
+  - name: projectDeleted
+    description: Project deleted
+    payload:
+      projectId: string
+
+  - name: projectArchived
+    description: Project archived
+    payload:
+      projectId: string
+
+  - name: fileCreated
+    description: File created
+    payload:
+      projectId: string
+      path: string
+      file: object
+
+  - name: fileUpdated
+    description: File updated
+    payload:
+      projectId: string
+      path: string
+      file: object
+
+  - name: fileDeleted
+    description: File deleted
+    payload:
+      projectId: string
+      path: string
+
+  - name: collaboratorAdded
+    description: Collaborator added
+    payload:
+      projectId: string
+      userId: string
+      role: string
+
+  - name: deploymentStarted
+    description: Deployment started
+    payload:
+      projectId: string
+      target: string
+
+  - name: deploymentCompleted
+    description: Deployment completed
+    payload:
+      projectId: string
+      target: string
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+patterns:
+  - name: Role-Based Access Control
+    description: |
+      Implements fine-grained permissions with owner, admin, editor, and viewer
+      roles. Each role has specific capabilities ensuring secure collaboration.
+
+  - name: Version Control Integration
+    description: |
+      Optional version control for files with automatic versioning on updates,
+      allowing rollback and history tracking.
+
+  - name: Activity Tracking
+    description: |
+      Comprehensive activity logging for all project operations, enabling
+      audit trails and user activity monitoring.
+
+  - name: Storage Optimization
+    description: |
+      CDN-backed file storage with compression, caching, and signed URLs
+      for secure and performant file delivery.
+
+  - name: Deployment Pipeline
+    description: |
+      Integrated deployment workflow with build, test, and deploy stages
+      supporting multiple target environments.
+
+examples:
+  - title: Basic Project Management
+    description: Simple project setup for individual developer
+    language: typescript
+    code: |
+      const projectSystem = new ProjectManagementSystem()
+      
+      await projectSystem.initialize({
+        userId: 'developer-123',
+        features: {
+          versionControl: true,
+          backups: true
+        },
+        storage: {
+          maxProjectSize: 500, // 500MB
+          maxFileSize: 50 // 50MB
+        }
+      })
+      
+      // Create a new web project
+      const projectId = await projectSystem.createProject({
+        name: 'My Portfolio',
+        type: 'web',
+        description: 'Personal portfolio website',
+        tags: ['portfolio', 'react', 'typescript']
+      })
+      
+      // Create project structure
+      await projectSystem.createFile('/src/index.tsx', 'import React from "react"...')
+      await projectSystem.createFile('/src/App.tsx', 'export function App() {...}')
+      await projectSystem.createFile('/package.json', '{"name": "portfolio"...}')
+      
+      // Listen for file changes
+      projectSystem.on('fileUpdated', ({ path }) => {
+        console.log(`File updated: ${path}`)
+      })
+
+  - title: Team Collaboration Setup
+    description: Project with team collaboration features
+    language: typescript
+    code: |
+      const projectSystem = new ProjectManagementSystem()
+      
+      await projectSystem.initialize({
+        userId: 'team-lead',
+        organizationId: 'startup-inc',
+        features: {
+          collaboration: true,
+          deployment: true,
+          analytics: true
+        },
+        permissions: {
+          defaultRole: 'editor',
+          maxCollaborators: 20
+        }
+      })
+      
+      // Create team project
+      const projectId = await projectSystem.createProject({
+        name: 'SaaS Platform',
+        type: 'fullstack',
+        visibility: 'organization',
+        settings: {
+          framework: 'nextjs',
+          buildCommand: 'npm run build',
+          startCommand: 'npm start'
+        }
+      })
+      
+      // Add team members
+      await projectSystem.addCollaborator(projectId, 'dev-1', 'admin')
+      await projectSystem.addCollaborator(projectId, 'dev-2', 'editor')
+      await projectSystem.addCollaborator(projectId, 'designer-1', 'editor')
+      await projectSystem.addCollaborator(projectId, 'pm-1', 'viewer')
+      
+      // Track activity
+      projectSystem.on('activityLogged', (activity) => {
+        console.log(`${activity.userId} ${activity.action} ${activity.target}`)
+      })
+
+  - title: Multi-Project Management
+    description: Managing multiple projects with search and filtering
+    language: typescript
+    code: |
+      const projectSystem = new ProjectManagementSystem()
+      
+      await projectSystem.initialize({
+        userId: 'agency-dev',
+        features: {
+          templates: true,
+          versionControl: true
+        },
+        ui: {
+          layout: 'kanban',
+          defaultView: 'all'
+        }
+      })
+      
+      // Create multiple client projects
+      const projects = [
+        { name: 'Client A Website', type: 'web', tags: ['client', 'wordpress'] },
+        { name: 'Client B API', type: 'api', tags: ['client', 'nodejs'] },
+        { name: 'Internal Tool', type: 'fullstack', tags: ['internal', 'react'] },
+        { name: 'Mobile App', type: 'library', tags: ['client', 'react-native'] }
+      ]
+      
+      for (const project of projects) {
+        await projectSystem.createProject(project)
+      }
+      
+      // Search projects
+      const clientProjects = await projectSystem.searchProjects('client')
+      console.log(`Found ${clientProjects.length} client projects`)
+      
+      const reactProjects = await projectSystem.searchProjects('react')
+      console.log(`Found ${reactProjects.length} React projects`)
+      
+      // Get statistics
+      const stats = projectSystem.getOutputs().statistics
+      console.log(`Total storage: ${stats.totalStorage / 1024 / 1024}MB`)
+
+  - title: Deployment Workflow
+    description: Project with CI/CD integration
+    language: typescript
+    code: |
+      const projectSystem = new ProjectManagementSystem()
+      
+      await projectSystem.initialize({
+        userId: 'devops-engineer',
+        features: {
+          deployment: true,
+          versionControl: true,
+          analytics: true
+        }
+      })
+      
+      const projectId = await projectSystem.createProject({
+        name: 'Production App',
+        type: 'fullstack',
+        settings: {
+          framework: 'nextjs',
+          buildCommand: 'npm run build',
+          startCommand: 'npm start',
+          envVars: {
+            NODE_ENV: 'production',
+            API_URL: 'https://api.example.com'
+          }
+        }
+      })
+      
+      // Listen for deployment events
+      projectSystem.on('deploymentStarted', ({ target }) => {
+        console.log(`Deploying to ${target}...`)
+      })
+      
+      projectSystem.on('buildStarted', () => {
+        console.log('Building project...')
+      })
+      
+      projectSystem.on('deploymentCompleted', ({ target }) => {
+        console.log(`Successfully deployed to ${target}`)
+      })
+      
+      projectSystem.on('deploymentFailed', ({ error }) => {
+        console.error(`Deployment failed: ${error}`)
+      })
+      
+      // Deploy to staging first
+      await projectSystem.deployProject(projectId, 'staging')
+      
+      // After testing, deploy to production
+      await projectSystem.deployProject(projectId, 'production')
+
+bestPractices:
+  - Implement proper access control for all operations
+  - Use version control for important files
+  - Regular automated backups of project data
+  - Monitor storage usage and set alerts
+  - Use CDN for static assets
+  - Implement rate limiting for API operations
+  - Audit all permission changes
+  - Use templates for common project types
+  - Tag projects for better organization
+  - Archive old projects instead of deleting
+  - Set up deployment pipelines for consistency
+  - Track project metrics and analytics
+  - Use encryption for sensitive data
+  - Implement proper error handling
+  - Document project structure and conventions
+
+troubleshooting:
+  - issue: Cannot create project
+    solutions:
+      - Check user authentication
+      - Verify storage quota
+      - Check database connection
+      - Review error logs
+
+  - issue: File upload fails
+    solutions:
+      - Check file size limits
+      - Verify MIME type allowed
+      - Check storage permissions
+      - Review CDN configuration
+
+  - issue: Permission denied errors
+    solutions:
+      - Verify user role
+      - Check project ownership
+      - Review collaborator list
+      - Check organization settings
+
+  - issue: Deployment failures
+    solutions:
+      - Check build command
+      - Verify environment variables
+      - Review deployment logs
+      - Check target availability
+
+  - issue: Slow file operations
+    solutions:
+      - Enable CDN caching
+      - Optimize file sizes
+      - Check network connectivity
+      - Review storage provider
+
+deployment:
+  requiredProviders:
+    - auth-service
+    - database
+    - file-storage
+  optionalProviders:
+    - cdn
+    - deployment-target
+    - analytics
+  configuration:
+    storage:
+      providers:
+        local: filesystem
+        aws: s3
+        firebase: cloud-storage
+    database:
+      tables:
+        - projects
+        - files
+        - permissions
+        - activities
+    security:
+      encryption: true
+      signedUrls: true
+      cors: enabled
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-frontend
+    - construct-development-mode
+  developmentMethod: manual
+  vibeCodingPercentage: 10
+  builtWith:
+    - platform-l1-project-file-explorer
+    - platform-l1-secure-auth-service
+    - platform-l1-encrypted-database
+    - platform-l1-cdn-storage
+  timeToCreate: 360
+  linesOfCode: 1000
+  testCoverage: 85
+  canBuildConstructs: false
+  platformFeatures:
+    - Complete project management
+    - File storage and versioning
+    - Team collaboration
+    - Permission management
+    - Deployment workflows

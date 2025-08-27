@@ -1,0 +1,44 @@
+{
+  "project": {
+    "root": "./frontend",
+    "testRunner": "vitest",
+    "testMatch": ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    "sourceMatch": ["src/**/*.{ts,tsx}"]
+  },
+  "phases": {
+    "red": {
+      "allowedOperations": ["write-test", "edit-test"],
+      "blockedPatterns": ["src/**/*.{ts,tsx}", "!src/**/*.test.{ts,tsx}", "!src/**/*.spec.{ts,tsx}"],
+      "message": "🔴 TDD Red Phase: Write a failing test first"
+    },
+    "green": {
+      "allowedOperations": ["write-implementation", "edit-implementation"],
+      "blockedPatterns": ["src/**/*.test.{ts,tsx}", "src/**/*.spec.{ts,tsx}"],
+      "message": "🟢 TDD Green Phase: Make the test pass with minimal code"
+    },
+    "refactor": {
+      "allowedOperations": ["refactor"],
+      "requirePassingTests": true,
+      "message": "🔵 TDD Refactor Phase: Improve code quality while keeping tests green"
+    }
+  },
+  "enforcement": {
+    "enabled": true,
+    "strictness": "medium",
+    "allowBypass": false,
+    "requireTestFirst": true,
+    "minTestCoverage": 80
+  },
+  "reporting": {
+    "outputPath": "./tdd-guard-reports",
+    "format": "json",
+    "includeMetrics": true,
+    "trackViolations": true
+  },
+  "ai": {
+    "provider": "claude-code-cli",
+    "validateChanges": true,
+    "suggestTests": true,
+    "autoGenerateStubs": false
+  }
+}

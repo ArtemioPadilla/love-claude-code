@@ -24,6 +24,11 @@ export interface AuthProvider {
   getCurrentUser(token: string): Promise<User | null>
   updateUser(userId: string, updates: Partial<User>): Promise<User>
   deleteUser(userId: string): Promise<void>
+  
+  // Optional lifecycle methods
+  initialize?(): Promise<void>
+  shutdown?(): Promise<void>
+  healthCheck?(): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }>
 }
 
 // Database interfaces
@@ -45,6 +50,11 @@ export interface DatabaseProvider {
   
   // Transactions
   transaction<T>(callback: (tx: Transaction) => Promise<T>): Promise<T>
+  
+  // Optional lifecycle methods
+  initialize?(): Promise<void>
+  shutdown?(): Promise<void>
+  healthCheck?(): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }>
 }
 
 export interface QueryOptions {
@@ -84,6 +94,11 @@ export interface StorageProvider {
   move(sourcePath: string, destinationPath: string): Promise<void>
   copy(sourcePath: string, destinationPath: string): Promise<void>
   getMetadata(path: string): Promise<FileInfo>
+  
+  // Optional lifecycle methods
+  initialize?(): Promise<void>
+  shutdown?(): Promise<void>
+  healthCheck?(): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }>
 }
 
 export interface FileMetadata {
@@ -119,6 +134,11 @@ export interface RealtimeProvider {
   // Presence
   trackPresence(channel: string, userId: string, metadata?: any): Promise<() => void>
   getPresence(channel: string): Promise<PresenceInfo[]>
+  
+  // Optional lifecycle methods
+  initialize?(): Promise<void>
+  shutdown?(): Promise<void>
+  healthCheck?(): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }>
 }
 
 export interface RealtimeConnection {
@@ -153,7 +173,7 @@ export interface FunctionDefinition {
   runtime?: string
   timeout?: number
   memory?: number
-  environment?: Record<string, string>
+  environmentVariables?: Record<string, string>
   createdAt?: Date
   updatedAt?: Date
 }
@@ -257,6 +277,11 @@ export interface DeploymentProvider {
   
   // Delete a deployment
   deleteDeployment(deploymentId: string): Promise<void>
+  
+  // Optional lifecycle methods
+  initialize?(): Promise<void>
+  shutdown?(): Promise<void>
+  healthCheck?(): Promise<{ status: 'healthy' | 'unhealthy'; details?: any }>
 }
 
 export interface PlatformDeployConfig {
@@ -289,7 +314,7 @@ export interface AppDeployConfig {
   build?: {
     command?: string
     outputDir?: string
-    environment?: Record<string, string>
+    environmentVariables?: Record<string, string>
   }
   runtime?: {
     engine?: 'nodejs' | 'python' | 'static'
@@ -304,7 +329,7 @@ export interface AppDeployConfig {
     custom?: string
     subdomain?: string
   }
-  environment?: Record<string, string>
+  environmentVariables?: Record<string, string>
 }
 
 export interface DeploymentResult {

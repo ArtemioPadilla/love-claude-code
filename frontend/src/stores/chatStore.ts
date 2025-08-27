@@ -3,6 +3,7 @@ import { api } from '@services/api'
 import { useEditorStore } from './editorStore'
 import { useSettingsStore } from './settingsStore'
 import { isElectron, checkOAuthStatus } from '@utils/electronDetection'
+import { performanceMonitor } from '@services/monitoring/performanceMonitor'
 
 interface Message {
   id: string
@@ -121,6 +122,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       timestamp: new Date(),
     }
 
+    const startTime = performance.now()
+    let responseStatus = 200
+    
     try {
       // Stream response
       await api.chatWithClaude(
@@ -148,6 +152,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
         assistantMessage.content = 'I apologize, but I encountered an issue generating a response. Please try again.'
       }
 
+      // Track successful API call performance
+      const duration = performance.now() - startTime
+      performanceMonitor.trackApiCall('/api/chat/claude', duration, responseStatus, {
+        messageLength: content.length,
+        responseLength: finalContent.length,
+        contextFiles: context.files?.length || 0,
+        model: settings.ai?.model || 'claude-3-5-sonnet'
+      })
+
       set({ 
         isLoading: false,
         streamingContent: ''
@@ -161,6 +174,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     } catch (error: any) {
       console.error('Failed to send message:', error)
+      
+      // Track failed API call performance
+      responseStatus = error.response?.status || 0
+      const duration = performance.now() - startTime
+      performanceMonitor.trackApiCall('/api/chat/claude', duration, responseStatus, {
+        messageLength: content.length,
+        error: error.message,
+        errorType: error.response?.data?.type || 'unknown',
+        model: settings.ai?.model || 'claude-3-5-sonnet'
+      })
       
       // Parse error response for better messages
       let errorMessage = 'I apologize, but I encountered an error. '

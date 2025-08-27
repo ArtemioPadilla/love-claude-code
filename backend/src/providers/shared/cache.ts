@@ -28,7 +28,7 @@ export class UnifiedCacheManager {
   constructor(config: CacheConfig = {}) {
     this.config = {
       provider: 'hybrid',
-      redisUrl: process.env.REDIS_URL,
+      redisUrl: process.env.REDIS_URL || 'redis://localhost:6379',
       maxMemorySize: 100 * 1024 * 1024, // 100MB
       defaultTTL: 300, // 5 minutes
       enableCompression: false,
@@ -218,16 +218,18 @@ export class UnifiedCacheManager {
     // Try Redis for missing keys
     if (missingKeys.length > 0 && this.redisClient?.isReady) {
       try {
-        const redisKeys = missingKeys.map(i => keys[i])
+        const redisKeys = missingKeys.map(i => keys[i]).filter(Boolean) as string[]
         const redisValues = await this.redisClient.mGet(redisKeys)
         
         redisValues.forEach((value, i) => {
           if (value) {
             const parsed = JSON.parse(value)
             const originalIndex = missingKeys[i]
-            results[originalIndex] = parsed
-            // Populate memory cache
-            this.lruCache.set(keys[originalIndex], parsed)
+            if (originalIndex !== undefined && keys[originalIndex]) {
+              results[originalIndex] = parsed
+              // Populate memory cache
+              this.lruCache.set(keys[originalIndex], parsed)
+            }
           }
         })
       } catch (error) {
@@ -350,7 +352,7 @@ export function cacheable(options: CacheOptions = {}) {
  * Cache invalidation decorator
  */
 export function invalidatesCache(patterns: string[]) {
-  return function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function(_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
     if (!descriptor || typeof descriptor.value !== 'function') {
       return descriptor
     }

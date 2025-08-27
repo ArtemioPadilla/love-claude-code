@@ -61,6 +61,33 @@ make dev`
     }
   ]
 
+  const newFeatures = [
+    {
+      icon: <Package className="w-6 h-6" />,
+      title: 'Desktop App',
+      description: 'Native desktop experience with system integration',
+      link: '#desktop-app'
+    },
+    {
+      icon: <Code2 className="w-6 h-6" />,
+      title: 'Construct Development',
+      description: 'Build reusable components with ConstructBuilder IDE',
+      link: '#construct-builder'
+    },
+    {
+      icon: <Settings className="w-6 h-6" />,
+      title: 'Visual Composer',
+      description: 'Create constructs visually with drag-and-drop',
+      link: '#visual-composer'
+    },
+    {
+      icon: <Cloud className="w-6 h-6" />,
+      title: 'Enterprise Features',
+      description: 'SSO, RBAC, audit logs, and compliance',
+      link: '#enterprise'
+    }
+  ]
+
   return (
     <div className="space-y-12">
       {/* Header */}
@@ -160,36 +187,94 @@ make dev`
         </div>
       </motion.div>
 
-      {/* Next Steps */}
+      {/* New Features */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.7 }}
+        className="space-y-6"
+      >
+        <h2 className="text-2xl font-semibold">What's New in Love Claude Code</h2>
+        <div className="grid md:grid-cols-2 gap-6">
+          {newFeatures.map((feature, index) => (
+            <motion.div
+              key={feature.title}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.1 * index }}
+              className="bg-gray-800 rounded-xl p-6 hover:bg-gray-750 transition-colors cursor-pointer"
+              onClick={() => window.location.hash = feature.link}
+            >
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-500/10 rounded-lg text-purple-400">
+                  {feature.icon}
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-2">{feature.title}</h3>
+                  <p className="text-gray-400 text-sm">{feature.description}</p>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Next Steps */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.8 }}
         className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 rounded-xl p-8 border border-blue-700"
       >
-        <h2 className="text-2xl font-semibold mb-4">Next Steps</h2>
-        <div className="space-y-3">
-          <p className="text-gray-300">
-            ✨ <strong>Create your first project:</strong> Click "Create New Project" and give it a name
-          </p>
-          <p className="text-gray-300">
-            💬 <strong>Chat with Claude:</strong> Describe what you want to build in natural language
-          </p>
-          <p className="text-gray-300">
-            🚀 <strong>Deploy your app:</strong> Choose a provider and deploy with one click
-          </p>
-          <p className="text-gray-300">
-            📚 <strong>Learn more:</strong> Check out our API documentation and provider guides
-          </p>
-          <p className="text-gray-300">
-            <Package className="w-4 h-4 inline mr-1" />
-            <strong>Browse Constructs:</strong>{' '}
-            <button
-              onClick={() => navigate('constructs')}
-              className="text-purple-400 hover:text-purple-300 underline transition-colors"
-            >
-              Explore our infrastructure construct catalog
-            </button>
+        <h2 className="text-2xl font-semibold mb-4">Your Learning Path</h2>
+        <div className="space-y-4">
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">1️⃣</span>
+            <div>
+              <strong className="text-gray-200">Start with a project:</strong>
+              <p className="text-gray-400 text-sm mt-1">Create your first project and explore the AI-powered editor</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">2️⃣</span>
+            <div>
+              <strong className="text-gray-200">Learn constructs:</strong>
+              <p className="text-gray-400 text-sm mt-1">
+                <button onClick={() => navigate('constructs')} className="text-purple-400 hover:text-purple-300 underline">
+                  Browse the construct catalog
+                </button> to understand the building blocks
+              </p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">3️⃣</span>
+            <div>
+              <strong className="text-gray-200">Build your own:</strong>
+              <p className="text-gray-400 text-sm mt-1">Use ConstructBuilder IDE to create reusable components</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">4️⃣</span>
+            <div>
+              <strong className="text-gray-200">Share with community:</strong>
+              <p className="text-gray-400 text-sm mt-1">Publish your constructs to the marketplace</p>
+            </div>
+          </div>
+          <div className="flex items-start gap-3">
+            <span className="text-2xl">5️⃣</span>
+            <div>
+              <strong className="text-gray-200">Scale with enterprise:</strong>
+              <p className="text-gray-400 text-sm mt-1">Deploy on-premise or use enterprise features for teams</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="mt-6 pt-6 border-t border-blue-600/50">
+          <p className="text-gray-300 text-sm">
+            <strong>Need help?</strong> Join our{' '}
+            <a href="#community" className="text-purple-400 hover:text-purple-300 underline">community forum</a>{' '}
+            or check the{' '}
+            <a href="#troubleshooting" className="text-purple-400 hover:text-purple-300 underline">troubleshooting guide</a>.
           </p>
         </div>
       </motion.div>

@@ -1,0 +1,180 @@
+id: mcp-server-pattern
+name: MCP Server Pattern
+level: L2
+category: pattern
+description: Production-ready MCP server with authentication, rate limiting, and encryption
+version: 1.0.0
+status: stable
+
+metadata:
+  author: Love Claude Code Team
+  license: MIT
+  documentation: https://docs.loveclaudecode.com/constructs/L2/mcp-server-pattern
+  examples: 
+    - https://github.com/love-claude-code/examples/mcp-server
+  
+capabilities:
+  - Unified MCP server management
+  - Multi-tenant support
+  - Plugin architecture
+  - Health monitoring
+  - Performance metrics
+  - Tool discovery and registration
+  - Automatic failover
+  - Configuration management
+
+configuration:
+  serverName:
+    type: string
+    required: true
+    description: Name of the MCP server instance
+  port:
+    type: number
+    required: true
+    default: 8080
+    description: Primary server port
+  enableAuth:
+    type: boolean
+    default: true
+    description: Enable authentication
+  enableRateLimit:
+    type: boolean
+    default: true
+    description: Enable rate limiting
+  enableEncryption:
+    type: boolean
+    default: true
+    description: Enable WebSocket encryption
+  maxConnections:
+    type: number
+    default: 100
+    description: Maximum concurrent connections
+  rateLimitWindow:
+    type: number
+    default: 60000
+    description: Rate limit window in milliseconds
+  rateLimitMaxRequests:
+    type: number
+    default: 100
+    description: Maximum requests per window
+  authProvider:
+    type: string
+    enum: [jwt, oauth, apikey]
+    default: jwt
+    description: Authentication provider type
+  pluginDirectory:
+    type: string
+    required: false
+    description: Directory containing MCP plugins
+
+dependencies:
+  - id: secure-mcp-server
+    level: L1
+    version: "^1.0.0"
+    type: composition
+  - id: authenticated-tool-registry
+    level: L1
+    version: "^1.0.0"
+    type: composition
+  - id: rate-limited-rpc
+    level: L1
+    version: "^1.0.0"
+    type: composition
+  - id: encrypted-websocket
+    level: L1
+    version: "^1.0.0"
+    type: composition
+
+interfaces:
+  exports:
+    - name: MCPServerPattern
+      type: React.Component
+      description: Main pattern component
+    - name: MCPServerPatternLogic
+      type: Class
+      description: Pattern logic implementation
+    
+  methods:
+    - name: initialize
+      description: Initialize all components and wire them together
+      async: true
+    - name: checkHealth
+      description: Check health of all components
+      async: true
+      returns: ComponentHealthStatus
+    - name: discoverTools
+      description: Discover all registered tools
+      async: true
+      returns: string[]
+    - name: registerTool
+      description: Register a new tool
+      async: true
+      parameters:
+        - name: string
+          type: string
+        - handler: Function
+    - name: getMetrics
+      description: Get current performance metrics
+      returns: PerformanceMetrics
+    - name: restart
+      description: Restart the server
+      async: true
+
+testing:
+  coverage: 92
+  frameworks:
+    - jest
+    - react-testing-library
+  testFiles:
+    - __tests__/MCPServerPattern.test.tsx
+
+examples:
+  - title: Basic MCP Server
+    code: |
+      const config: MCPServerConfig = {
+        serverName: 'my-mcp-server',
+        port: 8080,
+        enableAuth: true,
+        enableRateLimit: true,
+        enableEncryption: true
+      }
+      
+      <MCPServerPattern config={config} />
+  
+  - title: With Plugin Directory
+    code: |
+      const config: MCPServerConfig = {
+        serverName: 'plugin-server',
+        port: 9000,
+        enableAuth: true,
+        enableRateLimit: true,
+        enableEncryption: true,
+        pluginDirectory: './plugins',
+        authProvider: 'oauth'
+      }
+      
+      <MCPServerPattern 
+        config={config}
+        onConfigChange={(newConfig) => console.log('Config updated:', newConfig)}
+      />
+
+tags:
+  - mcp
+  - server
+  - pattern
+  - production
+  - multi-tenant
+  - plugin-architecture
+
+developmentGuidelines:
+  - Compose L1 constructs without modifying their internals
+  - Focus on orchestration and inter-component communication
+  - Provide unified configuration interface
+  - Implement comprehensive health monitoring
+  - Ensure graceful degradation when components fail
+  - Support hot-reloading of configuration
+  - Enable plugin architecture for extensibility
+
+developmentMethod: vibe-coded
+vibeCodedPercentage: 85
+testCoverage: 92

@@ -1,0 +1,58 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "name": "tdd-guard",
+        "description": "Enforce TDD principles before file operations",
+        "matcher": "Write|Edit|MultiEdit|TodoWrite",
+        "command": "tdd-guard",
+        "timeout": 5000,
+        "config": {
+          "enabled": true,
+          "testFramework": "vitest",
+          "watchPatterns": [
+            "frontend/src/**/*.ts",
+            "frontend/src/**/*.tsx",
+            "backend/src/**/*.ts"
+          ],
+          "excludePatterns": [
+            "node_modules/**",
+            "dist/**",
+            "coverage/**",
+            "**/*.test.ts",
+            "**/*.spec.ts"
+          ],
+          "strictness": "medium",
+          "allowRefactoring": true,
+          "phases": {
+            "red": {
+              "allowedFiles": ["**/*.test.ts", "**/*.spec.ts", "**/*.test.tsx"],
+              "message": "🔴 Red phase: Write failing tests first"
+            },
+            "green": {
+              "allowedFiles": ["**/*.ts", "**/*.tsx"],
+              "excludeFiles": ["**/*.test.ts", "**/*.spec.ts"],
+              "message": "🟢 Green phase: Make tests pass with minimal code"
+            },
+            "refactor": {
+              "allowedFiles": ["**/*.ts", "**/*.tsx"],
+              "message": "🔵 Refactor phase: Improve code quality"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "mcpServers": {
+    "playwright-automation": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-playwright"],
+      "env": {
+        "PLAYWRIGHT_HEADLESS": "false",
+        "PLAYWRIGHT_BROWSER": "chromium",
+        "PLAYWRIGHT_TIMEOUT": "30000"
+      },
+      "description": "Playwright browser automation for E2E testing"
+    }
+  }
+}

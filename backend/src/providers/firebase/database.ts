@@ -344,7 +344,7 @@ export class FirestoreProvider implements DatabaseProvider {
           const docRef = this.getCollection(op.table).doc(op.id)
           
           switch (op.operation) {
-            case 'create':
+            case 'create': {
               const now = new Date()
               batch.set(docRef, {
                 ...op.data,
@@ -353,6 +353,7 @@ export class FirestoreProvider implements DatabaseProvider {
                 updatedAt: now
               })
               break
+            }
               
             case 'update':
               batch.update(docRef, {

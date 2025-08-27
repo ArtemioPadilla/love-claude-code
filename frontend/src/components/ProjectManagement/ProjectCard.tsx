@@ -3,6 +3,7 @@ import { FiFolder, FiClock, FiTrash2, FiEdit3, FiMoreVertical, FiDownload } from
 import { useState } from 'react'
 import type { Project } from '@stores/projectStore'
 import { ProjectExport } from './ProjectExport'
+import { ConstructBadge } from './ConstructBadge'
 import { isElectron } from '@utils/electronDetection'
 
 interface ProjectCardProps {
@@ -99,7 +100,18 @@ export function ProjectCard({ project, onOpen, onEdit, onDelete }: ProjectCardPr
       </div>
       
       {/* Project Info */}
-      <h3 className="text-lg font-semibold mb-2">{project.name}</h3>
+      <div className="mb-2">
+        <h3 className="text-lg font-semibold">{project.name}</h3>
+        {project.isConstructProject && project.constructLevel && (
+          <div className="mt-2">
+            <ConstructBadge 
+              level={project.constructLevel} 
+              phase={project.constructMetadata?.phase}
+              size="small"
+            />
+          </div>
+        )}
+      </div>
       {project.description && (
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
           {project.description}

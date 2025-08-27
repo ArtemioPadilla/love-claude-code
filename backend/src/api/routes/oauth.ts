@@ -48,17 +48,17 @@ oauthRouter.post('/token', async (req, res) => {
     
     try {
       const data = JSON.parse(responseText)
-      res.json(data)
+      return res.json(data)
     } catch (e) {
       console.error('Failed to parse response:', responseText)
-      res.status(500).json({ 
+      return res.status(500).json({ 
         error: 'Invalid response from OAuth server',
         details: responseText 
       })
     }
   } catch (error) {
     console.error('OAuth proxy error:', error)
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'OAuth server error', 
       message: error instanceof Error ? error.message : 'Unknown error'
     })
@@ -105,17 +105,17 @@ oauthRouter.post('/refresh', async (req, res) => {
     
     try {
       const data = JSON.parse(responseText)
-      res.json(data)
+      return res.json(data)
     } catch (e) {
       console.error('Failed to parse response:', responseText)
-      res.status(500).json({ 
+      return res.status(500).json({ 
         error: 'Invalid response from OAuth server',
         details: responseText 
       })
     }
   } catch (error) {
     console.error('OAuth refresh error:', error)
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'OAuth server error', 
       message: error instanceof Error ? error.message : 'Unknown error'
     })
@@ -135,7 +135,7 @@ oauthRouter.post('/revoke', async (req, res) => {
     
     // Note: The revocation endpoint for OAuth tokens is not publicly documented
     // This is a best-effort attempt based on OAuth 2.0 standards
-    const response = await fetch('https://console.anthropic.com/oauth/revoke', {
+    await fetch('https://console.anthropic.com/oauth/revoke', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -150,10 +150,10 @@ oauthRouter.post('/revoke', async (req, res) => {
     
     // Even if revocation fails on the server side, we return success
     // The client should clear local tokens regardless
-    res.json({ success: true })
+    return res.json({ success: true })
   } catch (error) {
     console.error('OAuth revoke error:', error)
     // Still return success - client should clear tokens
-    res.json({ success: true })
+    return res.json({ success: true })
   }
 })

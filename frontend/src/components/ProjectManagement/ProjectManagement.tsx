@@ -4,32 +4,48 @@ import { FiX, FiFolder, FiCode } from 'react-icons/fi'
 import { ProjectList } from './ProjectList'
 import { ProjectSettingsModal } from './ProjectSettingsModal'
 import { TemplateSelector } from './TemplateSelector'
-import { useProjectStore } from '@stores/projectStore'
+import { ConstructLevelSelector } from './ConstructLevelSelector'
+import { useProjectStore } from '../../stores/projectStore'
+import { useEditorStore } from '../../stores/editorStore'
 import { ProjectTemplate } from '../../templates/projectTemplates'
+import { ConstructLevel } from '../../constructs/types'
+import { getConstructTemplatesByLevel, generateConstructProjectFiles } from '../../templates/constructTemplates'
 import Footer from '../Layout/Footer'
 import { useNavigate } from '../Navigation'
+import { ConstructCreationWizard, WizardData } from '../ConstructCreationWizard'
 
 interface CreateProjectModalProps {
   isOpen: boolean
   onClose: () => void
-  onCreate: (name: string, description: string, includeMCP: boolean, template?: ProjectTemplate | null) => void
+  onCreate: (name: string, description: string, includeMCP: boolean, template?: ProjectTemplate | null, constructLevel?: ConstructLevel) => void
+  onOpenWizard?: (level: ConstructLevel) => void
 }
 
-function CreateProjectModal({ isOpen, onClose, onCreate }: CreateProjectModalProps) {
+function CreateProjectModal({ isOpen, onClose, onCreate, onOpenWizard }: CreateProjectModalProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [includeMCP, setIncludeMCP] = useState(false)
   const [showTemplates, setShowTemplates] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplate | null>(null)
+  const [isConstructProject, setIsConstructProject] = useState(false)
+  const [selectedConstructLevel, setSelectedConstructLevel] = useState<ConstructLevel | null>(null)
+  const [showConstructLevels, setShowConstructLevels] = useState(false)
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (name.trim()) {
-      onCreate(name.trim(), description.trim(), includeMCP, selectedTemplate)
+      if (isConstructProject && !selectedConstructLevel) {
+        // Show construct level selector if not selected
+        setShowConstructLevels(true)
+        return
+      }
+      onCreate(name.trim(), description.trim(), includeMCP, selectedTemplate, selectedConstructLevel || undefined)
       setName('')
       setDescription('')
       setIncludeMCP(false)
       setSelectedTemplate(null)
+      setIsConstructProject(false)
+      setSelectedConstructLevel(null)
       onClose()
     }
   }
@@ -37,8 +53,37 @@ function CreateProjectModal({ isOpen, onClose, onCreate }: CreateProjectModalPro
   const handleTemplateSelect = (template: ProjectTemplate) => {
     setSelectedTemplate(template)
     setShowTemplates(false)
-    if (template.id !== 'blank' && !name) {
+    if (template.id === 'construct-development') {
+      setIsConstructProject(true)
+      setShowConstructLevels(true)
+      if (!name) {
+        setName('My Construct')
+      }
+    } else if (template.id !== 'blank' && !name) {
       setName(template.name)
+      setIsConstructProject(false)
+    }
+  }
+
+  const handleConstructLevelSelect = (level: ConstructLevel) => {
+    setSelectedConstructLevel(level)
+    setShowConstructLevels(false)
+    
+    // If wizard handler provided, use it. Otherwise continue with regular flow
+    if (onOpenWizard) {
+      onClose()
+      onOpenWizard(level)
+    } else {
+      // Update the name based on level if it's still default
+      if (name === 'My Construct' || !name) {
+        const levelNames = {
+          [ConstructLevel.L0]: 'My L0 Primitive',
+          [ConstructLevel.L1]: 'My L1 Configured Construct',
+          [ConstructLevel.L2]: 'My L2 Pattern',
+          [ConstructLevel.L3]: 'My L3 Application'
+        }
+        setName(levelNames[level])
+      }
     }
   }
 
@@ -51,6 +96,43 @@ function CreateProjectModal({ isOpen, onClose, onCreate }: CreateProjectModalPro
         onClose={() => setShowTemplates(false)}
         onSelectTemplate={handleTemplateSelect}
       />
+      
+      {/* Construct Level Selector Modal */}
+      {showConstructLevels && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4"
+          onClick={() => setShowConstructLevels(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-card border border-border rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold">Choose Construct Level</h2>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setShowConstructLevels(false)}
+                  className="p-2 rounded-md hover:bg-accent/50 transition-all"
+                >
+                  <FiX size={18} />
+                </motion.button>
+              </div>
+              <ConstructLevelSelector
+                selectedLevel={selectedConstructLevel}
+                onSelectLevel={handleConstructLevelSelect}
+              />
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
       <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -116,15 +198,34 @@ function CreateProjectModal({ isOpen, onClose, onCreate }: CreateProjectModalPro
             >
               <FiCode className="w-4 h-4" />
               {selectedTemplate ? (
-                <span>Template: {selectedTemplate.name}</span>
+                <span>
+                  Template: {selectedTemplate.name}
+                  {isConstructProject && selectedConstructLevel && ` (${selectedConstructLevel})`}
+                </span>
               ) : (
                 <span>Choose a Template (Optional)</span>
               )}
             </button>
             {selectedTemplate && selectedTemplate.id !== 'blank' && (
-              <p className="text-xs text-muted-foreground mt-2">
-                {selectedTemplate.description}
-              </p>
+              <div className="mt-2">
+                <p className="text-xs text-muted-foreground">
+                  {selectedTemplate.description}
+                </p>
+                {isConstructProject && selectedConstructLevel && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    className="mt-2 p-3 bg-accent/30 rounded-md"
+                  >
+                    <p className="text-xs font-medium mb-1">
+                      {selectedConstructLevel} Construct Selected
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      You'll be building a reusable {selectedConstructLevel} construct that can be shared across projects.
+                    </p>
+                  </motion.div>
+                )}
+              </div>
             )}
           </div>
           
@@ -182,20 +283,57 @@ export function ProjectManagement() {
     setCurrentProject,
     setCurrentView 
   } = useProjectStore()
+  const { createFile, setCurrentProject: setEditorProject } = useEditorStore()
   const navigate = useNavigate()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [editingProject, setEditingProject] = useState<string | null>(null)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [selectedProject, setSelectedProject] = useState<any>(null)
+  const [showConstructWizard, setShowConstructWizard] = useState(false)
+  const [wizardInitialLevel, setWizardInitialLevel] = useState<ConstructLevel | undefined>()
   
-  const handleCreateProject = (name: string, description: string, includeMCP: boolean, template?: ProjectTemplate | null) => {
-    const id = addProject({ 
-      name, 
-      description, 
+  const handleCreateProject = async (name: string, description: string, includeMCP: boolean, template?: ProjectTemplate | null, constructLevel?: ConstructLevel) => {
+    const projectData: any = {
+      name,
+      description,
       hasMCP: includeMCP,
-      template: template || undefined 
-    })
+      template: template || undefined
+    }
+    
+    // Add construct-specific metadata if it's a construct project
+    if (template?.id === 'construct-development' && constructLevel) {
+      projectData.isConstructProject = true
+      projectData.constructLevel = constructLevel
+      projectData.constructMetadata = {
+        level: constructLevel,
+        phase: 'specification',
+        specificationComplete: false,
+        testsGenerated: false,
+        implementationComplete: false
+      }
+    }
+    
+    const id = addProject(projectData)
     setCurrentProject(id)
+    
+    // If it's a construct project, generate and add the template files
+    if (template?.id === 'construct-development' && constructLevel) {
+      const files = generateConstructProjectFiles(constructLevel, name)
+      setEditorProject({ id, name, path: `/${name.toLowerCase().replace(/\s+/g, '-')}` })
+      
+      // Create files for the construct project
+      for (const file of files) {
+        await createFile(file.path.replace(/^\//, ''), file.content)
+      }
+    } else if (template && template.files && template.files.length > 0) {
+      // Handle regular template files
+      setEditorProject({ id, name, path: `/${name.toLowerCase().replace(/\s+/g, '-')}` })
+      
+      for (const file of template.files) {
+        await createFile(file.path.replace(/^\//, ''), file.content)
+      }
+    }
+    
     navigate('project', { id })
   }
   
@@ -216,6 +354,32 @@ export function ProjectManagement() {
     if (confirm('Are you sure you want to delete this project?')) {
       deleteProject(id)
     }
+  }
+  
+  const handleWizardComplete = (wizardData: WizardData) => {
+    // Create a new project from wizard data
+    const projectData: any = {
+      name: wizardData.name,
+      description: wizardData.description,
+      isConstructProject: true,
+      constructLevel: wizardData.level,
+      constructMetadata: {
+        level: wizardData.level,
+        phase: 'implementation',
+        specificationComplete: true,
+        testsGenerated: true,
+        implementationComplete: true,
+        ...wizardData.selfReferential
+      },
+      constructDefinition: {
+        ...wizardData,
+        id: `${wizardData.name.toLowerCase().replace(/\s+/g, '-')}-${Date.now()}`
+      }
+    }
+    
+    const id = addProject(projectData)
+    setCurrentProject(id)
+    navigate('project', { id })
   }
   
   return (
@@ -253,6 +417,10 @@ export function ProjectManagement() {
             isOpen={showCreateModal}
             onClose={() => setShowCreateModal(false)}
             onCreate={handleCreateProject}
+            onOpenWizard={(level) => {
+              setWizardInitialLevel(level)
+              setShowConstructWizard(true)
+            }}
           />
         )}
       </AnimatePresence>
@@ -273,6 +441,17 @@ export function ProjectManagement() {
           }}
         />
       )}
+      
+      {/* Construct Creation Wizard */}
+      <ConstructCreationWizard
+        isOpen={showConstructWizard}
+        onClose={() => {
+          setShowConstructWizard(false)
+          setWizardInitialLevel(undefined)
+        }}
+        onComplete={handleWizardComplete}
+        initialLevel={wizardInitialLevel}
+      />
     </div>
   )
 }

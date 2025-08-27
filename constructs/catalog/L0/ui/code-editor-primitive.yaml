@@ -1,0 +1,160 @@
+id: platform-l0-code-editor-primitive
+name: Code Editor Primitive
+level: L0
+version: 1.0.0
+description: Raw CodeMirror 6 editor instance with no features, themes, or security. The most basic text editor possible.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 30
+    builtWith: []
+
+categories:
+  - ui
+  - editor
+  - primitive
+
+tags:
+  - codemirror
+  - editor
+  - L0
+  - primitive
+  - text-editing
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  initialValue:
+    type: string
+    description: Initial text content of the editor
+    required: false
+    default: ""
+    
+  language:
+    type: string
+    description: Programming language for basic syntax highlighting
+    required: false
+    default: javascript
+    validation:
+      enum:
+        - javascript
+        - python
+        - plain
+        
+  readOnly:
+    type: boolean
+    description: Whether the editor is read-only
+    required: false
+    default: false
+
+outputs:
+  value:
+    type: string
+    description: Current content of the editor
+    
+  editorInstance:
+    type: object
+    description: Raw CodeMirror EditorView instance for direct manipulation
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/CodeEditorPrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: input-validation
+    description: No input validation at L0 level
+    severity: high
+    recommendations:
+      - Use L1 SecureCodeEditor for production applications
+      - L0 constructs have no security features by design
+      
+  - aspect: xss-protection
+    description: No XSS protection at primitive level
+    severity: high
+    recommendations:
+      - Never use L0 constructs directly in production
+      - Always wrap with L1 security features
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: CodeMirror 6
+  external: false
+  position:
+    x: 100
+    y: 100
+
+examples:
+  - title: Basic Editor
+    description: Create a simple JavaScript editor
+    language: typescript
+    code: |
+      import { CodeEditorPrimitive } from '@/constructs/L0/ui/CodeEditorPrimitive'
+      
+      const editor = new CodeEditorPrimitive()
+      await editor.initialize({
+        initialValue: 'console.log("Hello, World!")',
+        language: 'javascript'
+      })
+      
+      // Get the React component
+      const component = editor.render()
+      
+  - title: Read-Only Editor
+    description: Create a read-only code viewer
+    language: typescript
+    code: |
+      const viewer = new CodeEditorPrimitive()
+      await viewer.initialize({
+        initialValue: 'def hello():\n    print("Hello from Python!")',
+        language: 'python',
+        readOnly: true
+      })
+      
+  - title: Accessing Raw Instance
+    description: Get the CodeMirror instance for advanced usage
+    language: typescript
+    code: |
+      const editor = new CodeEditorPrimitive()
+      await editor.initialize({ language: 'javascript' })
+      
+      // Get outputs after render
+      const outputs = editor.getOutputs()
+      const cmInstance = outputs.editorInstance // Raw CodeMirror EditorView
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No themes, no advanced features - just basic text editing
+  - No error handling or validation
+  - Used as a building block for higher-level editor constructs
+  - Part of the Love Claude Code platform itself
+
+testing:
+  unit:
+    - Initializes with default values
+    - Accepts initial content
+    - Switches between languages
+    - Handles read-only mode
+    - Outputs current value
+    - Provides editor instance
+    
+  integration:
+    - Used by L1 SecureCodeEditor
+    - Used by L2 IDEWorkspace
+    - Part of L3 Love Claude Code Frontend

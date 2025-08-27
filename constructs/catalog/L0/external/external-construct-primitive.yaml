@@ -1,0 +1,146 @@
+id: platform-l0-external-construct-primitive
+name: External Construct Primitive
+level: L0
+type: Pattern
+description: Base wrapper for any external package with sandbox execution and resource monitoring
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - external
+  - integration
+  - wrapper
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - external
+  - primitive
+  - sandbox
+  - isolation
+  - monitoring
+  - resource-management
+
+inputs:
+  - name: packageName
+    type: string
+    description: Name of the external package
+    required: true
+  - name: version
+    type: string
+    description: Package version
+    required: false
+    defaultValue: latest
+  - name: config
+    type: object
+    description: Configuration for the external package
+    required: false
+    defaultValue: {}
+  - name: sandboxConfig
+    type: object
+    description: Sandbox configuration overrides
+    required: false
+    defaultValue: {}
+
+outputs:
+  - name: instance
+    type: object
+    description: Sandboxed instance of the external package
+  - name: monitor
+    type: object
+    description: Resource usage monitor with memory, CPU, and network metrics
+  - name: status
+    type: string
+    description: Current status (loading, ready, error)
+
+security:
+  - aspect: sandbox-isolation
+    description: External code runs in isolated sandbox environment
+    severity: high
+    recommendations:
+      - Configure appropriate resource limits
+      - Restrict network access to known domains
+      - Monitor resource usage continuously
+      - Use error boundaries to contain failures
+  - aspect: resource-limits
+    description: Enforces memory and CPU limits to prevent resource exhaustion
+    severity: medium
+    recommendations:
+      - Set appropriate limits based on package requirements
+      - Monitor for resource exhaustion
+      - Implement graceful degradation
+      - Alert on limit breaches
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: compute-time
+      unit: hours
+      costPerUnit: 0.0001
+      typicalUsage: 720
+
+c4:
+  type: Component
+  technology: Sandbox Container
+
+examples:
+  - title: Basic Usage
+    description: Wrap an external package with default sandbox settings
+    code: |
+      const external = new ExternalConstructPrimitive()
+      await external.initialize({
+        packageName: 'lodash',
+        version: '4.17.21',
+        config: { compact: true }
+      })
+      
+      const instance = external.getOutput('instance')
+      const result = await instance.execute('debounce', fn, 300)
+    language: typescript
+
+  - title: Custom Resource Limits
+    description: Configure custom sandbox resource limits
+    code: |
+      const external = new ExternalConstructPrimitive()
+      await external.initialize({
+        packageName: 'heavy-computation-lib',
+        sandboxConfig: {
+          memoryLimit: 1024, // 1GB
+          cpuLimit: 75,      // 75% CPU
+          timeoutMs: 60000,  // 1 minute
+          blockNetworkRequests: false,
+          allowedDomains: ['api.example.com']
+        }
+      })
+    language: typescript
+
+bestPractices:
+  - Always configure resource limits appropriately for the external package
+  - Monitor resource usage in production environments
+  - Use error boundaries to contain failures from external code
+  - Validate external package inputs and outputs
+  - Implement timeout handling for long-running operations
+  - Track performance metrics for optimization
+  - Use caching where appropriate to reduce redundant executions
+
+deployment:
+  requiredProviders: []
+  configSchema:
+    type: object
+    properties:
+      sandboxProvider:
+        type: string
+        enum: [docker, webworker, iframe]
+        default: webworker
+      resourceMonitoring:
+        type: boolean
+        default: true
+  environmentVariables: []
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith: []
+  timeToCreate: 45
+  canBuildConstructs: false

@@ -6,6 +6,7 @@ export function GeneralSettings() {
   const { settings, saveSettings } = useSettingsStore()
   const [appName, setAppName] = useState('Love Claude Code')
   const [theme, setTheme] = useState<'dark' | 'light' | 'system'>('dark')
+  const [language, setLanguage] = useState('en')
   const [autoSave, setAutoSave] = useState(true)
   const [autoSaveInterval, setAutoSaveInterval] = useState(30)
   const [isSaving, setIsSaving] = useState(false)
@@ -15,6 +16,7 @@ export function GeneralSettings() {
     if (settings.general) {
       setAppName(settings.general.appName || 'Love Claude Code')
       setTheme(settings.general.theme || 'dark')
+      setLanguage(settings.general.language || 'en')
       setAutoSave(settings.general.autoSave ?? true)
       setAutoSaveInterval(settings.general.autoSaveInterval || 30)
     }
@@ -29,6 +31,7 @@ export function GeneralSettings() {
         general: {
           appName,
           theme,
+          language,
           autoSave,
           autoSaveInterval,
         }
@@ -70,6 +73,31 @@ export function GeneralSettings() {
             />
             <p className="text-xs text-muted-foreground mt-2">
               Customize the application name shown in the header
+            </p>
+          </div>
+        </div>
+
+        {/* Language */}
+        <div className="space-y-4 border-b border-border pb-6">
+          <div>
+            <label htmlFor="language" className="block text-sm font-medium mb-2">
+              Language
+            </label>
+            <select
+              id="language"
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+              className="input max-w-md"
+            >
+              <option value="en">English</option>
+              <option value="es">Español</option>
+              <option value="fr">Français</option>
+              <option value="de">Deutsch</option>
+              <option value="ja">日本語</option>
+              <option value="zh">中文</option>
+            </select>
+            <p className="text-xs text-muted-foreground mt-2">
+              Choose your preferred interface language
             </p>
           </div>
         </div>

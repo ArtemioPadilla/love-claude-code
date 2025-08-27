@@ -12,36 +12,41 @@ interface C4LegendProps {
 export const C4Legend: React.FC<C4LegendProps> = ({ level }) => {
   const getLegendItems = () => {
     switch (level) {
-      case C4Level.CONTEXT:
+      case C4Level.CONTEXT: {
         return [
           { icon: <Users className="w-4 h-4" />, label: 'Person', color: 'bg-green-900/50 border-green-500' },
           { icon: <Package className="w-4 h-4" />, label: 'Software System', color: 'bg-blue-900/50 border-blue-500' },
           { icon: <Package className="w-4 h-4" />, label: 'External System', color: 'bg-orange-900/50 border-orange-500' }
         ]
+      }
       
-      case C4Level.CONTAINER:
+      case C4Level.CONTAINER: {
         return [
           { icon: <Globe className="w-4 h-4" />, label: 'Web Application', color: 'bg-indigo-900/50 border-indigo-500' },
           { icon: <Database className="w-4 h-4" />, label: 'Database', color: 'bg-indigo-900/50 border-indigo-500' },
           { icon: <Package className="w-4 h-4" />, label: 'Application', color: 'bg-indigo-900/50 border-indigo-500' },
           { icon: <Shield className="w-4 h-4" />, label: 'Security', color: 'bg-red-900/50 border-red-500' }
         ]
+      }
       
-      case C4Level.COMPONENT:
+      case C4Level.COMPONENT: {
         return [
           { icon: <Layers className="w-4 h-4" />, label: 'Component', color: 'bg-purple-900/50 border-purple-500' },
           { icon: <Shield className="w-4 h-4" />, label: 'Security Component', color: 'bg-red-900/50 border-red-500' },
           { icon: <Database className="w-4 h-4" />, label: 'Data Component', color: 'bg-green-900/50 border-green-500' }
         ]
+      }
       
-      case C4Level.CODE:
+      case C4Level.CODE: {
         return [
           { icon: <Layers className="w-4 h-4" />, label: 'Class', color: 'bg-gray-700 border-gray-500' },
           { icon: <Layers className="w-4 h-4" />, label: 'Interface', color: 'bg-blue-900/50 border-blue-500' }
         ]
+      }
       
-      default:
+      default: {
         return []
+      }
     }
   }
   

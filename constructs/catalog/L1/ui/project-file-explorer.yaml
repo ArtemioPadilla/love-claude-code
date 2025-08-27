@@ -1,0 +1,471 @@
+id: platform-l1-project-file-explorer
+name: Project File Explorer
+level: L1
+version: 1.0.0
+description: Secure file explorer with CRUD operations, search, icons, and project management features. Built upon L0 FileTreePrimitive with enhanced functionality and security.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 90
+    builtWith: 
+      - platform-l0-file-tree-primitive
+
+categories:
+  - ui
+  - navigation
+  - file-system
+  - project-management
+
+tags:
+  - file-explorer
+  - crud
+  - search
+  - secure
+  - project
+  - drag-drop
+  - L1
+  - enhanced
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  projectId:
+    type: string
+    description: Current project ID
+    required: true
+    example: my-project-123
+    
+  nodes:
+    type: FileNode[]
+    description: Tree structure of files and folders
+    required: true
+    default: []
+    example:
+      - path: /src
+        name: src
+        type: folder
+        children:
+          - path: /src/index.js
+            name: index.js
+            type: file
+    
+  expandedPaths:
+    type: string[]
+    description: Array of expanded folder paths
+    required: false
+    default: []
+    example: ["/src", "/src/components"]
+    
+  selectedPath:
+    type: string
+    description: Currently selected file/folder path
+    required: false
+    example: /src/index.js
+    
+  enableSearch:
+    type: boolean
+    description: Enable file search functionality
+    required: false
+    default: true
+    example: true
+    
+  enableCRUD:
+    type: boolean
+    description: Enable create, rename, delete operations
+    required: false
+    default: true
+    example: true
+    
+  enableDragDrop:
+    type: boolean
+    description: Enable drag and drop file operations
+    required: false
+    default: true
+    example: false
+    
+  showHiddenFiles:
+    type: boolean
+    description: Show hidden files (starting with .)
+    required: false
+    default: false
+    example: true
+    
+  allowedFileTypes:
+    type: string[]
+    description: Allowed file extensions for creation
+    required: false
+    default: ["*"]
+    example: [".js", ".ts", ".tsx", ".json", ".md"]
+    
+  maxFileNameLength:
+    type: number
+    description: Maximum file name length
+    required: false
+    default: 255
+    example: 100
+    
+  readOnlyPaths:
+    type: string[]
+    description: Paths that cannot be modified
+    required: false
+    default: []
+    example: ["/node_modules", "/dist", "/.git"]
+    
+  theme:
+    type: string
+    description: Visual theme
+    required: false
+    default: light
+    validation:
+      enum: [light, dark]
+    example: dark
+
+outputs:
+  selectedFile:
+    type: FileNode | null
+    description: Currently selected file node
+    
+  fileCount:
+    type: number
+    description: Total number of files
+    
+  folderCount:
+    type: number
+    description: Total number of folders
+    
+  searchActive:
+    type: boolean
+    description: Whether search is active
+    
+  lastOperation:
+    type: FileOperation
+    description: Last performed file operation
+    
+  clipboardItem:
+    type: FileNode | null
+    description: Item in clipboard for copy/paste
+
+types:
+  FileNode:
+    description: File or folder node
+    properties:
+      path:
+        type: string
+        description: Full path to file/folder
+      name:
+        type: string
+        description: File/folder name
+      type:
+        type: string
+        enum: [file, folder]
+        description: Node type
+      children:
+        type: FileNode[]
+        description: Child nodes (folders only)
+      size:
+        type: number
+        description: File size in bytes
+      modified:
+        type: Date
+        description: Last modified date
+      created:
+        type: Date
+        description: Creation date
+        
+  FileOperation:
+    description: File operation record
+    properties:
+      type:
+        type: string
+        enum: [create, rename, delete, paste]
+        description: Operation type
+      path:
+        type: string
+        description: Target path
+      newPath:
+        type: string
+        description: New path (for rename/paste)
+      timestamp:
+        type: Date
+        description: When operation occurred
+      success:
+        type: boolean
+        description: Whether operation succeeded
+      error:
+        type: string
+        description: Error message if failed
+
+implementation:
+  ui: frontend/src/constructs/L1/ui/ProjectFileExplorer.tsx
+  
+dependencies:
+  - platform-l0-file-tree-primitive
+  - dompurify
+
+security:
+  - aspect: Path Validation
+    description: Validates file paths to prevent directory traversal
+    severity: critical
+    implementation: Path sanitization and validation
+    recommendations:
+      - Never allow .. or ~ in paths
+      - Validate all paths server-side
+      - Use absolute paths internally
+      
+  - aspect: File Type Restrictions
+    description: Restricts file types that can be created
+    severity: high
+    implementation: Extension whitelist validation
+    recommendations:
+      - Define allowed extensions explicitly
+      - Block executable extensions
+      - Validate MIME types server-side
+      
+  - aspect: XSS Protection
+    description: Sanitizes file names to prevent XSS
+    severity: high
+    implementation: DOMPurify for file name sanitization
+    recommendations:
+      - Sanitize all user input
+      - Escape file names in display
+      - Validate characters server-side
+      
+  - aspect: Access Control
+    description: Enforces read-only paths
+    severity: medium
+    implementation: Path-based permission checking
+    recommendations:
+      - Define system paths as read-only
+      - Implement user-based permissions
+      - Audit file operations
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - File operations depend on backend storage
+    - Search is performed client-side
+
+c4:
+  type: Component
+  technology: React + File System API
+  external: false
+  position:
+    x: 400
+    y: 300
+
+examples:
+  - title: Basic File Explorer
+    description: Simple project file browser
+    language: typescript
+    code: |
+      import { ProjectFileExplorer } from '@/constructs/L1/ui/ProjectFileExplorer'
+      
+      const explorer = new ProjectFileExplorer()
+      await explorer.initialize({
+        projectId: 'my-project',
+        nodes: fileTreeData,
+        enableCRUD: true
+      })
+      
+      // Handle file selection
+      explorer.on('fileSelected', (file) => {
+        console.log('Opening:', file.path)
+        openFileInEditor(file.path)
+      })
+      
+      // Render
+      <div className="sidebar">
+        {explorer.render()}
+      </div>
+      
+  - title: Secure Configuration
+    description: Restricted file operations
+    language: typescript
+    code: |
+      const explorer = new ProjectFileExplorer()
+      await explorer.initialize({
+        projectId: 'secure-project',
+        nodes: fileTree,
+        allowedFileTypes: ['.js', '.ts', '.json', '.md'],
+        readOnlyPaths: [
+          '/node_modules',
+          '/.git',
+          '/dist',
+          '/build'
+        ],
+        maxFileNameLength: 100,
+        showHiddenFiles: false
+      })
+      
+      // Only allowed files can be created
+      try {
+        await explorer.createFile('/src', 'hack.exe')
+      } catch (error) {
+        console.error('Blocked:', error.message)
+      }
+      
+  - title: With Search and Dark Theme
+    description: Enhanced file finding
+    language: typescript
+    code: |
+      const explorer = new ProjectFileExplorer()
+      await explorer.initialize({
+        projectId: 'my-project',
+        nodes: largeFileTree,
+        enableSearch: true,
+        theme: 'dark'
+      })
+      
+      // Search for files
+      explorer.on('searchCompleted', ({ results }) => {
+        console.log(`Found ${results.length} files`)
+        highlightSearchResults(results)
+      })
+      
+      // Programmatic search
+      const components = await explorer.searchFiles('component')
+      console.log('Component files:', components)
+      
+  - title: File Operations
+    description: CRUD operations with events
+    language: typescript
+    code: |
+      const explorer = new ProjectFileExplorer()
+      await explorer.initialize({
+        projectId: 'my-project',
+        nodes: fileTree,
+        enableCRUD: true
+      })
+      
+      // Create new file
+      const newFile = await explorer.createFile(
+        '/src/components',
+        'NewComponent.tsx'
+      )
+      
+      // Copy/paste operations
+      explorer.copyToClipboard(existingFile)
+      const pasted = await explorer.pasteFromClipboard('/src/utils')
+      
+      // Track all operations
+      explorer.on('fileCreated', logOperation)
+      explorer.on('itemRenamed', logOperation)
+      explorer.on('itemDeleted', logOperation)
+      
+      // Undo last operation
+      const lastOp = explorer.getOutput('lastOperation')
+      if (lastOp.type === 'delete') {
+        // Restore deleted file
+      }
+
+bestPractices:
+  - Always validate file paths before operations
+  - Implement proper error handling for all operations
+  - Use debouncing for search to improve performance
+  - Provide clear visual feedback for operations
+  - Handle large file trees with virtualization
+  - Implement undo/redo for critical operations
+  - Cache file tree data when possible
+  - Show loading states during async operations
+  - Validate file names on both client and server
+  - Use optimistic updates for better UX
+  - Implement keyboard shortcuts for power users
+  - Add confirmation dialogs for destructive actions
+  - Track and log all file operations
+  - Handle edge cases like duplicate names
+  - Test with very large file trees
+
+testing:
+  unit:
+    - Path validation and sanitization
+    - File name sanitization
+    - CRUD operations
+    - Search functionality
+    - Clipboard operations
+    - Security restrictions
+    - Event emissions
+    - Node counting
+    
+  integration:
+    - File tree rendering
+    - User interactions
+    - Context menu operations
+    - Drag and drop
+    - Theme switching
+    - Search UI
+    - Error handling
+
+performance:
+  - Search is O(n) where n is total nodes
+  - Rendering uses React reconciliation
+  - Large trees may need virtualization
+  - File operations are async
+  - Consider pagination for huge trees
+
+limitations:
+  - No server-side file watching
+  - Drag-drop not fully implemented
+  - No multi-select support
+  - No file preview
+  - No git integration
+  - Search is client-side only
+  - No folder size calculation
+
+migration:
+  from: platform-l0-file-tree-primitive
+  steps:
+    - Replace FileTreePrimitive with ProjectFileExplorer
+    - Add projectId parameter
+    - Configure security settings
+    - Add event handlers for operations
+    - Update UI to use enhanced features
+    - Test all file operations
+
+roadmap:
+  - Server-side file watching
+  - Full drag-drop implementation
+  - Multi-select operations
+  - File preview panel
+  - Git status integration
+  - Advanced search with filters
+  - Folder size calculation
+  - File history tracking
+  - Integration with L2 ProjectManagement
+  - Keyboard navigation
+  - Context menu customization
+  - File templates
+
+comparison:
+  vs_l0_file_tree:
+    added:
+      - CRUD operations
+      - File search
+      - Security validation
+      - Clipboard support
+      - File icons
+      - Context menus
+      - Theme support
+      - Hidden file toggle
+      - Operation tracking
+    removed:
+      - Nothing (full enhancement)
+    improved:
+      - Visual design
+      - User interaction
+      - Error handling
+      - Functionality
+
+<system-reminder>
+Whenever you write a YAML file, ensure it follows proper YAML syntax with correct indentation and structure. The file should be comprehensive and include all necessary information for developers to understand and use the construct.
+</system-reminder>

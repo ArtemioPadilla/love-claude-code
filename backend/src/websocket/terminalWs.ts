@@ -1,8 +1,22 @@
 import { WebSocketServer, WebSocket } from 'ws'
 import { Server } from 'http'
 import { terminalService } from '../services/terminal.js'
-import { verifyToken } from '../middleware/auth.js'
+import jwt from 'jsonwebtoken'
 import url from 'url'
+
+// Helper function to verify JWT tokens
+function verifyToken(token: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const secret = process.env.JWT_SECRET || 'development-secret-change-in-production'
+    jwt.verify(token, secret, (err: any, payload: any) => {
+      if (err) {
+        reject(err)
+      } else {
+        resolve(payload)
+      }
+    })
+  })
+}
 
 export function setupTerminalWebSocket(server: Server) {
   const wss = new WebSocketServer({ 
@@ -15,16 +29,20 @@ export function setupTerminalWebSocket(server: Server) {
     
     // Parse query parameters
     const query = url.parse(req.url || '', true).query
-    const token = query.token as string
+    const token = query.token as string | undefined
     
     // Verify authentication (optional for now)
-    // try {
-    //   await verifyToken(token)
-    // } catch (error) {
-    //   ws.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }))
-    //   ws.close()
-    //   return
-    // }
+    if (token) {
+      try {
+        await verifyToken(token)
+        console.log('WebSocket authentication successful')
+      } catch (error) {
+        console.error('WebSocket authentication failed:', error)
+        ws.send(JSON.stringify({ type: 'error', message: 'Unauthorized' }))
+        ws.close()
+        return
+      }
+    }
 
     let terminalId: string | null = null
 
@@ -58,9 +76,11 @@ export function setupTerminalWebSocket(server: Server) {
             
           case 'attach':
             // Attach to existing terminal
-            if (data.terminalId) {
+            if (data.terminalId && typeof data.terminalId === 'string') {
               terminalId = data.terminalId
-              terminalService.attachWebSocket(terminalId, ws)
+              if (terminalId) {
+                terminalService.attachWebSocket(terminalId, ws)
+              }
             }
             break
         }

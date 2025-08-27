@@ -94,9 +94,10 @@ export async function compareProviders(
       data: {
         comparison,
         summary,
-        recommendation: args.requirements && comparison.overview.length > 0 ? 
-          `Based on your requirements, ${comparison.overview[0].name} (score: ${comparison.overview[0].score?.toFixed(2) || 'N/A'}) is the best fit` :
-          'Provide project requirements for personalized recommendations'
+        recommendation: args.requirements && comparison.overview.length > 0 ? (() => {
+          const topProvider = comparison.overview[0]!
+          return `Based on your requirements, ${topProvider.name} (score: ${topProvider.score?.toFixed(2) || 'N/A'}) is the best fit`
+        })() : 'Provide project requirements for personalized recommendations'
       }
     }
   } catch (error) {
@@ -120,19 +121,21 @@ function buildFeatureComparison(providers: ProviderType[], focusFeatures?: strin
   const featuresToCompare = focusFeatures || allFeatures
   
   return featuresToCompare.map(feature => {
-    const [category, subFeature] = feature.split('.')
+    const featureParts = feature.split('.')
+    const category = featureParts[0]
+    const subFeature = featureParts[1]
     const comparison: any = { feature }
     
     providers.forEach(provider => {
       const cap = providerCapabilities[provider]
-      if (!cap) {
+      if (!cap || !category) {
         comparison[provider] = false
         return
       }
       
       const categoryFeatures = (cap.features as any)[category]
       
-      if (categoryFeatures) {
+      if (categoryFeatures && subFeature) {
         comparison[provider] = categoryFeatures[subFeature] || false
       } else {
         comparison[provider] = false
@@ -217,10 +220,10 @@ function generateComparisonSummary(comparison: any, requirements?: ProjectRequir
   const featureWinners: Record<string, number> = {}
   providers.forEach((p: any) => featureWinners[p.provider] = 0)
   
-  comparison.features.forEach((feature: any) => {
+  comparison.features?.forEach((feature: any) => {
     providers.forEach((p: any) => {
-      if (feature[p.provider] === true) {
-        featureWinners[p.provider]++
+      if (p?.provider && feature?.[p.provider] === true) {
+        featureWinners[p.provider] = (featureWinners[p.provider] || 0) + 1
       }
     })
   })

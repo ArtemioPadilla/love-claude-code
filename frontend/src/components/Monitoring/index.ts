@@ -1,0 +1,5 @@
+export { MetricsDashboard } from './MetricsDashboard'
+export { performanceMonitor } from '../../services/monitoring/performanceMonitor'
+export { usePerformanceStore } from '../../stores/performanceStore'
+export type { PerformanceMetric, ResourceMetrics } from '../../services/monitoring/performanceMonitor'
+export type { Alert, PerformanceThreshold, AggregateMetrics } from '../../stores/performanceStore'

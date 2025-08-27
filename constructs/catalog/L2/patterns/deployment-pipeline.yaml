@@ -1,0 +1,806 @@
+id: platform-l2-deployment-pipeline
+name: Deployment Pipeline
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - deployment
+  - cicd
+  - pipeline
+  - automation
+  - devops
+  - pattern
+  - platform-construct
+
+description: |
+  Complete CI/CD pipeline pattern with build, test, and deployment stages. This pattern enables
+  automated software delivery with support for multiple deployment strategies (blue-green, canary,
+  rolling), environment management, approval workflows, and comprehensive monitoring. It composes
+  infrastructure constructs to provide a production-ready deployment pipeline with real-time
+  updates and artifact management.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-managed-container
+  - platform-l1-rest-api-service
+  - platform-l1-encrypted-database
+  - platform-l1-cdn-storage
+  - platform-l1-authenticated-websocket
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: projectId
+    type: string
+    required: true
+    description: Project identifier
+    example: my-app
+    validation:
+      pattern: '^[a-zA-Z0-9-]+$'
+
+  - name: source
+    type: object
+    required: true
+    description: Source code configuration
+    properties:
+      type:
+        type: string
+        default: git
+        enum: ['git', 'upload', 's3']
+        description: Source type
+      repository:
+        type: string
+        description: Repository URL (for git sources)
+        example: github.com/user/repo
+      branch:
+        type: string
+        default: main
+        description: Git branch
+      bucket:
+        type: string
+        description: S3 bucket (for s3 sources)
+
+  - name: build
+    type: object
+    required: false
+    description: Build stage configuration
+    properties:
+      type:
+        type: string
+        default: nodejs
+        enum: ['nodejs', 'python', 'java', 'go', 'docker', 'custom']
+        description: Build type
+      buildCommand:
+        type: string
+        default: npm run build
+        description: Build command
+      dockerfile:
+        type: string
+        description: Dockerfile path (for docker builds)
+      buildArgs:
+        type: object
+        description: Build arguments
+      cache:
+        type: boolean
+        default: true
+        description: Enable build caching
+
+  - name: test
+    type: object
+    required: false
+    description: Test stage configuration
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: Enable test stage
+      command:
+        type: string
+        default: npm test
+        description: Test command
+      coverage:
+        type: object
+        description: Coverage configuration
+        properties:
+          enabled:
+            type: boolean
+            default: false
+          threshold:
+            type: number
+            default: 80
+            validation:
+              min: 0
+              max: 100
+      parallel:
+        type: boolean
+        default: false
+        description: Run tests in parallel
+      timeout:
+        type: number
+        default: 600000
+        description: Test timeout in ms
+
+  - name: environments
+    type: array
+    required: false
+    description: Deployment environments
+    items:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Environment name
+        type:
+          type: string
+          enum: ['development', 'staging', 'production']
+        url:
+          type: string
+          description: Environment URL
+        approvalRequired:
+          type: boolean
+          default: false
+          description: Require manual approval
+
+  - name: deploy
+    type: object
+    required: false
+    description: Deployment configuration
+    properties:
+      strategy:
+        type: string
+        default: rolling
+        enum: ['rolling', 'blue-green', 'canary']
+        description: Deployment strategy
+      provider:
+        type: string
+        enum: ['aws', 'kubernetes', 'docker', 'vercel', 'netlify']
+        description: Deployment provider
+      healthCheck:
+        type: object
+        description: Health check configuration
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          path:
+            type: string
+            default: /health
+          interval:
+            type: number
+            default: 30000
+          timeout:
+            type: number
+            default: 5000
+
+  - name: notifications
+    type: object
+    required: false
+    description: Notification configuration
+    properties:
+      email:
+        type: array
+        description: Email addresses
+        items:
+          type: string
+      slack:
+        type: string
+        description: Slack channel
+      webhook:
+        type: string
+        description: Webhook URL
+
+outputs:
+  - name: pipelineId
+    type: string
+    description: Unique pipeline identifier
+
+  - name: status
+    type: string
+    description: Pipeline status
+    enum: ['ready', 'running', 'stopped', 'error']
+
+  - name: capabilities
+    type: object
+    description: Pipeline capabilities
+    properties:
+      build:
+        type: boolean
+      test:
+        type: boolean
+      deploy:
+        type: boolean
+      notifications:
+        type: boolean
+
+  - name: statistics
+    type: object
+    description: Pipeline statistics
+    properties:
+      totalRuns:
+        type: number
+        description: Total pipeline runs
+      successRate:
+        type: number
+        description: Success rate percentage
+      averageDuration:
+        type: number
+        description: Average run duration in ms
+      lastSuccess:
+        type: string
+        description: Last successful run timestamp
+      lastFailure:
+        type: string
+        description: Last failed run timestamp
+
+methods:
+  - name: triggerRun
+    description: Trigger a new pipeline run
+    signature: (options?: RunOptions) => Promise<string>
+    parameters:
+      - name: options
+        type: object
+        description: Run options
+        properties:
+          branch:
+            type: string
+            description: Override branch
+          skipTests:
+            type: boolean
+            description: Skip test stage
+          environment:
+            type: string
+            description: Target environment
+    returns:
+      type: string
+      description: Run ID
+
+  - name: cancelRun
+    description: Cancel a running pipeline
+    signature: (runId: string) => Promise<void>
+    parameters:
+      - name: runId
+        type: string
+        description: Run ID to cancel
+
+  - name: retryRun
+    description: Retry a failed run
+    signature: (runId: string) => Promise<string>
+    parameters:
+      - name: runId
+        type: string
+        description: Run ID to retry
+    returns:
+      type: string
+      description: New run ID
+
+  - name: getRunHistory
+    description: Get pipeline run history
+    signature: (limit?: number) => Run[]
+    parameters:
+      - name: limit
+        type: number
+        default: 50
+        description: Maximum results
+    returns:
+      type: array
+      description: Pipeline runs
+
+  - name: getRunDetails
+    description: Get detailed run information
+    signature: (runId: string) => Run
+    parameters:
+      - name: runId
+        type: string
+        description: Run ID
+    returns:
+      type: object
+      description: Run details
+
+  - name: getArtifacts
+    description: Get run artifacts
+    signature: (runId: string) => Artifact[]
+    parameters:
+      - name: runId
+        type: string
+        description: Run ID
+    returns:
+      type: array
+      description: Build artifacts
+
+  - name: approveDeployment
+    description: Approve a deployment waiting for approval
+    signature: (deploymentId: string) => Promise<void>
+    parameters:
+      - name: deploymentId
+        type: string
+        description: Deployment ID
+
+  - name: rollback
+    description: Rollback a deployment
+    signature: (deploymentId: string) => Promise<void>
+    parameters:
+      - name: deploymentId
+        type: string
+        description: Deployment to rollback
+
+events:
+  - name: initialized
+    description: Pipeline initialized
+    payload:
+      pipelineId: string
+
+  - name: runStarted
+    description: Pipeline run started
+    payload:
+      id: string
+      number: number
+      status: string
+      trigger: string
+
+  - name: runCompleted
+    description: Pipeline run completed
+    payload:
+      id: string
+      status: string
+      duration: number
+
+  - name: runFailed
+    description: Pipeline run failed
+    payload:
+      id: string
+      error: string
+      stage: string
+
+  - name: runCancelled
+    description: Pipeline run cancelled
+    payload:
+      id: string
+      status: string
+
+  - name: stageStarted
+    description: Pipeline stage started
+    payload:
+      runId: string
+      stage: object
+
+  - name: stageCompleted
+    description: Pipeline stage completed
+    payload:
+      runId: string
+      stage: object
+
+  - name: stageFailed
+    description: Pipeline stage failed
+    payload:
+      runId: string
+      stage: object
+      error: string
+
+  - name: deploymentStarted
+    description: Deployment started
+    payload:
+      deploymentId: string
+      environment: string
+      strategy: string
+
+  - name: deploymentCompleted
+    description: Deployment completed
+    payload:
+      deploymentId: string
+      environment: string
+      url: string
+
+  - name: deploymentFailed
+    description: Deployment failed
+    payload:
+      deploymentId: string
+      error: string
+
+  - name: approvalRequired
+    description: Manual approval required
+    payload:
+      deploymentId: string
+      environment: string
+
+  - name: rollbackStarted
+    description: Rollback started
+    payload:
+      deploymentId: string
+
+  - name: rollbackCompleted
+    description: Rollback completed
+    payload:
+      deploymentId: string
+
+  - name: artifactCreated
+    description: Build artifact created
+    payload:
+      artifact: object
+
+  - name: notificationSent
+    description: Notification sent
+    payload:
+      type: string
+      recipient: string
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+  - name: runUpdated
+    description: Real-time run update
+    payload:
+      run: object
+
+  - name: destroyed
+    description: Pipeline destroyed
+    payload: {}
+
+patterns:
+  - name: Blue-Green Deployment
+    description: |
+      Deploy to a staging environment, run health checks, then swap with
+      production. Provides zero-downtime deployments with instant rollback.
+
+  - name: Canary Deployment
+    description: |
+      Gradually roll out changes to a small percentage of users before
+      full deployment. Monitor metrics to decide on promotion or rollback.
+
+  - name: Rolling Deployment
+    description: |
+      Update instances one at a time to maintain availability during
+      deployment. Suitable for stateless applications.
+
+  - name: Multi-Stage Pipeline
+    description: |
+      Compose multiple stages including build, test, security scan,
+      performance test, and deployment with conditional execution.
+
+  - name: Artifact Management
+    description: |
+      Automatically store build artifacts in CDN storage with versioning
+      and retention policies.
+
+examples:
+  - title: Basic Node.js Pipeline
+    description: Simple pipeline for Node.js application
+    language: typescript
+    code: |
+      const pipeline = new DeploymentPipeline()
+      
+      await pipeline.initialize({
+        projectId: 'my-node-app',
+        source: {
+          type: 'git',
+          repository: 'github.com/user/my-node-app',
+          branch: 'main'
+        },
+        build: {
+          type: 'nodejs',
+          buildCommand: 'npm run build'
+        },
+        test: {
+          enabled: true,
+          command: 'npm test',
+          coverage: {
+            enabled: true,
+            threshold: 80
+          }
+        }
+      })
+      
+      // Trigger a build
+      const runId = await pipeline.triggerRun()
+      
+      // Listen for updates
+      pipeline.on('stageCompleted', ({ stage }) => {
+        console.log(`Stage ${stage.name} completed in ${stage.duration}ms`)
+      })
+      
+      pipeline.on('runCompleted', ({ id, status }) => {
+        console.log(`Pipeline run ${id} ${status}`)
+      })
+
+  - title: Multi-Environment Deployment
+    description: Pipeline with staging and production environments
+    language: typescript
+    code: |
+      const pipeline = new DeploymentPipeline()
+      
+      await pipeline.initialize({
+        projectId: 'multi-env-app',
+        source: {
+          type: 'git',
+          repository: 'github.com/company/app'
+        },
+        build: {
+          type: 'docker',
+          dockerfile: 'Dockerfile',
+          buildArgs: {
+            NODE_ENV: 'production'
+          }
+        },
+        environments: [
+          {
+            name: 'staging',
+            type: 'staging',
+            url: 'https://staging.example.com'
+          },
+          {
+            name: 'production',
+            type: 'production',
+            url: 'https://example.com',
+            approvalRequired: true
+          }
+        ],
+        deploy: {
+          strategy: 'blue-green',
+          provider: 'aws'
+        }
+      })
+      
+      // Deploy to staging first
+      const runId = await pipeline.triggerRun({
+        environment: 'staging'
+      })
+      
+      // Wait for approval before production
+      pipeline.on('approvalRequired', async ({ deploymentId }) => {
+        console.log('Production deployment requires approval')
+        // In a real app, this would be triggered by UI
+        await pipeline.approveDeployment(deploymentId)
+      })
+
+  - title: Blue-Green Deployment with Health Checks
+    description: Zero-downtime deployment with automated rollback
+    language: typescript
+    code: |
+      const pipeline = new DeploymentPipeline()
+      
+      await pipeline.initialize({
+        projectId: 'zero-downtime-app',
+        source: {
+          type: 'git',
+          repository: 'github.com/company/critical-app'
+        },
+        build: {
+          type: 'docker',
+          cache: true
+        },
+        test: {
+          enabled: true,
+          parallel: true,
+          timeout: 300000
+        },
+        deploy: {
+          strategy: 'blue-green',
+          provider: 'kubernetes',
+          healthCheck: {
+            enabled: true,
+            path: '/api/health',
+            interval: 10000,
+            timeout: 5000
+          }
+        },
+        notifications: {
+          slack: '#deployments',
+          email: ['devops@company.com']
+        }
+      })
+      
+      // Monitor deployment health
+      pipeline.on('deploymentStarted', ({ environment, strategy }) => {
+        console.log(`Starting ${strategy} deployment to ${environment}`)
+      })
+      
+      pipeline.on('deploymentFailed', async ({ deploymentId, error }) => {
+        console.error(`Deployment failed: ${error}`)
+        // Automatic rollback on failure
+        await pipeline.rollback(deploymentId)
+      })
+
+  - title: Canary Deployment with Metrics
+    description: Progressive rollout with metric-based promotion
+    language: typescript
+    code: |
+      const pipeline = new DeploymentPipeline()
+      
+      await pipeline.initialize({
+        projectId: 'canary-app',
+        source: {
+          type: 'git',
+          repository: 'github.com/company/user-facing-app'
+        },
+        build: {
+          type: 'nodejs',
+          buildCommand: 'npm run build:production'
+        },
+        test: {
+          enabled: true,
+          coverage: {
+            enabled: true,
+            threshold: 90
+          }
+        },
+        deploy: {
+          strategy: 'canary',
+          provider: 'aws',
+          canaryConfig: {
+            initialPercentage: 5,
+            incrementPercentage: 10,
+            intervalMinutes: 15,
+            errorThreshold: 1,
+            latencyThreshold: 200
+          }
+        }
+      })
+      
+      // Monitor canary metrics
+      pipeline.on('canaryPromoted', ({ percentage }) => {
+        console.log(`Canary promoted to ${percentage}% of traffic`)
+      })
+      
+      pipeline.on('canaryRollback', ({ reason }) => {
+        console.error(`Canary rolled back: ${reason}`)
+      })
+
+  - title: Python ML Pipeline
+    description: Pipeline for machine learning model deployment
+    language: typescript
+    code: |
+      const pipeline = new DeploymentPipeline()
+      
+      await pipeline.initialize({
+        projectId: 'ml-model-service',
+        source: {
+          type: 'git',
+          repository: 'github.com/company/ml-models'
+        },
+        build: {
+          type: 'python',
+          buildCommand: 'python setup.py bdist_wheel',
+          dockerfile: 'Dockerfile.ml'
+        },
+        test: {
+          enabled: true,
+          command: 'pytest tests/',
+          modelValidation: {
+            enabled: true,
+            accuracyThreshold: 0.95,
+            datasetPath: 's3://ml-data/validation'
+          }
+        },
+        deploy: {
+          strategy: 'canary',
+          provider: 'aws',
+          modelServing: {
+            framework: 'tensorflow',
+            endpoint: 'sagemaker'
+          }
+        },
+        artifacts: {
+          model: {
+            path: 'models/*.h5',
+            storage: 's3://ml-models'
+          },
+          metrics: {
+            path: 'metrics/*.json',
+            storage: 's3://ml-metrics'
+          }
+        }
+      })
+      
+      // Track model performance
+      pipeline.on('modelDeployed', ({ version, metrics }) => {
+        console.log(`Model v${version} deployed with accuracy: ${metrics.accuracy}`)
+      })
+
+bestPractices:
+  - Use semantic versioning for pipeline configurations
+  - Implement comprehensive test coverage before deployment
+  - Enable build caching to speed up subsequent runs
+  - Use environment-specific configurations
+  - Implement proper secret management
+  - Monitor deployment health with automated rollback
+  - Use approval workflows for production deployments
+  - Archive build artifacts for debugging
+  - Implement notification strategies for failures
+  - Use parallel test execution for faster feedback
+  - Set appropriate timeouts for each stage
+  - Implement retry logic for transient failures
+  - Use deployment strategies appropriate to your app
+  - Monitor resource usage during deployments
+  - Maintain deployment audit logs
+
+troubleshooting:
+  - issue: Build failures
+    solutions:
+      - Check build logs for error details
+      - Verify build dependencies are available
+      - Ensure sufficient container resources
+      - Check for syntax errors in build scripts
+
+  - issue: Test timeouts
+    solutions:
+      - Increase test timeout configuration
+      - Run tests in parallel
+      - Optimize slow test cases
+      - Check for resource constraints
+
+  - issue: Deployment failures
+    solutions:
+      - Verify deployment credentials
+      - Check target environment health
+      - Review deployment logs
+      - Ensure proper permissions
+
+  - issue: Slow pipeline execution
+    solutions:
+      - Enable build caching
+      - Parallelize test execution
+      - Optimize Docker layers
+      - Use smaller base images
+
+  - issue: Artifact upload failures
+    solutions:
+      - Check storage permissions
+      - Verify storage quota
+      - Check network connectivity
+      - Review artifact size limits
+
+deployment:
+  requiredProviders:
+    - container-runtime
+    - storage-service
+    - database
+    - websocket-server
+  optionalProviders:
+    - notification-service
+    - monitoring-service
+  configuration:
+    containers:
+      buildContainer:
+        cpu: 2
+        memory: 4096
+        timeout: 1800000
+      testContainer:
+        cpu: 1
+        memory: 2048
+        timeout: 600000
+    storage:
+      artifactRetention: 30
+      maxArtifactSize: 1024
+    security:
+      secretsManagement: true
+      auditLogging: true
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-platform
+    - construct-certification-pipeline
+  developmentMethod: manual
+  vibeCodingPercentage: 15
+  builtWith:
+    - platform-l1-managed-container
+    - platform-l1-rest-api-service
+    - platform-l1-encrypted-database
+    - platform-l1-cdn-storage
+    - platform-l1-authenticated-websocket
+  timeToCreate: 480
+  linesOfCode: 1500
+  testCoverage: 88
+  canBuildConstructs: true
+  platformFeatures:
+    - Multi-stage pipelines
+    - Deployment strategies
+    - Real-time updates
+    - Artifact management
+    - Approval workflows

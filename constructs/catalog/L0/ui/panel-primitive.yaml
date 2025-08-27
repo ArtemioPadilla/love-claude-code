@@ -1,0 +1,218 @@
+id: platform-l0-panel-primitive
+name: Panel Primitive
+level: L0
+version: 1.0.0
+description: Raw panel container with no styling, borders, or visual features. Just a div with optional title and content.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 15
+    builtWith: []
+
+categories:
+  - ui
+  - layout
+  - container
+  - primitive
+
+tags:
+  - panel
+  - container
+  - section
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  title:
+    type: string
+    description: Optional panel title text
+    required: false
+    example: "User Settings"
+    
+  content:
+    type: React.ReactNode
+    description: Panel content (string or React elements)
+    required: true
+    example: |
+      "Simple text content"
+      // or
+      <div>
+        <p>Complex content</p>
+        <button>Action</button>
+      </div>
+    
+  width:
+    type: string
+    description: Panel width (any valid CSS value)
+    required: false
+    default: "100%"
+    example: "300px"
+    
+  height:
+    type: string
+    description: Panel height (any valid CSS value)
+    required: false
+    default: "auto"
+    example: "500px"
+
+outputs:
+  panelElement:
+    type: HTMLElement
+    description: The main panel container DOM element
+    
+  titleElement:
+    type: HTMLElement | null
+    description: The title DOM element (null if no title provided)
+    
+  contentElement:
+    type: HTMLElement
+    description: The content container DOM element
+    
+  dimensions:
+    type: object
+    description: Current panel dimensions
+    properties:
+      width: string
+      height: string
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/PanelPrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: content-injection
+    description: No content sanitization at L0 level
+    severity: medium
+    recommendations:
+      - Use L1 SecurePanel for production applications
+      - Sanitize user-provided content before display
+      
+  - aspect: overflow-control
+    description: Basic overflow handling only
+    severity: low
+    recommendations:
+      - Consider content constraints in L1
+      - Add proper scrolling behavior for production
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 700
+    y: 100
+
+examples:
+  - title: Simple Panel
+    description: Basic panel with text content
+    language: typescript
+    code: |
+      import { PanelPrimitive } from '@/constructs/L0/ui/PanelPrimitive'
+      
+      const panel = new PanelPrimitive()
+      await panel.initialize({
+        content: 'This is a simple panel with text content.'
+      })
+      
+      // Get the React component
+      const component = panel.render()
+      
+  - title: Panel with Title
+    description: Panel with title section
+    language: typescript
+    code: |
+      const panel = new PanelPrimitive()
+      await panel.initialize({
+        title: 'User Profile',
+        content: (
+          <div>
+            <p>Name: John Doe</p>
+            <p>Email: john@example.com</p>
+          </div>
+        )
+      })
+      
+  - title: Sized Panel
+    description: Panel with specific dimensions
+    language: typescript
+    code: |
+      const panel = new PanelPrimitive()
+      await panel.initialize({
+        title: 'Sidebar',
+        content: 'Sidebar content',
+        width: '250px',
+        height: '100vh'
+      })
+      
+      // Get current dimensions
+      const dims = panel.getDimensions()
+      console.log(dims) // { width: '250px', height: '100vh' }
+      
+  - title: Scrollable Panel
+    description: Panel with scrollable content
+    language: typescript
+    code: |
+      const panel = new PanelPrimitive()
+      await panel.initialize({
+        content: (
+          <div>
+            {Array.from({ length: 100 }, (_, i) => (
+              <p key={i}>Line {i + 1}</p>
+            ))}
+          </div>
+        ),
+        height: '300px' // Content will scroll within this height
+      })
+
+methods:
+  getDimensions:
+    description: Get the current panel dimensions
+    parameters: []
+    returns:
+      type: object
+      properties:
+        width: string
+        height: string
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No visual styling (borders, shadows, backgrounds)
+  - No collapsible or resizable features
+  - Basic overflow scrolling only
+  - Used as a building block for higher-level panel constructs
+  - Part of the Love Claude Code platform itself
+  - Keep structure minimal and semantic
+
+testing:
+  unit:
+    - Renders content correctly
+    - Displays title when provided
+    - Applies width and height styles
+    - Sets output references
+    - Handles React node content
+    - Updates dimensions output
+    - Handles missing title gracefully
+    
+  integration:
+    - Used by L1 StyledPanel
+    - Used by L2 DashboardLayout
+    - Part of L3 Love Claude Code UI

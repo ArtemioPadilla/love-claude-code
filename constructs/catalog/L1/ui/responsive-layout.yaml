@@ -1,0 +1,474 @@
+id: platform-l1-responsive-layout
+name: Responsive Layout
+level: L1
+version: 1.0.0
+description: Flexible layout system with resizable panels, responsive breakpoints, and persistence. Built with Split.js for smooth resizing.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 60
+    builtWith: 
+      - platform-l0-panel-primitive
+
+categories:
+  - ui
+  - layout
+  - responsive
+
+tags:
+  - layout
+  - responsive
+  - resizable
+  - split.js
+  - panels
+  - adaptive
+  - L1
+  - enhanced
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  panels:
+    type: PanelConfig[]
+    description: Array of panel configurations
+    required: true
+    example:
+      - id: sidebar
+        content: "<Sidebar />"
+        collapsible: true
+      - id: main
+        content: "<MainContent />"
+      - id: terminal
+        content: "<Terminal />"
+        minSize: 150
+    
+  direction:
+    type: string
+    description: Split direction - horizontal or vertical
+    required: false
+    default: horizontal
+    validation:
+      enum: [horizontal, vertical]
+    example: horizontal
+    
+  minSizes:
+    type: number[]
+    description: Minimum sizes for each panel in pixels
+    required: false
+    default: [100, 100]
+    example: [200, 400, 150]
+    
+  sizes:
+    type: number[]
+    description: Initial sizes as percentages
+    required: false
+    default: [50, 50]
+    example: [20, 60, 20]
+    
+  gutterSize:
+    type: number
+    description: Size of the gutter between panels
+    required: false
+    default: 8
+    example: 12
+    
+  snapOffset:
+    type: number
+    description: Snap to edges within this offset
+    required: false
+    default: 30
+    example: 50
+    
+  breakpoints:
+    type: BreakpointConfig[]
+    description: Responsive breakpoint configurations
+    required: false
+    default: []
+    example:
+      - name: mobile
+        maxWidth: 768
+        direction: vertical
+        sizes: [30, 70]
+      - name: tablet
+        maxWidth: 1024
+        sizes: [25, 75]
+    
+  persistLayout:
+    type: boolean
+    description: Persist layout sizes to localStorage
+    required: false
+    default: true
+    example: true
+    
+  layoutId:
+    type: string
+    description: Unique ID for persisting layout
+    required: false
+    default: default-layout
+    example: ide-layout
+    
+  theme:
+    type: string
+    description: Layout theme
+    required: false
+    default: default
+    validation:
+      enum: [default, minimal, bordered, shadowed]
+    example: bordered
+    
+  onSizeChange:
+    type: function
+    description: Callback when panel sizes change
+    required: false
+    example: (sizes) => console.log('New sizes:', sizes)
+    
+  onBreakpointChange:
+    type: function
+    description: Callback when breakpoint changes
+    required: false
+    example: (name, config) => console.log('Breakpoint:', name)
+
+outputs:
+  currentSizes:
+    type: number[]
+    description: Current panel sizes as percentages
+    
+  currentBreakpoint:
+    type: string
+    description: Currently active breakpoint
+    
+  isCollapsed:
+    type: boolean[]
+    description: Collapsed state of each panel
+    
+  containerWidth:
+    type: number
+    description: Container width in pixels
+    
+  containerHeight:
+    type: number
+    description: Container height in pixels
+
+types:
+  PanelConfig:
+    description: Configuration for a single panel
+    properties:
+      id:
+        type: string
+        description: Unique panel identifier
+      content:
+        type: ReactNode
+        description: Panel content
+      className:
+        type: string
+        description: CSS class name
+      minSize:
+        type: number
+        description: Minimum panel size
+      maxSize:
+        type: number
+        description: Maximum panel size
+      collapsible:
+        type: boolean
+        description: Can panel be collapsed
+        
+  BreakpointConfig:
+    description: Responsive breakpoint settings
+    properties:
+      name:
+        type: string
+        description: Breakpoint name
+      maxWidth:
+        type: number
+        description: Maximum width for breakpoint
+      minWidth:
+        type: number
+        description: Minimum width for breakpoint
+      direction:
+        type: string
+        enum: [horizontal, vertical]
+        description: Layout direction at breakpoint
+      sizes:
+        type: number[]
+        description: Panel sizes at breakpoint
+      hidePanels:
+        type: string[]
+        description: Panel IDs to hide at breakpoint
+
+implementation:
+  ui: frontend/src/constructs/L1/ui/ResponsiveLayout.tsx
+  
+dependencies:
+  - platform-l0-panel-primitive
+  - split.js
+
+security:
+  - aspect: Layout Persistence
+    description: Validates localStorage data to prevent injection
+    severity: low
+    implementation: JSON schema validation for persisted layouts
+    recommendations:
+      - Validate persisted data structure
+      - Sanitize panel IDs
+      - Implement storage quota limits
+      
+  - aspect: Content Isolation
+    description: Panels are isolated from each other
+    severity: low
+    implementation: Separate React contexts per panel
+    recommendations:
+      - Use iframe for untrusted content
+      - Implement CSP for panel content
+      - Validate panel configurations
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Split.js is MIT licensed
+    - Client-side only implementation
+
+c4:
+  type: Component
+  technology: React + Split.js
+  external: false
+  position:
+    x: 600
+    y: 300
+
+examples:
+  - title: Basic Two-Panel Layout
+    description: Simple horizontal split layout
+    language: typescript
+    code: |
+      import { ResponsiveLayout } from '@/constructs/L1/ui/ResponsiveLayout'
+      
+      const layout = new ResponsiveLayout()
+      await layout.initialize({
+        panels: [
+          { id: 'sidebar', content: <Sidebar /> },
+          { id: 'main', content: <MainContent /> }
+        ],
+        sizes: [30, 70],
+        minSizes: [200, 400]
+      })
+      
+      // Render
+      <div className="app-layout">
+        {layout.render()}
+      </div>
+      
+  - title: IDE Layout with Breakpoints
+    description: Complex responsive IDE layout
+    language: typescript
+    code: |
+      const layout = new ResponsiveLayout()
+      await layout.initialize({
+        panels: [
+          { 
+            id: 'explorer', 
+            content: <FileExplorer />,
+            collapsible: true 
+          },
+          { 
+            id: 'editor', 
+            content: <CodeEditor /> 
+          },
+          { 
+            id: 'terminal', 
+            content: <Terminal />,
+            collapsible: true 
+          }
+        ],
+        direction: 'horizontal',
+        sizes: [20, 60, 20],
+        minSizes: [150, 300, 100],
+        breakpoints: [
+          {
+            name: 'mobile',
+            maxWidth: 768,
+            direction: 'vertical',
+            sizes: [0, 70, 30], // Hide explorer on mobile
+            hidePanels: ['explorer']
+          },
+          {
+            name: 'tablet',
+            maxWidth: 1024,
+            sizes: [25, 50, 25]
+          }
+        ],
+        persistLayout: true,
+        layoutId: 'ide-layout',
+        theme: 'bordered',
+        onSizeChange: (sizes) => {
+          console.log('Layout changed:', sizes)
+        }
+      })
+      
+      // Programmatic control
+      layout.collapsePanel(0) // Collapse explorer
+      layout.expandPanel(0)   // Expand explorer
+      layout.resetLayout()    // Reset to defaults
+      
+  - title: Dashboard Layout
+    description: Multi-panel dashboard with persistence
+    language: typescript
+    code: |
+      const dashboard = new ResponsiveLayout()
+      await dashboard.initialize({
+        panels: [
+          { id: 'nav', content: <Navigation /> },
+          { id: 'metrics', content: <MetricsPanel /> },
+          { id: 'charts', content: <ChartsPanel /> },
+          { id: 'logs', content: <LogsPanel /> }
+        ],
+        direction: 'horizontal',
+        sizes: [15, 35, 35, 15],
+        minSizes: [100, 200, 200, 100],
+        gutterSize: 10,
+        snapOffset: 40,
+        persistLayout: true,
+        layoutId: 'dashboard-v1',
+        theme: 'shadowed'
+      })
+      
+      // Listen for breakpoint changes
+      dashboard.on('breakpointChange', ({ name, config }) => {
+        if (name === 'mobile') {
+          // Adjust UI for mobile
+        }
+      })
+      
+  - title: Vertical Split with Collapsible Panels
+    description: Vertical layout with collapsible sections
+    language: typescript
+    code: |
+      const layout = new ResponsiveLayout()
+      await layout.initialize({
+        panels: [
+          { 
+            id: 'header',
+            content: <Header />,
+            maxSize: 200
+          },
+          { 
+            id: 'content',
+            content: <Content />
+          },
+          { 
+            id: 'footer',
+            content: <Footer />,
+            collapsible: true,
+            minSize: 50,
+            maxSize: 300
+          }
+        ],
+        direction: 'vertical',
+        sizes: [20, 60, 20],
+        theme: 'minimal',
+        onSizeChange: (sizes) => {
+          // Update content based on available space
+          updateContentLayout(sizes[1])
+        }
+      })
+
+bestPractices:
+  - Set appropriate minimum sizes for panels
+  - Use breakpoints for mobile responsiveness
+  - Persist layouts for user preference
+  - Handle panel collapse/expand gracefully
+  - Test with different screen sizes
+  - Consider keyboard navigation
+  - Provide visual feedback for resize handles
+  - Optimize panel content for different sizes
+  - Use throttling for resize events
+  - Implement proper cleanup on unmount
+  - Consider accessibility for screen readers
+  - Test with touch devices
+  - Handle edge cases (single panel, empty panels)
+  - Validate panel configurations
+  - Use consistent gutter sizes
+
+testing:
+  unit:
+    - Panel rendering and configuration
+    - Split.js initialization
+    - Size change handling
+    - Breakpoint detection
+    - Layout persistence
+    - Panel collapse/expand
+    - Theme application
+    - Event emissions
+    
+  integration:
+    - Resize behavior
+    - Responsive breakpoints
+    - localStorage persistence
+    - Keyboard navigation
+    - Touch interactions
+    - Cross-browser compatibility
+
+performance:
+  - Split.js is lightweight (~2KB gzipped)
+  - ResizeObserver for efficient size detection
+  - Throttled resize events
+  - Minimal re-renders on size change
+  - localStorage caching for instant restoration
+
+limitations:
+  - Cannot change split direction without recreation
+  - Limited to horizontal/vertical splits (no nested)
+  - Browser localStorage limits (5MB typical)
+  - No built-in drag-and-drop between panels
+  - Gutter customization is limited
+
+migration:
+  from: platform-l0-panel-primitive
+  steps:
+    - Replace PanelPrimitive with ResponsiveLayout
+    - Configure panels array with content
+    - Add Split.js configuration
+    - Set up breakpoints if needed
+    - Enable persistence with layoutId
+    - Update event handlers
+
+roadmap:
+  - Nested split layouts
+  - Drag-and-drop panel rearrangement
+  - Advanced gutter customization
+  - Floating panel support
+  - Tab groups within panels
+  - Animation on collapse/expand
+  - Touch gesture support
+  - Accessibility improvements
+  - Server-side layout persistence
+  - Layout templates/presets
+
+comparison:
+  vs_l0_panel:
+    added:
+      - Split.js resizing
+      - Responsive breakpoints
+      - Layout persistence
+      - Panel collapse/expand
+      - Multiple themes
+      - Size change callbacks
+      - Snap to edges
+      - Gutter customization
+    removed:
+      - Nothing (full enhancement)
+    improved:
+      - User interaction
+      - Flexibility
+      - Responsiveness
+      - Persistence

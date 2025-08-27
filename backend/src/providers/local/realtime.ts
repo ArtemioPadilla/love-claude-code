@@ -107,7 +107,7 @@ export class LocalRealtimeProvider implements RealtimeProvider {
   
   private extractUserId(url: string): string | null {
     const match = url.match(/userId=([^&]+)/)
-    return match ? match[1] : null
+    return match ? (match[1] || null) : null
   }
   
   private handleMessage(connectionId: string, message: any): void {

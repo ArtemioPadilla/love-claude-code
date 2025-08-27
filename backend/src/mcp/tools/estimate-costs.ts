@@ -46,7 +46,7 @@ export async function estimateCosts(
           cheapest: costEstimates[0],
           mostExpensive: costEstimates[costEstimates.length - 1],
           recommendation: `For ${args.requirements.expectedUsers} users and ${args.requirements.dataVolume} of data, ` +
-            `${costEstimates[0].provider} would be the most cost-effective at $${costEstimates[0].pricing.estimated.monthly}/month`
+            `${costEstimates[0]?.provider || 'unknown'} would be the most cost-effective at $${costEstimates[0]?.pricing.estimated.monthly || 0}/month`
         }
       }
     }

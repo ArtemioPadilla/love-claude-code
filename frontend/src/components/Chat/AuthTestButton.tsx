@@ -17,9 +17,10 @@ export function AuthTestButton() {
       const models = await api.getClaudeModels()
       setIsConnected(true)
       console.log('Auth test successful, models:', models)
-    } catch (err: any) {
+    } catch (err) {
       setIsConnected(false)
-      const errorMessage = err.response?.data?.message || err.message || 'Connection failed'
+      const error = err as Error & { response?: { data?: { message?: string } } }
+      const errorMessage = error.response?.data?.message || error.message || 'Connection failed'
       setError(errorMessage)
       console.error('Auth test failed:', err)
     } finally {

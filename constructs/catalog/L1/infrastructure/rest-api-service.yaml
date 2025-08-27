@@ -1,0 +1,1053 @@
+id: platform-l1-rest-api-service
+name: REST API Service
+level: L1
+version: 1.0.0
+author: Love Claude Code
+category: infrastructure
+tags:
+  - rest
+  - api
+  - cors
+  - rate-limit
+  - authentication
+  - validation
+  - managed
+  - platform-construct
+
+description: |
+  Production-ready REST API service with comprehensive features including CORS configuration,
+  rate limiting, JWT authentication, request validation, response caching, error handling,
+  and detailed logging. Built upon the L0 API Endpoint Primitive, this L1 construct provides
+  enterprise-grade API capabilities out of the box.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: baseUrl
+    type: string
+    required: true
+    description: Base URL for the API service
+    example: https://api.example.com
+    validation:
+      pattern: '^https?://[\w.-]+(:[0-9]+)?$'
+
+  - name: version
+    type: string
+    required: false
+    default: v1
+    description: API version prefix
+    example: v1
+
+  - name: endpoints
+    type: array
+    required: true
+    description: Array of endpoint definitions
+    itemType:
+      type: object
+      properties:
+        path:
+          type: string
+          description: Endpoint path (e.g., /users/:id)
+          required: true
+        method:
+          type: string
+          description: HTTP method
+          required: true
+          enum: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD']
+        handler:
+          type: function
+          description: Request handler function
+          required: true
+          signature: (req: Request) => Promise<Response>
+        schema:
+          type: object
+          description: Request validation schema
+          properties:
+            query:
+              type: object
+              description: Query parameter schema
+            body:
+              type: object
+              description: Request body schema
+            params:
+              type: object
+              description: URL parameter schema
+            headers:
+              type: object
+              description: Header schema
+        auth:
+          type: object
+          description: Authentication requirements
+          properties:
+            required:
+              type: boolean
+              default: true
+            roles:
+              type: array
+              itemType: string
+              description: Required roles
+        rateLimit:
+          type: object
+          description: Endpoint-specific rate limit
+        cache:
+          type: object
+          description: Caching configuration
+          properties:
+            ttl:
+              type: number
+              description: Cache TTL in seconds
+
+  - name: corsConfig
+    type: object
+    required: false
+    description: CORS configuration
+    default:
+      enabled: true
+      origins: ['*']
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+      headers: ['Content-Type', 'Authorization']
+      credentials: true
+      maxAge: 86400
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      origins:
+        type: array
+        itemType: string
+        description: Allowed origins (* for all)
+      methods:
+        type: array
+        itemType: string
+        description: Allowed HTTP methods
+      headers:
+        type: array
+        itemType: string
+        description: Allowed headers
+      credentials:
+        type: boolean
+        default: true
+        description: Allow credentials
+      maxAge:
+        type: number
+        default: 86400
+        description: Preflight cache duration in seconds
+
+  - name: rateLimitConfig
+    type: object
+    required: false
+    description: Rate limiting configuration
+    default:
+      enabled: true
+      windowMs: 900000
+      max: 100
+      message: 'Too many requests, please try again later'
+      standardHeaders: true
+      legacyHeaders: false
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      windowMs:
+        type: number
+        default: 900000
+        description: Time window in milliseconds
+      max:
+        type: number
+        default: 100
+        description: Max requests per window
+      message:
+        type: string
+        description: Error message when rate limited
+      standardHeaders:
+        type: boolean
+        default: true
+        description: Return rate limit headers
+      skipSuccessfulRequests:
+        type: boolean
+        default: false
+        description: Only count failed requests
+      keyGenerator:
+        type: function
+        description: Custom key generator function
+        signature: (req: Request) => string
+
+  - name: authConfig
+    type: object
+    required: false
+    description: Authentication configuration
+    default:
+      enabled: true
+      type: jwt
+      publicEndpoints: ['/health', '/status']
+      tokenHeader: Authorization
+      tokenPrefix: Bearer
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      type:
+        type: string
+        default: jwt
+        enum: ['jwt', 'apiKey', 'basic', 'oauth2']
+      publicEndpoints:
+        type: array
+        itemType: string
+        description: Endpoints that don't require auth
+      tokenHeader:
+        type: string
+        default: Authorization
+        description: Header containing token
+      tokenPrefix:
+        type: string
+        default: Bearer
+        description: Token prefix
+
+  - name: validationConfig
+    type: object
+    required: false
+    description: Request validation configuration
+    default:
+      enabled: true
+      strictMode: true
+      coerceTypes: true
+      removeAdditional: true
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      strictMode:
+        type: boolean
+        default: true
+        description: Strict validation mode
+      coerceTypes:
+        type: boolean
+        default: true
+        description: Automatically convert types
+      removeAdditional:
+        type: boolean
+        default: true
+        description: Remove extra properties
+
+  - name: cachingConfig
+    type: object
+    required: false
+    description: Response caching configuration
+    default:
+      enabled: false
+      ttl: 300
+      maxSize: 100
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      ttl:
+        type: number
+        default: 300
+        description: Default cache TTL in seconds
+      maxSize:
+        type: number
+        default: 100
+        description: Maximum cache entries
+
+  - name: loggingConfig
+    type: object
+    required: false
+    description: Request/response logging
+    default:
+      enabled: true
+      level: info
+      includeHeaders: false
+      includeBody: false
+      maskSensitive: true
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      level:
+        type: string
+        default: info
+        enum: ['debug', 'info', 'warn', 'error']
+      includeHeaders:
+        type: boolean
+        default: false
+        description: Log request/response headers
+      includeBody:
+        type: boolean
+        default: false
+        description: Log request/response body
+      maskSensitive:
+        type: boolean
+        default: true
+        description: Mask sensitive data
+
+  - name: errorHandling
+    type: object
+    required: false
+    description: Error handling configuration
+    default:
+      includeStack: false
+      customErrors: {}
+      fallbackMessage: 'An error occurred'
+    properties:
+      includeStack:
+        type: boolean
+        default: false
+        description: Include stack traces (dev only)
+      customErrors:
+        type: object
+        description: Custom error messages by code
+      fallbackMessage:
+        type: string
+        default: 'An error occurred'
+
+  - name: middleware
+    type: array
+    required: false
+    description: Custom middleware functions
+    itemType:
+      type: function
+      signature: (req: Request, res: Response, next: Function) => void
+
+  - name: headers
+    type: object
+    required: false
+    description: Default headers for all responses
+    default:
+      X-API-Version: v1
+      X-Powered-By: 'Love Claude Code'
+
+  - name: timeout
+    type: number
+    required: false
+    default: 30000
+    description: Request timeout in milliseconds
+    validation:
+      min: 1000
+      max: 300000
+
+  - name: retryConfig
+    type: object
+    required: false
+    description: Request retry configuration
+    default:
+      enabled: true
+      maxRetries: 3
+      retryDelay: 1000
+      retryableStatuses: [502, 503, 504]
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      maxRetries:
+        type: number
+        default: 3
+        validation:
+          min: 0
+          max: 10
+      retryDelay:
+        type: number
+        default: 1000
+        description: Delay between retries in ms
+      retryableStatuses:
+        type: array
+        itemType: number
+        description: HTTP status codes to retry
+
+outputs:
+  - name: serviceId
+    type: string
+    description: Unique service identifier
+
+  - name: status
+    type: string
+    description: Current service status
+    enum: ['stopped', 'starting', 'running', 'stopping', 'error']
+
+  - name: endpoints
+    type: array
+    description: Registered endpoint information
+    itemType:
+      type: object
+      properties:
+        id:
+          type: string
+        method:
+          type: string
+        path:
+          type: string
+        fullPath:
+          type: string
+        fullUrl:
+          type: string
+        authenticated:
+          type: boolean
+        metrics:
+          type: object
+
+  - name: metrics
+    type: object
+    description: API performance metrics
+    properties:
+      totalRequests:
+        type: number
+      successfulRequests:
+        type: number
+      failedRequests:
+        type: number
+      averageResponseTime:
+        type: number
+      requestsPerMinute:
+        type: number
+      activeConnections:
+        type: number
+      bandwidthUsed:
+        type: number
+
+  - name: health
+    type: object
+    description: Service health status
+    properties:
+      status:
+        type: string
+        enum: ['healthy', 'unhealthy', 'unknown']
+      lastCheck:
+        type: Date
+      services:
+        type: object
+
+  - name: rateLimitStatus
+    type: object
+    description: Current rate limit status
+    properties:
+      limited:
+        type: boolean
+      limit:
+        type: number
+      remaining:
+        type: number
+      resetTime:
+        type: Date
+
+methods:
+  - name: stop
+    description: Stop the API service
+    signature: () => Promise<void>
+
+  - name: getRateLimitStatus
+    description: Get rate limit status for a key
+    signature: (key?: string) => RateLimitStatus
+    parameters:
+      - name: key
+        type: string
+        description: Rate limit key (e.g., IP or user ID)
+    returns:
+      type: object
+      description: Rate limit status information
+
+events:
+  - name: started
+    description: Service started successfully
+    payload:
+      serviceId: string
+
+  - name: stopped
+    description: Service stopped
+    payload:
+      serviceId: string
+
+  - name: error
+    description: Request error occurred
+    payload:
+      path: string
+      method: string
+      error: string
+      status: number
+
+  - name: rateLimited
+    description: Rate limit exceeded
+    payload:
+      key: string
+      limit: number
+      remaining: number
+      resetTime: Date
+
+  - name: authFailed
+    description: Authentication failed
+    payload:
+      path: string
+      reason: string
+
+  - name: healthChange
+    description: Health status changed
+    payload: HealthStatus
+
+  - name: metrics
+    description: Metrics updated
+    payload: APIMetrics
+
+  - name: log
+    description: Log entry created
+    payload:
+      timestamp: Date
+      level: string
+      message: string
+      data: any
+
+security:
+  - aspect: Authentication
+    description: JWT-based API authentication with role support
+    implementation: |
+      - Token validation on every request
+      - Configurable public endpoints
+      - Role-based access control
+      - Token expiry checking
+      - Secure token storage practices
+
+  - aspect: Rate Limiting
+    description: Protection against API abuse and DDoS
+    implementation: |
+      - IP-based rate limiting by default
+      - Custom key generation support
+      - Redis backend for distributed systems
+      - Per-endpoint rate limits
+      - Standard rate limit headers
+
+  - aspect: Input Validation
+    description: Comprehensive request validation and sanitization
+    implementation: |
+      - JSON schema validation
+      - Type coercion and checking
+      - SQL injection prevention
+      - XSS protection
+      - Path traversal prevention
+
+  - aspect: CORS
+    description: Configurable cross-origin resource sharing
+    implementation: |
+      - Flexible origin configuration
+      - Credential support
+      - Preflight caching
+      - Method and header filtering
+
+cost:
+  baseCost: 0
+  usage:
+    - name: requests
+      unit: 1M requests
+      costPerUnit: 0.20
+      description: API requests processed
+    - name: bandwidth
+      unit: GB
+      costPerUnit: 0.09
+      description: Data transfer
+    - name: compute
+      unit: hours
+      costPerUnit: 0.05
+      description: Compute time
+
+examples:
+  - title: Basic CRUD API
+    description: Simple user management API with authentication
+    language: typescript
+    code: |
+      const api = new RestAPIService()
+      
+      await api.initialize({
+        baseUrl: 'https://api.example.com',
+        version: 'v1',
+        endpoints: [
+          // Public endpoint
+          {
+            path: '/health',
+            method: 'GET',
+            handler: async () => ({
+              status: 200,
+              data: { status: 'ok', timestamp: new Date() }
+            }),
+            auth: { required: false }
+          },
+          
+          // List users (authenticated)
+          {
+            path: '/users',
+            method: 'GET',
+            handler: async (req) => {
+              const { limit = 10, offset = 0 } = req.query
+              const users = await db.getUsers({ limit, offset })
+              return {
+                status: 200,
+                data: {
+                  users,
+                  total: await db.getUserCount(),
+                  limit,
+                  offset
+                }
+              }
+            },
+            schema: {
+              query: {
+                limit: { type: 'number', min: 1, max: 100 },
+                offset: { type: 'number', min: 0 }
+              }
+            },
+            cache: { ttl: 60 } // Cache for 1 minute
+          },
+          
+          // Get single user
+          {
+            path: '/users/:id',
+            method: 'GET',
+            handler: async (req) => {
+              const user = await db.getUser(req.params.id)
+              if (!user) {
+                return { status: 404, error: 'User not found' }
+              }
+              return { status: 200, data: user }
+            },
+            schema: {
+              params: {
+                id: { type: 'string', pattern: '^[0-9a-f]{24}$' }
+              }
+            }
+          },
+          
+          // Create user (admin only)
+          {
+            path: '/users',
+            method: 'POST',
+            handler: async (req) => {
+              const user = await db.createUser(req.body)
+              return { status: 201, data: user }
+            },
+            schema: {
+              body: {
+                name: { type: 'string', required: true, min: 2, max: 100 },
+                email: { type: 'string', required: true, format: 'email' },
+                role: { type: 'string', enum: ['user', 'admin'], default: 'user' },
+                age: { type: 'number', min: 0, max: 150 }
+              }
+            },
+            auth: { required: true, roles: ['admin'] },
+            rateLimit: { max: 10, windowMs: 60000 } // 10 per minute
+          },
+          
+          // Update user
+          {
+            path: '/users/:id',
+            method: 'PUT',
+            handler: async (req) => {
+              const user = await db.updateUser(req.params.id, req.body)
+              if (!user) {
+                return { status: 404, error: 'User not found' }
+              }
+              return { status: 200, data: user }
+            },
+            schema: {
+              params: {
+                id: { type: 'string', pattern: '^[0-9a-f]{24}$' }
+              },
+              body: {
+                name: { type: 'string', min: 2, max: 100 },
+                email: { type: 'string', format: 'email' },
+                age: { type: 'number', min: 0, max: 150 }
+              }
+            },
+            auth: { required: true }
+          },
+          
+          // Delete user (admin only)
+          {
+            path: '/users/:id',
+            method: 'DELETE',
+            handler: async (req) => {
+              const deleted = await db.deleteUser(req.params.id)
+              if (!deleted) {
+                return { status: 404, error: 'User not found' }
+              }
+              return { status: 204 }
+            },
+            auth: { required: true, roles: ['admin'] }
+          }
+        ],
+        
+        // Global configuration
+        authConfig: {
+          enabled: true,
+          type: 'jwt',
+          publicEndpoints: ['/health', '/docs']
+        },
+        corsConfig: {
+          enabled: true,
+          origins: ['https://app.example.com', 'http://localhost:3000'],
+          credentials: true
+        },
+        rateLimitConfig: {
+          enabled: true,
+          windowMs: 900000, // 15 minutes
+          max: 1000
+        },
+        loggingConfig: {
+          enabled: true,
+          level: 'info',
+          maskSensitive: true
+        }
+      })
+      
+      // Monitor API health
+      api.on('healthChange', (health) => {
+        if (health.status === 'unhealthy') {
+          alertOps('API health degraded', health)
+        }
+      })
+      
+      // Track metrics
+      api.on('metrics', (metrics) => {
+        sendToMonitoring({
+          requests: metrics.totalRequests,
+          errorRate: metrics.failedRequests / metrics.totalRequests,
+          avgResponseTime: metrics.averageResponseTime
+        })
+      })
+
+  - title: Public API with Strict Rate Limiting
+    description: Public-facing API with aggressive rate limiting
+    language: typescript
+    code: |
+      const publicApi = new RestAPIService()
+      
+      await publicApi.initialize({
+        baseUrl: 'https://public-api.example.com',
+        endpoints: [
+          {
+            path: '/search',
+            method: 'GET',
+            handler: async (req) => {
+              const { q, category, limit = 20 } = req.query
+              
+              if (!q) {
+                return { status: 400, error: 'Query parameter q is required' }
+              }
+              
+              const results = await searchService.search({
+                query: q,
+                category,
+                limit
+              })
+              
+              return {
+                status: 200,
+                data: {
+                  results,
+                  query: q,
+                  count: results.length
+                }
+              }
+            },
+            schema: {
+              query: {
+                q: { type: 'string', required: true, min: 2, max: 100 },
+                category: { type: 'string', enum: ['products', 'articles', 'all'] },
+                limit: { type: 'number', min: 1, max: 50 }
+              }
+            },
+            auth: { required: false },
+            rateLimit: {
+              windowMs: 60000, // 1 minute
+              max: 10, // 10 searches per minute
+              skipSuccessfulRequests: false
+            },
+            cache: {
+              ttl: 300 // Cache for 5 minutes
+            }
+          },
+          
+          {
+            path: '/suggest',
+            method: 'GET',
+            handler: async (req) => {
+              const suggestions = await searchService.getSuggestions(req.query.q)
+              return { status: 200, data: suggestions }
+            },
+            auth: { required: false },
+            rateLimit: {
+              windowMs: 60000,
+              max: 30 // More lenient for suggestions
+            }
+          }
+        ],
+        
+        // Strict global rate limiting
+        rateLimitConfig: {
+          enabled: true,
+          windowMs: 900000, // 15 minutes
+          max: 100, // 100 requests per 15 minutes per IP
+          message: 'Too many requests. Please try again later.',
+          standardHeaders: true,
+          keyGenerator: (req) => {
+            // Use X-Forwarded-For if behind proxy
+            return req.headers['x-forwarded-for'] || 
+                   req.connection.remoteAddress || 
+                   'unknown'
+          }
+        },
+        
+        // Allow CORS from anywhere for public API
+        corsConfig: {
+          enabled: true,
+          origins: ['*'],
+          methods: ['GET', 'OPTIONS'],
+          credentials: false
+        },
+        
+        // Disable auth for public API
+        authConfig: {
+          enabled: false
+        },
+        
+        // Cache configuration
+        cachingConfig: {
+          enabled: true,
+          ttl: 300,
+          maxSize: 1000
+        }
+      })
+      
+      // Monitor rate limiting
+      publicApi.on('rateLimited', (info) => {
+        console.log(`Rate limit hit: ${info.key}`)
+        trackMetric('rate_limit_hit', {
+          ip: info.key,
+          endpoint: 'search'
+        })
+      })
+
+  - title: Microservice API with Health Checks
+    description: Internal microservice API with comprehensive health monitoring
+    language: typescript
+    code: |
+      const microservice = new RestAPIService()
+      
+      await microservice.initialize({
+        baseUrl: 'http://user-service:3000',
+        version: 'v1',
+        endpoints: [
+          // Health check endpoint
+          {
+            path: '/health',
+            method: 'GET',
+            handler: async () => {
+              const checks = await runHealthChecks()
+              const allHealthy = Object.values(checks).every(c => c.status === 'ok')
+              
+              return {
+                status: allHealthy ? 200 : 503,
+                data: {
+                  status: allHealthy ? 'healthy' : 'degraded',
+                  checks,
+                  timestamp: new Date(),
+                  version: process.env.APP_VERSION
+                }
+              }
+            },
+            auth: { required: false }
+          },
+          
+          // Readiness check
+          {
+            path: '/ready',
+            method: 'GET',
+            handler: async () => {
+              const ready = await checkDependencies()
+              return {
+                status: ready ? 200 : 503,
+                data: { ready }
+              }
+            },
+            auth: { required: false }
+          },
+          
+          // Service endpoints
+          {
+            path: '/users/batch',
+            method: 'POST',
+            handler: async (req) => {
+              const { userIds } = req.body
+              const users = await getUsersByIds(userIds)
+              return {
+                status: 200,
+                data: users
+              }
+            },
+            schema: {
+              body: {
+                userIds: { 
+                  type: 'array', 
+                  required: true,
+                  items: { type: 'string' },
+                  maxItems: 100
+                }
+              }
+            }
+          }
+        ],
+        
+        // Internal service configuration
+        authConfig: {
+          enabled: true,
+          type: 'jwt',
+          publicEndpoints: ['/health', '/ready', '/metrics']
+        },
+        
+        // No CORS needed for internal services
+        corsConfig: {
+          enabled: false
+        },
+        
+        // Higher rate limits for internal services
+        rateLimitConfig: {
+          enabled: true,
+          windowMs: 60000,
+          max: 10000
+        },
+        
+        // Detailed logging for debugging
+        loggingConfig: {
+          enabled: true,
+          level: 'debug',
+          includeHeaders: true,
+          includeBody: true
+        },
+        
+        // Shorter timeouts for internal calls
+        timeout: 5000,
+        
+        // Retry configuration
+        retryConfig: {
+          enabled: true,
+          maxRetries: 3,
+          retryDelay: 100,
+          retryableStatuses: [502, 503, 504]
+        }
+      })
+      
+      // Kubernetes liveness/readiness integration
+      async function runHealthChecks() {
+        return {
+          database: await checkDatabase(),
+          cache: await checkCache(),
+          dependencies: await checkDependencies()
+        }
+      }
+
+bestPractices:
+  - Always use HTTPS in production for API endpoints
+  - Enable CORS only for specific origins in production
+  - Implement rate limiting to prevent abuse and DDoS attacks
+  - Use JWT tokens with appropriate expiration times (15-30 minutes)
+  - Validate all input data using JSON schemas
+  - Never expose sensitive information in error messages
+  - Log all API requests for security auditing and debugging
+  - Implement request timeouts to prevent hanging connections
+  - Version your API from the beginning (/v1, /v2, etc.)
+  - Document all endpoints with OpenAPI/Swagger specifications
+  - Use appropriate HTTP status codes (200, 201, 400, 401, 403, 404, 500)
+  - Implement proper error handling with consistent error format
+  - Cache GET responses when data doesn't change frequently
+  - Monitor API performance metrics and set up alerts
+  - Use middleware for cross-cutting concerns (auth, logging, etc.)
+  - Implement health check endpoints for load balancers
+  - Use compression for large responses
+  - Implement API versioning strategy early
+  - Set up proper CORS headers for browser-based clients
+  - Use environment variables for configuration
+
+troubleshooting:
+  - issue: CORS errors in browser
+    solutions:
+      - Verify origins are correctly configured
+      - Check if credentials flag matches client configuration
+      - Ensure preflight requests are handled
+      - Check for typos in allowed headers
+      - Verify HTTPS is used if credentials are enabled
+  
+  - issue: 401 Unauthorized errors
+    solutions:
+      - Check if token is being sent in correct header
+      - Verify token hasn't expired
+      - Ensure token prefix (Bearer) is included
+      - Check if endpoint requires authentication
+      - Verify JWT secret is correct
+  
+  - issue: 429 Too Many Requests
+    solutions:
+      - Check rate limit configuration
+      - Verify key generator is working correctly
+      - Consider increasing limits for authenticated users
+      - Implement exponential backoff on client
+      - Check if multiple instances share rate limit store
+  
+  - issue: Validation errors
+    solutions:
+      - Check request matches schema exactly
+      - Verify required fields are present
+      - Check data types match schema
+      - Look for typos in field names
+      - Enable coerceTypes if needed
+  
+  - issue: High response times
+    solutions:
+      - Check database query performance
+      - Implement caching for expensive operations
+      - Add database indexes
+      - Use pagination for large datasets
+      - Profile handler functions
+      - Check for N+1 query problems
+
+deployment:
+  requiredProviders:
+    - http
+  optionalProviders:
+    - redis
+    - elasticsearch
+  configuration:
+    server:
+      port: 3000
+      host: 0.0.0.0
+    nginx:
+      clientMaxBodySize: 10m
+      proxyTimeout: 30s
+    kubernetes:
+      replicas: 3
+      autoscaling:
+        minReplicas: 2
+        maxReplicas: 10
+        targetCPU: 70
+    aws:
+      services:
+        - api-gateway
+        - lambda
+        - elasticache
+        - cloudwatch
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-backend
+    - love-claude-code-api
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-api-endpoint-primitive
+  timeToCreate: 150
+  linesOfCode: 1150
+  testCoverage: 88
+  canBuildConstructs: false
+  platformFeatures:
+    - API endpoint management
+    - Request handling
+    - Authentication middleware
+    - Rate limiting

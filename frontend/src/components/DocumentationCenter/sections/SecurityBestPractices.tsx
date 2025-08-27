@@ -2,8 +2,8 @@ import React from 'react'
 import { motion } from 'framer-motion'
 import { 
   Shield, Lock, Key, AlertTriangle, CheckCircle, 
-  Eye, EyeOff, Server, Database, Globe,
-  UserCheck, ShieldCheck, FileWarning, Zap,
+  EyeOff, Server, Database, Globe,
+  UserCheck, ShieldCheck,
   GitBranch, Activity, Terminal, Package
 } from 'lucide-react'
 

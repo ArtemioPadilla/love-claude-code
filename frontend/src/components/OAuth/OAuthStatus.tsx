@@ -15,14 +15,18 @@ export function OAuthStatus() {
   
   const authMethod = settings.ai?.authMethod || 'api-key'
   
-  // Only show in Electron with Claude CLI auth method
+  // Move useEffect to top level
+  useEffect(() => {
+    // Only check status in Electron with Claude CLI auth method
+    if (isElectron() && authMethod === 'claude-cli') {
+      checkStatus()
+    }
+  }, [authMethod])
+  
+  // Early return after hooks
   if (!isElectron() || authMethod !== 'claude-cli') {
     return null
   }
-  
-  useEffect(() => {
-    checkStatus()
-  }, [])
   
   const checkStatus = async () => {
     setIsChecking(true)

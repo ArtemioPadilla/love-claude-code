@@ -1,0 +1,175 @@
+id: platform-l1-zoomable-graph
+name: Zoomable Graph
+level: L1
+type: ui
+description: Enhanced graph visualization with pan, zoom, and minimap
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - ui
+  - diagram
+  - visualization
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - graph
+  - zoomable
+  - pan
+  - viewport
+  - minimap
+
+inputs:
+  - name: nodes
+    type: array
+    description: Graph nodes
+    required: true
+    defaultValue: []
+  
+  - name: edges
+    type: array
+    description: Graph edges
+    required: true
+    defaultValue: []
+  
+  - name: directed
+    type: boolean
+    description: Whether graph is directed
+    required: false
+    defaultValue: false
+  
+  - name: layoutType
+    type: string
+    description: Layout algorithm
+    required: false
+    defaultValue: force
+    validation:
+      enum: [force, hierarchical, circular, grid]
+  
+  - name: width
+    type: number
+    description: Viewport width
+    required: false
+    defaultValue: 800
+  
+  - name: height
+    type: number
+    description: Viewport height
+    required: false
+    defaultValue: 600
+  
+  - name: initialZoom
+    type: number
+    description: Initial zoom level
+    required: false
+    defaultValue: 1
+  
+  - name: minZoom
+    type: number
+    description: Minimum zoom level
+    required: false
+    defaultValue: 0.1
+  
+  - name: maxZoom
+    type: number
+    description: Maximum zoom level
+    required: false
+    defaultValue: 5
+  
+  - name: enablePan
+    type: boolean
+    description: Enable panning
+    required: false
+    defaultValue: true
+  
+  - name: enableZoom
+    type: boolean
+    description: Enable zooming
+    required: false
+    defaultValue: true
+  
+  - name: enableMinimap
+    type: boolean
+    description: Show minimap
+    required: false
+    defaultValue: true
+  
+  - name: enableControls
+    type: boolean
+    description: Show zoom controls
+    required: false
+    defaultValue: true
+  
+  - name: zoomSensitivity
+    type: number
+    description: Mouse wheel zoom sensitivity
+    required: false
+    defaultValue: 0.001
+  
+  - name: fitToViewOnLoad
+    type: boolean
+    description: Auto-fit graph on load
+    required: false
+    defaultValue: true
+
+outputs:
+  - name: viewport
+    type: object
+    description: Current viewport state {x, y, zoom}
+  
+  - name: visibleBounds
+    type: object
+    description: Visible area bounds
+  
+  - name: graphBounds
+    type: object
+    description: Total graph bounds
+  
+  - name: isInteracting
+    type: boolean
+    description: Whether user is panning/zooming
+
+security:
+  - type: input-validation
+    description: Validates zoom limits to prevent DoS
+
+examples:
+  - title: Zoomable Network Graph
+    description: Create an interactive network visualization
+    code: |
+      const graph = new ZoomableGraph()
+      await graph.initialize({
+        nodes: [
+          { id: 'A', x: 100, y: 100 },
+          { id: 'B', x: 300, y: 200 },
+          { id: 'C', x: 200, y: 300 }
+        ],
+        edges: [
+          { source: 'A', target: 'B' },
+          { source: 'B', target: 'C' },
+          { source: 'C', target: 'A' }
+        ],
+        layoutType: 'force',
+        enableMinimap: true,
+        fitToViewOnLoad: true,
+        width: 800,
+        height: 600
+      })
+
+bestPractices:
+  - Use appropriate zoom limits for your data
+  - Enable minimap for large graphs
+  - Implement smooth transitions
+  - Consider performance with many nodes
+  - Provide keyboard shortcuts for accessibility
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 35
+  builtWith:
+    - platform-l0-graph-primitive
+    - platform-l0-layout-engine-primitive
+  timeToCreate: 60
+  canBuildConstructs: false

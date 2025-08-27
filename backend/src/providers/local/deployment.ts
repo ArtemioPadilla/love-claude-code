@@ -10,7 +10,7 @@ import {
 } from '../types.js'
 import { promises as fs } from 'fs'
 import path from 'path'
-import { exec, spawn } from 'child_process'
+import { exec } from 'child_process'
 import { promisify } from 'util'
 import crypto from 'crypto'
 
@@ -32,38 +32,20 @@ interface Deployment {
  * Local deployment provider using Docker and local processes
  */
 export class LocalDeploymentProvider implements DeploymentProvider {
-  private config: ProviderConfig
+  // Config removed as it was unused
   private deploymentPath: string
   private deployments: Map<string, Deployment> = new Map()
-  private dockerComposeTemplate: string
+  // Docker compose template removed as unused
   
   constructor(config: ProviderConfig) {
-    this.config = config
+    // Store deploymentPath directly from config
     this.deploymentPath = path.join(
       config.options?.deploymentPath || './data/deployments',
       config.projectId
     )
     
     // Docker compose template for deployments
-    this.dockerComposeTemplate = `
-version: '3.8'
-services:
-  {{SERVICE_NAME}}:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    ports:
-      - "{{PORT}}:{{INTERNAL_PORT}}"
-    environment:
-      {{ENVIRONMENT}}
-    volumes:
-      {{VOLUMES}}
-    restart: unless-stopped
-    labels:
-      - "love-claude.deployment={{DEPLOYMENT_ID}}"
-      - "love-claude.project={{PROJECT_ID}}"
-      - "love-claude.environment={{ENVIRONMENT_NAME}}"
-`
+    // Template would be defined here for generating docker-compose.yml files
   }
   
   async initialize(): Promise<void> {
@@ -371,7 +353,7 @@ CMD ["python", "app.py"]
     await execAsync(`docker build -t ${imageName} .`, { cwd: deployDir })
     
     // Prepare environment variables
-    const envVars = Object.entries(config.environment || {})
+    const envVars = Object.entries(config.environmentVariables || {})
       .map(([k, v]) => `-e ${k}="${v}"`)
       .join(' ')
     
@@ -424,7 +406,7 @@ services:
     ports:
       - "${backendPort}:3000"
     environment:
-      ${Object.entries(config.environment || {}).map(([k, v]) => `- ${k}=${v}`).join('\n      ')}
+      ${Object.entries(config.environmentVariables || {}).map(([k, v]) => `- ${k}=${v}`).join('\n      ')}
 `
     
     await fs.writeFile(path.join(deployDir, 'docker-compose.yml'), dockerCompose)
@@ -543,7 +525,7 @@ services:
     if (options?.startTime) {
       logs = logs.filter(log => {
         const match = log.match(/\[([\d-T:.Z]+)\]/)
-        if (match) {
+        if (match && match[1]) {
           return new Date(match[1]) >= options.startTime!
         }
         return false
@@ -600,7 +582,7 @@ services:
     return Math.floor(Math.random() * (9999 - 3001) + 3001)
   }
   
-  private async generatePlatformDockerCompose(config: PlatformDeployConfig, deploymentId: string): string {
+  private async generatePlatformDockerCompose(config: PlatformDeployConfig, deploymentId: string): Promise<string> {
     return `
 version: '3.8'
 

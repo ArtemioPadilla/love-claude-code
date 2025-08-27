@@ -1,0 +1,372 @@
+id: superset-integration
+name: SupersetIntegration
+level: L1
+category: external
+type: business-intelligence
+description: Apache Superset integration for business intelligence and data visualization
+metadata:
+  version: 1.0.0
+  author: Love Claude Code Team
+  status: stable
+  platform: Love Claude Code
+  vibe: analytical
+  vibeCodingPercentage: 85
+  tags:
+    - business-intelligence
+    - data-visualization
+    - analytics
+    - dashboards
+    - apache-superset
+    - reporting
+
+dependencies:
+  internal: []
+  external:
+    - apache-superset
+    - REST API
+
+interface:
+  inputs:
+    - name: config
+      type: SupersetConfig
+      description: Configuration for Superset connection
+      required: true
+      properties:
+        - baseUrl: string
+        - username: string (optional)
+        - password: string (optional)
+        - accessToken: string (optional)
+        - oauthClientId: string (optional)
+    - name: dashboards
+      type: SupersetDashboard[]
+      description: List of dashboards to manage
+    - name: datasets
+      type: SupersetDataset[]
+      description: List of datasets to analyze
+
+  outputs:
+    - name: visualizations
+      type: React.Component
+      description: Embedded dashboard visualizations
+    - name: reports
+      type: Blob
+      description: Exported reports in various formats
+    - name: insights
+      type: object
+      description: Business intelligence insights
+
+  methods:
+    # Authentication
+    - name: authenticate
+      description: Authenticate with Superset instance
+      async: true
+      returns: void
+
+    # Dashboard Management
+    - name: listDashboards
+      description: List all available dashboards
+      async: true
+      returns: SupersetDashboard[]
+    
+    - name: getDashboard
+      description: Get dashboard by ID
+      parameters:
+        - id: number
+      async: true
+      returns: SupersetDashboard
+    
+    - name: createDashboard
+      description: Create a new dashboard
+      parameters:
+        - dashboard: Partial<SupersetDashboard>
+      async: true
+      returns: SupersetDashboard
+    
+    - name: updateDashboard
+      description: Update existing dashboard
+      parameters:
+        - id: number
+        - updates: Partial<SupersetDashboard>
+      async: true
+      returns: SupersetDashboard
+    
+    - name: deleteDashboard
+      description: Delete a dashboard
+      parameters:
+        - id: number
+      async: true
+      returns: void
+
+    # Dataset Management
+    - name: listDatasets
+      description: List all available datasets
+      async: true
+      returns: SupersetDataset[]
+    
+    - name: getDataset
+      description: Get dataset by ID
+      parameters:
+        - id: number
+      async: true
+      returns: SupersetDataset
+    
+    - name: createDataset
+      description: Create a new dataset
+      parameters:
+        - dataset: Partial<SupersetDataset>
+      async: true
+      returns: SupersetDataset
+    
+    - name: refreshDataset
+      description: Refresh dataset metadata
+      parameters:
+        - id: number
+      async: true
+      returns: void
+
+    # Chart Management
+    - name: listCharts
+      description: List all available charts
+      async: true
+      returns: SupersetChart[]
+    
+    - name: getChart
+      description: Get chart by ID
+      parameters:
+        - id: number
+      async: true
+      returns: SupersetChart
+    
+    - name: createChart
+      description: Create a new chart
+      parameters:
+        - chart: Partial<SupersetChart>
+      async: true
+      returns: SupersetChart
+    
+    - name: updateChart
+      description: Update existing chart
+      parameters:
+        - id: number
+        - updates: Partial<SupersetChart>
+      async: true
+      returns: SupersetChart
+
+    # Database Management
+    - name: listDatabases
+      description: List all connected databases
+      async: true
+      returns: SupersetDatabase[]
+    
+    - name: testDatabaseConnection
+      description: Test database connection
+      parameters:
+        - database: Partial<SupersetDatabase>
+      async: true
+      returns: boolean
+
+    # SQL Lab
+    - name: executeSQLQuery
+      description: Execute SQL query in SQL Lab
+      parameters:
+        - query: SQLLabQuery
+      async: true
+      returns: any
+    
+    - name: getSQLQueryResults
+      description: Get results of executed query
+      parameters:
+        - queryId: string
+      async: true
+      returns: any
+
+    # Export functionality
+    - name: exportDashboard
+      description: Export dashboard in various formats
+      parameters:
+        - options: ExportOptions
+      async: true
+      returns: Blob
+    
+    - name: exportChart
+      description: Export chart in various formats
+      parameters:
+        - options: ExportOptions
+      async: true
+      returns: Blob
+    
+    - name: exportDataset
+      description: Export dataset in various formats
+      parameters:
+        - options: ExportOptions
+      async: true
+      returns: Blob
+
+    # Embedding
+    - name: getEmbedUrl
+      description: Get embed URL for dashboard
+      parameters:
+        - dashboardId: number
+        - filters: object (optional)
+      returns: string
+
+  events:
+    - name: onDashboardLoad
+      description: Fired when dashboard is loaded
+      payload: SupersetDashboard
+    
+    - name: onChartUpdate
+      description: Fired when chart is updated
+      payload: SupersetChart
+    
+    - name: onDataRefresh
+      description: Fired when data is refreshed
+      payload: SupersetDataset
+    
+    - name: onExport
+      description: Fired when export is completed
+      payload: 
+        type: string
+        format: string
+        success: boolean
+
+capabilities:
+  - dashboard-management
+  - chart-creation
+  - dataset-management
+  - sql-queries
+  - data-export
+  - embedded-analytics
+  - real-time-refresh
+  - custom-visualizations
+  - multi-database-support
+  - row-level-security
+  - caching
+  - alerts-and-reports
+
+configuration:
+  authentication:
+    - session-based
+    - oauth2
+    - token-based
+  
+  exportFormats:
+    - pdf
+    - csv
+    - png
+    - json
+  
+  visualizationTypes:
+    - line-chart
+    - bar-chart
+    - pie-chart
+    - scatter-plot
+    - heatmap
+    - table
+    - pivot-table
+    - sunburst
+    - treemap
+    - box-plot
+    - histogram
+    - funnel
+    - sankey
+    - word-cloud
+    - map
+
+examples:
+  - name: Basic Dashboard Integration
+    description: Connect to Superset and display dashboards
+    code: |
+      const superset = new SupersetIntegration({
+        baseUrl: 'https://superset.example.com',
+        username: 'admin',
+        password: 'password'
+      });
+      
+      await superset.authenticate();
+      const dashboards = await superset.listDashboards();
+      
+      // Display dashboard
+      <superset.EmbeddedDashboard 
+        dashboardId={dashboards[0].id}
+        height="800px"
+      />
+
+  - name: SQL Lab Query
+    description: Execute SQL queries and visualize results
+    code: |
+      const result = await superset.executeSQLQuery({
+        sql: 'SELECT category, SUM(revenue) FROM sales GROUP BY category',
+        database_id: 1
+      });
+      
+      // Create chart from results
+      const chart = await superset.createChart({
+        slice_name: 'Revenue by Category',
+        viz_type: 'bar',
+        datasource_id: result.dataset_id,
+        datasource_type: 'table'
+      });
+
+  - name: Export Dashboard Report
+    description: Export dashboard as PDF report
+    code: |
+      const pdfBlob = await superset.exportDashboard({
+        format: 'pdf',
+        dashboardId: 123
+      });
+      
+      // Download the report
+      const url = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'dashboard-report.pdf';
+      a.click();
+
+implementation:
+  path: frontend/src/constructs/L1/external/SupersetIntegration.tsx
+  className: SupersetIntegration
+  extends: L1ExternalConstruct
+
+testing:
+  unitTests:
+    - test authentication flows
+    - test dashboard CRUD operations
+    - test chart creation and updates
+    - test SQL query execution
+    - test export functionality
+  
+  integrationTests:
+    - test with real Superset instance
+    - test embedded dashboard loading
+    - test data refresh mechanisms
+    - test error handling
+  
+  e2eTests:
+    - test complete BI workflow
+    - test dashboard interactions
+    - test report generation
+
+documentation:
+  setup: |
+    1. Install and configure Apache Superset instance
+    2. Enable CORS for embedding dashboards
+    3. Configure authentication method (session/OAuth)
+    4. Create API credentials if using token auth
+    5. Set up data sources and initial dashboards
+  
+  bestPractices:
+    - Use caching for frequently accessed dashboards
+    - Implement proper error handling for network issues
+    - Use filters to reduce data transfer
+    - Schedule regular data refreshes
+    - Monitor query performance
+    - Use appropriate visualization types for data
+  
+  security:
+    - Store credentials securely
+    - Use HTTPS for all communications
+    - Implement row-level security where needed
+    - Validate SQL queries before execution
+    - Use read-only database connections
+    - Audit all data access

@@ -1,0 +1,194 @@
+id: platform-l0-npm-package-primitive
+name: NPM Package Primitive
+level: L0
+type: external
+description: Zero-dependency primitive for NPM package metadata and dependency trees
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - external
+  - package-management
+  - npm
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - npm
+  - package
+  - dependency
+  - semver
+  - primitive
+  - external-integration
+
+inputs:
+  - name: packageJson
+    type: string | object
+    description: Package.json content as string or object
+    required: true
+  - name: lockFile
+    type: string | object
+    description: Package-lock.json or yarn.lock content
+    required: false
+  - name: registry
+    type: string
+    description: NPM registry URL
+    required: false
+    defaultValue: https://registry.npmjs.org
+  - name: scope
+    type: string
+    description: NPM scope (e.g., @myorg)
+    required: false
+
+outputs:
+  - name: packageTree
+    type: NpmPackageTree
+    description: Parsed package structure with dependencies
+  - name: metadata
+    type: NpmPackageMetadata
+    description: Package metadata
+  - name: dependencyCount
+    type: number
+    description: Total number of dependencies
+
+features:
+  - Package.json parsing and validation
+  - Dependency tree representation
+  - Semver version range parsing and resolution
+  - Support for all dependency types (dependencies, devDependencies, peerDependencies, optionalDependencies)
+  - Package name validation following NPM rules
+  - Scoped package support
+  - Zero external dependencies
+
+methods:
+  - name: parseDefinition
+    description: Parse package.json into structured format
+    parameters:
+      - name: input
+        type: string | object
+        description: Package.json content
+    returns:
+      type: NpmPackageTree
+      description: Parsed package tree
+  
+  - name: validateConfiguration
+    description: Validate package configuration
+    parameters:
+      - name: config
+        type: any
+        description: Package configuration to validate
+    returns:
+      type: object
+      description: Validation result with errors
+  
+  - name: parseVersionRange
+    description: Parse semver version range
+    parameters:
+      - name: range
+        type: string
+        description: Version range string
+    returns:
+      type: SemverRange
+      description: Parsed version range
+  
+  - name: resolveVersionRange
+    description: Check if version satisfies range
+    parameters:
+      - name: version
+        type: string
+        description: Version to check
+      - name: range
+        type: SemverRange
+        description: Range to check against
+    returns:
+      type: boolean
+      description: Whether version satisfies range
+
+examples:
+  - title: Parse Package.json
+    description: Parse a package.json file
+    code: |
+      const npmPackage = new NpmPackagePrimitiveConstruct()
+      const tree = npmPackage.parseDefinition({
+        "name": "my-app",
+        "version": "1.0.0",
+        "dependencies": {
+          "react": "^18.2.0",
+          "react-dom": "^18.2.0"
+        }
+      })
+    language: typescript
+
+  - title: Validate Configuration
+    description: Validate package configuration
+    code: |
+      const validation = npmPackage.validateConfiguration(tree)
+      if (!validation.valid) {
+        console.error('Validation errors:', validation.errors)
+      }
+    language: typescript
+
+  - title: Check Version Compatibility
+    description: Check if a version satisfies a range
+    code: |
+      const range = npmPackage.parseVersionRange('^18.2.0')
+      const satisfies = npmPackage.resolveVersionRange('18.3.1', range)
+      console.log(satisfies) // true
+    language: typescript
+
+bestPractices:
+  - Validate package.json structure before parsing
+  - Handle missing or malformed fields gracefully
+  - Use for data representation only - no actual package operations
+  - Consider memory usage for large dependency trees
+  - Cache parsed results when processing multiple times
+
+security:
+  - aspect: json-parsing
+    description: No protection against malicious JSON input
+    severity: medium
+    recommendations:
+      - Use L1 SecureNpmPackage for production
+      - Limit JSON parsing depth and size
+      - Validate against known package.json schema
+      
+  - aspect: dependency-confusion
+    description: No validation of package names or sources
+    severity: high
+    recommendations:
+      - Validate package names against npm naming rules
+      - Check for typosquatting attempts
+      - Verify scoped packages are from trusted sources
+      
+  - aspect: version-validation
+    description: Semver parsing may accept invalid versions
+    severity: low
+    recommendations:
+      - Strict semver validation
+      - Reject malformed version strings
+      - Limit version range complexity
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+
+c4:
+  type: Component
+  technology: NPM
+  description: NPM package metadata parser and validator
+
+deployment:
+  requiredProviders: []
+  configSchema: {}
+  environmentVariables: []
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  generatedBy: Claude
+
+metadata:
+  createdAt: 2024-01-23
+  updatedAt: 2024-01-23
+  status: stable

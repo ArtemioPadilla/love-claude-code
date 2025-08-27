@@ -284,7 +284,7 @@ export class RateLimiter {
   constructor(
     private maxTokens: number,
     private refillRate: number, // tokens per second
-    private refillInterval: number = 1000 // milliseconds
+    private _refillInterval: number = 1000 // milliseconds (unused but kept for future use)
   ) {
     this.tokens = maxTokens
     this.lastRefill = Date.now()
@@ -360,7 +360,7 @@ export async function withTimeout<T>(
  * Resilience decorators
  */
 export function retryable(config: RetryConfig = {}) {
-  return function(target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+  return function(_target: any, _propertyKey: string, descriptor: PropertyDescriptor) {
     if (!descriptor || typeof descriptor.value !== 'function') {
       return descriptor
     }

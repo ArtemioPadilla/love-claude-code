@@ -1,0 +1,264 @@
+id: platform-l0-websocket-server-primitive
+name: WebSocket Server Primitive
+level: L0
+version: 1.0.0
+description: Raw WebSocket server with no authentication, error handling, or advanced features. Just basic connection handling and message passing.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 30
+    builtWith: []
+
+categories:
+  - infrastructure
+  - networking
+  - websocket
+  - primitive
+
+tags:
+  - websocket
+  - server
+  - realtime
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  port:
+    type: number
+    description: Port number to listen on
+    required: true
+    example: 8080
+    
+  host:
+    type: string
+    description: Host address to bind to
+    required: false
+    default: "0.0.0.0"
+    example: localhost
+    
+  onConnection:
+    type: function
+    description: Callback when client connects - (clientId) => void
+    required: false
+    
+  onMessage:
+    type: function
+    description: Callback when message received - (clientId, message) => void
+    required: false
+    
+  onDisconnect:
+    type: function
+    description: Callback when client disconnects - (clientId) => void
+    required: false
+
+outputs:
+  serverId:
+    type: string
+    description: Unique WebSocket server ID
+    
+  status:
+    type: ServerStatus
+    description: Current server status (created, listening, stopped)
+    
+  connections:
+    type: string[]
+    description: Array of active connection IDs
+    
+  messageCount:
+    type: number
+    description: Total messages processed
+
+types:
+  ServerStatus:
+    description: Server lifecycle status
+    enum: [created, listening, stopped]
+    
+  ServerStats:
+    description: Server statistics
+    properties:
+      serverId:
+        type: string
+        description: Server identifier
+      status:
+        type: ServerStatus
+        description: Current status
+      connectionCount:
+        type: number
+        description: Number of active connections
+      totalMessagesSent:
+        type: number
+        description: Total messages sent to clients
+      totalMessagesReceived:
+        type: number
+        description: Total messages received from clients
+      uptime:
+        type: number
+        description: Server uptime in milliseconds
+
+implementation:
+  infrastructure: frontend/src/constructs/L0/infrastructure/WebSocketServerPrimitive.ts
+  
+dependencies: []
+
+security:
+  - aspect: no-authentication
+    description: No authentication or authorization at L0 level
+    severity: critical
+    recommendations:
+      - Use L1 AuthenticatedWebSocket for production
+      - Implement authentication at application level
+      
+  - aspect: no-encryption
+    description: No message encryption or TLS support
+    severity: high
+    recommendations:
+      - Use wss:// protocol in L1 constructs
+      - Encrypt sensitive data at application level
+      
+  - aspect: no-validation
+    description: No message validation or sanitization
+    severity: medium
+    recommendations:
+      - Validate all incoming messages in L1+
+      - Implement message schemas
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs at L0
+    - Simulated WebSocket server only
+    - Real implementation would use ws library
+
+c4:
+  type: Component
+  technology: WebSocket
+  external: false
+  position:
+    x: 200
+    y: 500
+
+examples:
+  - title: Basic WebSocket Server
+    description: Simple server setup
+    language: typescript
+    code: |
+      import { WebSocketServerPrimitive } from '@/constructs/L0/infrastructure/WebSocketServerPrimitive'
+      
+      const server = new WebSocketServerPrimitive()
+      await server.initialize({
+        port: 8080,
+        onConnection: (clientId) => {
+          console.log('Client connected:', clientId)
+        },
+        onMessage: (clientId, message) => {
+          console.log(`Message from ${clientId}:`, message)
+        },
+        onDisconnect: (clientId) => {
+          console.log('Client disconnected:', clientId)
+        }
+      })
+      
+      await server.deploy()
+      // Server is now listening on port 8080
+      
+  - title: Echo Server
+    description: Echo messages back to sender
+    language: typescript
+    code: |
+      const echoServer = new WebSocketServerPrimitive()
+      await echoServer.initialize({
+        port: 3001,
+        onMessage: (clientId, message) => {
+          // Echo message back to sender
+          echoServer.sendToClient(clientId, message)
+        }
+      })
+      
+      await echoServer.deploy()
+      
+  - title: Broadcast Server
+    description: Broadcast messages to all clients
+    language: typescript
+    code: |
+      const broadcastServer = new WebSocketServerPrimitive()
+      await broadcastServer.initialize({
+        port: 3002,
+        onMessage: (clientId, message) => {
+          // Broadcast to all connected clients
+          broadcastServer.broadcast({
+            from: clientId,
+            message: message,
+            timestamp: new Date()
+          })
+        }
+      })
+      
+      await broadcastServer.deploy()
+      
+  - title: Connection Management
+    description: Managing client connections
+    language: typescript
+    code: |
+      const server = new WebSocketServerPrimitive()
+      await server.initialize({ port: 8080 })
+      await server.deploy()
+      
+      // Simulate client connections
+      const client1 = server.connect('user-123')
+      const client2 = server.connect() // Auto-generated ID
+      
+      // Check connections
+      console.log(server.getConnectedClients()) // ['user-123', 'client-xxx-xxx']
+      console.log(server.isClientConnected('user-123')) // true
+      
+      // Send messages
+      server.sendToClient('user-123', { type: 'welcome' })
+      server.broadcast({ type: 'notification', text: 'Server update' })
+      
+      // Handle incoming messages
+      server.receiveMessage('user-123', { type: 'chat', text: 'Hello!' })
+      
+      // Disconnect client
+      server.disconnect('user-123')
+      
+      // Get server stats
+      const stats = server.getStats()
+      console.log(`Connections: ${stats.connectionCount}`)
+      console.log(`Messages: ${stats.totalMessagesReceived}`)
+
+bestPractices:
+  - This is a primitive construct - use L1 AuthenticatedWebSocket for production
+  - No authentication, authorization, or encryption
+  - No error handling or reconnection logic
+  - No message queuing or delivery guarantees
+  - Direct WebSocket implementation only
+  - Used as building block for higher-level constructs
+  - Part of the Love Claude Code platform itself
+  - Keep server logic minimal and stateless
+
+testing:
+  unit:
+    - Validates required port parameter
+    - Manages server lifecycle (deploy, stop)
+    - Handles client connections and disconnections
+    - Processes messages with callbacks
+    - Tracks connection and message statistics
+    - Supports broadcast and unicast messaging
+    - Simulates WebSocket behavior
+    
+  integration:
+    - Used by L1 AuthenticatedWebSocket
+    - Used by L2 RealtimeCollaboration
+    - Part of L3 Love Claude Code platform

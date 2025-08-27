@@ -1,0 +1,386 @@
+id: love-claude-code-frontend
+name: Love Claude Code Frontend
+level: L3
+type: Application
+version: 1.0.0
+author: Love Claude Code Team
+license: MIT
+description: |
+  Complete Love Claude Code frontend application - The self-building IDE powered by Claude.
+  This L3 construct represents the entire frontend application that composes multiple L2 patterns
+  into a fully functional, production-ready development environment.
+
+categories:
+  - frontend
+  - application
+  - ide
+  - self-referential
+
+providers:
+  - local
+  - firebase
+  - aws
+
+tags:
+  - ai-powered
+  - self-building
+  - development-environment
+  - claude-integration
+  - multi-provider
+  - production-ready
+
+inputs:
+  - name: appName
+    type: string
+    description: Application name
+    required: false
+    defaultValue: "Love Claude Code"
+    
+  - name: version
+    type: string
+    description: Application version
+    required: false
+    defaultValue: "1.0.0"
+    
+  - name: theme
+    type: string
+    description: Default application theme
+    required: false
+    defaultValue: "dark"
+    validation:
+      enum: ["light", "dark", "system"]
+      
+  - name: defaultProvider
+    type: string
+    description: Default backend provider
+    required: false
+    defaultValue: "local"
+    validation:
+      enum: ["local", "firebase", "aws"]
+      
+  - name: features
+    type: object
+    description: Feature flags for the application
+    required: false
+    defaultValue:
+      aiAssistant: true
+      realTimeCollab: true
+      constructCatalog: true
+      multiProvider: true
+      selfReferential: true
+      documentation: true
+      analytics: true
+      monitoring: true
+      
+  - name: buildConfig
+    type: object
+    description: Build configuration
+    required: false
+    defaultValue:
+      mode: "development"
+      bundler: "vite"
+      target: "es2022"
+      sourceMaps: true
+      minify: false
+      
+  - name: deploymentConfig
+    type: object
+    description: Deployment configuration
+    required: false
+    defaultValue:
+      provider: "vercel"
+      environment: "development"
+      region: "us-west-2"
+      cdn: true
+      ssl: true
+
+outputs:
+  - name: applicationUrl
+    type: string
+    description: URL where the application is deployed
+    
+  - name: buildArtifacts
+    type: string
+    description: Path to build artifacts
+    
+  - name: healthEndpoint
+    type: string
+    description: Health check endpoint URL
+    
+  - name: metricsEndpoint
+    type: string
+    description: Metrics endpoint URL
+    
+  - name: version
+    type: string
+    description: Deployed application version
+
+dependencies:
+  - constructId: ide-workspace
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: claude-conversation-system
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: project-management-system
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: construct-catalog-system
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: documentation-center
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: theme-system
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: multi-provider-system
+    version: ">=1.0.0"
+    optional: false
+    
+  - constructId: realtime-collaboration
+    version: ">=1.0.0"
+    optional: true
+    
+  - constructId: analytics-system
+    version: ">=1.0.0"
+    optional: true
+    
+  - constructId: monitoring-dashboard
+    version: ">=1.0.0"
+    optional: true
+
+security:
+  - aspect: authentication
+    description: Multi-provider authentication support
+    severity: high
+    recommendations:
+      - Use secure token storage
+      - Implement proper session management
+      - Support SSO where available
+      
+  - aspect: api-keys
+    description: Secure API key management
+    severity: critical
+    recommendations:
+      - Never store API keys in frontend code
+      - Use environment variables
+      - Implement key rotation
+      
+  - aspect: code-execution
+    description: Sandboxed code execution
+    severity: critical
+    recommendations:
+      - All user code runs in isolated containers
+      - Resource limits enforced
+      - Network restrictions applied
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: hosting
+      unit: month
+      costPerUnit: 20
+      typicalUsage: 1
+      
+    - name: cdn-bandwidth
+      unit: GB
+      costPerUnit: 0.08
+      typicalUsage: 100
+      
+    - name: api-calls
+      unit: 1000 calls
+      costPerUnit: 0.01
+      typicalUsage: 10000
+      
+    - name: claude-tokens
+      unit: 1M tokens
+      costPerUnit: 3.00
+      typicalUsage: 5
+      
+  notes:
+    - Cost varies significantly based on provider choice
+    - Local provider has minimal costs
+    - Firebase and AWS costs scale with usage
+
+c4:
+  type: System
+  technology: "React, TypeScript, Vite"
+  external: false
+  position:
+    x: 0
+    y: 0
+
+relationships:
+  - from: love-claude-code-frontend
+    to: backend-api
+    description: Makes API calls for data and operations
+    technology: REST/WebSocket
+    type: sync
+    
+  - from: love-claude-code-frontend
+    to: claude-api
+    description: Streams AI responses
+    technology: WebSocket
+    type: async
+    
+  - from: love-claude-code-frontend
+    to: storage-service
+    description: Stores and retrieves files
+    technology: HTTPS
+    type: sync
+
+examples:
+  - title: Basic Application Setup
+    description: Create and configure the Love Claude Code frontend
+    language: typescript
+    code: |
+      import { createLoveClaudeCodeFrontend } from '@/constructs/L3/applications/LoveClaudeCodeFrontend';
+
+      // Create the application
+      const app = createLoveClaudeCodeFrontend({
+        name: 'My Love Claude Code Instance',
+        description: 'Custom instance of the self-building IDE'
+      });
+
+      // Configure features
+      app.importConfiguration({
+        features: {
+          realTimeCollab: true,
+          analytics: false
+        },
+        theme: 'dark',
+        defaultProvider: 'firebase'
+      });
+
+      // Start development server
+      await app.startDevelopment();
+      
+  - title: Production Deployment
+    description: Build and deploy to production
+    language: typescript
+    code: |
+      // Set production environment
+      app.setEnvironment('production');
+
+      // Build the application
+      await app.build({
+        analyze: true
+      });
+
+      // Deploy to Vercel
+      await app.deploy('vercel', {
+        environment: 'production'
+      });
+
+      // Check deployment health
+      const health = await app.getHealthStatus();
+      console.log('Deployment health:', health);
+      
+  - title: Self-Referential Features
+    description: Use the self-building capabilities
+    language: typescript
+    code: |
+      // Generate a new L1 construct
+      const newConstruct = await app.generateConstruct({
+        level: 'L1',
+        type: 'ui-component',
+        requirements: {
+          name: 'AnimatedButton',
+          description: 'Button with hover animations',
+          framework: 'react'
+        }
+      });
+
+      // Modify the application itself
+      await app.modifySelf({
+        component: 'theme-system',
+        changes: {
+          addTheme: {
+            name: 'ocean',
+            colors: {
+              primary: '#006994',
+              secondary: '#00A8CC'
+            }
+          }
+        }
+      });
+
+bestPractices:
+  - Always validate configuration before building or deploying
+  - Use environment-specific configurations for development and production
+  - Enable monitoring and analytics in production environments
+  - Regularly check health status of all composed patterns
+  - Use the self-referential features responsibly and with proper testing
+  - Keep the application version updated in sync with deployments
+  - Test provider switching in staging before production use
+  - Implement proper error boundaries around all L2 patterns
+  - Use lazy loading for optional features to improve performance
+  - Cache static assets aggressively with proper versioning
+
+deployment:
+  requiredProviders:
+    - "@pulumi/pulumi"
+    - "@pulumi/aws"
+    - "@pulumi/gcp"
+    - "@pulumi/azure"
+  
+  configSchema:
+    type: object
+    properties:
+      domain:
+        type: string
+        description: Custom domain for the application
+      environment:
+        type: string
+        enum: ["development", "staging", "production"]
+      provider:
+        type: string
+        enum: ["vercel", "aws", "firebase", "netlify"]
+      region:
+        type: string
+        description: Deployment region
+        
+  environmentVariables:
+    - VITE_API_URL
+    - VITE_CLAUDE_API_KEY
+    - VITE_FIREBASE_CONFIG
+    - VITE_AWS_REGION
+    - VITE_ENABLE_ANALYTICS
+    
+  preDeploymentChecks:
+    - Validate all environment variables are set
+    - Run test suite
+    - Check bundle size is within limits
+    - Verify all L2 patterns are properly configured
+    
+  postDeploymentChecks:
+    - Health check passes
+    - All routes are accessible
+    - API connectivity verified
+    - Performance metrics within acceptable range
+
+# Self-referential metadata
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: vibe-coded
+  vibeCodingPercentage: 100
+  conversationId: "love-claude-code-genesis"
+  builtWith:
+    - ide-workspace
+    - claude-conversation-system
+    - construct-catalog-system
+  timeToCreate: 180
+  canBuildConstructs: true
+  
+platformCapabilities:
+  canSelfDeploy: true
+  canSelfUpdate: true
+  canSelfTest: true
+  platformVersion: "1.0.0"

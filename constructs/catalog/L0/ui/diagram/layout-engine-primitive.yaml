@@ -1,0 +1,135 @@
+id: platform-l0-layout-engine-primitive
+name: Layout Engine Primitive
+level: L0
+type: UI
+description: Pure TypeScript graph layout algorithms
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - ui
+  - visualization
+  - layout
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - layout
+  - primitive
+  - algorithms
+  - graph
+inputs:
+  - name: nodes
+    type: array
+    description: Nodes to layout
+    required: true
+    defaultValue: []
+  - name: edges
+    type: array
+    description: Edges between nodes
+    required: false
+    defaultValue: []
+  - name: layoutType
+    type: string
+    description: Type of layout algorithm
+    required: false
+    defaultValue: force
+    validation:
+      enum:
+        - force
+        - hierarchical
+        - circular
+        - grid
+  - name: width
+    type: number
+    description: Layout area width
+    required: false
+    defaultValue: 800
+  - name: height
+    type: number
+    description: Layout area height
+    required: false
+    defaultValue: 600
+  - name: animate
+    type: boolean
+    description: Whether to animate layout changes
+    required: false
+    defaultValue: true
+outputs:
+  - name: layoutResult
+    type: object
+    description: Calculated node positions and bounds
+  - name: isCalculating
+    type: boolean
+    description: Whether layout is being calculated
+security:
+  - aspect: computational-complexity
+    description: No limits on layout computation time
+    severity: high
+    recommendations:
+      - Use L1 SafeLayoutEngine with timeouts
+      - Limit node count for force-directed layouts
+      - Implement progressive layout for large graphs
+      
+  - aspect: infinite-loops
+    description: Force simulation may not converge
+    severity: medium
+    recommendations:
+      - Set maximum iteration limits
+      - Monitor convergence metrics
+      - Provide escape mechanisms for users
+      
+  - aspect: memory-exhaustion
+    description: Quadratic memory usage for some algorithms
+    severity: medium
+    recommendations:
+      - Use hierarchical layouts for large graphs
+      - Implement node clustering for scalability
+      - Monitor memory usage during calculations
+cost:
+  baseMonthly: 0
+  usageFactors: []
+c4:
+  type: Component
+  technology: Pure TypeScript
+examples:
+  - title: Force-Directed Layout
+    description: Create a force-directed graph layout
+    code: |
+      const layout = new LayoutEnginePrimitive()
+      await layout.initialize({
+        nodes: [
+          { id: 'A' },
+          { id: 'B' },
+          { id: 'C' }
+        ],
+        edges: [
+          { source: 'A', target: 'B' },
+          { source: 'B', target: 'C' }
+        ],
+        layoutType: 'force',
+        width: 800,
+        height: 600
+      })
+
+      // Calculate layout
+      const result = layout.calculateLayout()
+
+      // Get optimized positions
+      const positions = result.nodes
+    language: typescript
+bestPractices:
+  - This is a primitive - use L1 ResponsiveLayout for production
+  - No performance optimizations for very large graphs (1000+ nodes)
+  - Pure algorithms - no GPU acceleration
+deployment:
+  requiredProviders: []
+  configSchema: {}
+  environmentVariables: []
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith: []
+  timeToCreate: 60
+  canBuildConstructs: false

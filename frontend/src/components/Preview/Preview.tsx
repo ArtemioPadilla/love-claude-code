@@ -144,8 +144,8 @@ export function Preview() {
           <motion.button
             onClick={() => {
               const previewWindow = window.open('', '_blank')
-              if (previewWindow) {
-                previewWindow.document.write(`
+              if (previewWindow && 'document' in previewWindow) {
+                (previewWindow.document as any).write(`
                   <!DOCTYPE html>
                   <html>
                     <head>
@@ -164,7 +164,7 @@ export function Preview() {
                     </body>
                   </html>
                 `)
-                previewWindow.document.close()
+                (previewWindow.document as Document).close()
               }
             }}
             className="p-2 rounded-md hover:bg-accent/50 transition-all text-muted-foreground hover:text-foreground"

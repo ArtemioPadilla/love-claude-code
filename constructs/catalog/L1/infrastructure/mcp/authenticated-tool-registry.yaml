@@ -1,0 +1,271 @@
+id: platform-l1-authenticated-tool-registry
+name: Authenticated Tool Registry
+description: Secure tool registry with JWT authentication, role-based access control, usage quotas, and comprehensive audit logging
+level: L1
+type: infrastructure
+category: mcp
+version: 1.0.0
+status: stable
+
+author:
+  name: Love Claude Code Platform
+  email: platform@loveclaudecode.com
+
+dependencies:
+  - constructId: platform-l0-tool-registry-primitive
+    level: L0
+    optional: false
+  - constructId: platform-l0-auth-token-primitive
+    level: L0
+    optional: false
+  - constructId: platform-l0-storage-primitive
+    level: L0
+    optional: false
+
+providers:
+  - local
+  - firebase
+  - aws
+
+capabilities:
+  - jwt-authentication
+  - role-based-access-control
+  - tool-permissions
+  - usage-quotas
+  - audit-logging
+  - user-management
+  - role-management
+  - permission-matrix
+  - usage-analytics
+  - security-monitoring
+
+inputs:
+  - name: authConfig
+    type: AuthenticationConfig
+    description: JWT authentication configuration
+    required: true
+    defaultValue:
+      jwtSecret: process.env.JWT_SECRET
+      tokenExpiry: 8h
+      refreshTokenExpiry: 30d
+      issuer: authenticated-tool-registry
+
+  - name: rbacConfig
+    type: RBACConfig
+    description: Role-based access control configuration
+    required: false
+    defaultValue:
+      roles:
+        admin:
+          permissions: ["tool:*", "user:*", "audit:*"]
+          quotas:
+            unlimited: true
+        developer:
+          permissions: ["tool:read", "tool:execute", "tool:register"]
+          quotas:
+            dailyExecutions: 1000
+            maxRegistrations: 50
+        viewer:
+          permissions: ["tool:read", "audit:read:own"]
+          quotas:
+            dailyExecutions: 100
+            maxRegistrations: 0
+      defaultRole: viewer
+
+  - name: quotaConfig
+    type: QuotaConfig
+    description: Usage quota configuration
+    required: false
+    defaultValue:
+      globalDailyLimit: 10000
+      perUserDailyLimit: 1000
+      perToolDailyLimit: 5000
+      quotaResetTime: "00:00"
+      enableQuotaEnforcement: true
+
+  - name: auditConfig
+    type: AuditConfig
+    description: Audit logging configuration
+    required: false
+    defaultValue:
+      enableAuditLogging: true
+      retentionDays: 90
+      logLevel: info
+      sensitiveDataMasking: true
+      complianceMode: false
+
+outputs:
+  - name: registry
+    type: AuthenticatedToolRegistry
+    description: Authenticated tool registry instance
+  - name: authenticateUser
+    type: Function
+    description: Function to authenticate users and issue JWT tokens
+  - name: authorizeToolAccess
+    type: Function
+    description: Function to check if user has permission to access a tool
+  - name: registerToolWithAuth
+    type: Function
+    description: Function to register a tool with authentication checks
+  - name: executeToolWithAuth
+    type: Function
+    description: Function to execute a tool with authentication and quota checks
+  - name: getUserQuotaStatus
+    type: Function
+    description: Function to get current quota usage for a user
+  - name: getAuditLogs
+    type: Function
+    description: Function to retrieve audit logs with filtering
+  - name: securityMetrics
+    type: SecurityMetrics
+    description: Real-time security metrics and monitoring data
+
+properties:
+  - name: isAuthenticated
+    type: boolean
+    description: Whether authentication is currently enforced
+    visibility: public
+    modifiable: false
+  - name: activeUsers
+    type: number
+    description: Number of users with active sessions
+    visibility: public
+    modifiable: false
+  - name: totalToolExecutions
+    type: number
+    description: Total number of authenticated tool executions
+    visibility: public
+    modifiable: false
+
+events:
+  - name: authenticationSuccess
+    description: Emitted when user successfully authenticates
+    payload:
+      userId: string
+      role: string
+      timestamp: Date
+  - name: authenticationFailure
+    description: Emitted when authentication fails
+    payload:
+      username: string
+      reason: string
+      ip: string
+      timestamp: Date
+  - name: toolAccessGranted
+    description: Emitted when tool access is granted
+    payload:
+      userId: string
+      toolName: string
+      action: string
+      timestamp: Date
+  - name: toolAccessDenied
+    description: Emitted when tool access is denied
+    payload:
+      userId: string
+      toolName: string
+      action: string
+      reason: string
+      timestamp: Date
+  - name: quotaExceeded
+    description: Emitted when user exceeds quota
+    payload:
+      userId: string
+      quotaType: string
+      limit: number
+      current: number
+      timestamp: Date
+  - name: securityAlert
+    description: Emitted for security-related events
+    payload:
+      type: string
+      severity: string
+      userId: string
+      details: any
+      timestamp: Date
+
+constraints:
+  performance:
+    maxConcurrentUsers: 10000
+    authenticationLatency: 100
+    authorizationLatency: 50
+    auditLogWriteLatency: 200
+  security:
+    - type: authentication
+      description: All tool access must be authenticated with valid JWT tokens
+      level: required
+    - type: authorization
+      description: Role-based access control must be enforced for all operations
+      level: required
+    - type: audit-logging
+      description: All security-relevant events must be logged with tamper protection
+      level: required
+
+monitoring:
+  metrics:
+    - authentication_success_rate
+    - authentication_failure_count
+    - authorization_checks_per_second
+    - quota_violations_count
+    - active_user_sessions
+    - tool_execution_rate
+    - audit_log_write_latency
+    - token_refresh_count
+    - security_alerts_triggered
+  logs:
+    - Authentication attempts
+    - Authorization decisions
+    - Tool registrations
+    - Tool executions
+    - Quota violations
+    - Role changes
+    - Security alerts
+    - Audit queries
+  alerts:
+    - name: High authentication failure rate
+      condition: auth_failure_rate > 0.2
+      severity: high
+    - name: Unusual tool execution pattern
+      condition: tool_execution_spike > 10x_normal
+      severity: medium
+    - name: Quota system overload
+      condition: quota_check_latency > 500ms
+      severity: high
+
+bestPractices:
+  - Use strong JWT secrets and rotate them regularly
+  - Implement proper password hashing (bcrypt, argon2)
+  - Set appropriate token expiry times based on security requirements
+  - Regularly review and update role permissions
+  - Monitor quota usage patterns to detect abuse
+  - Archive audit logs to long-term storage for compliance
+  - Implement rate limiting on authentication endpoints
+  - Use principle of least privilege for default roles
+  - Enable multi-factor authentication for admin roles
+  - Regularly review security alerts and incidents
+
+tags:
+  - mcp
+  - security
+  - authentication
+  - rbac
+  - audit
+  - quota
+  - tool-registry
+  - jwt
+  - enterprise
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-tool-registry-primitive
+    - platform-l0-auth-token-primitive
+    - platform-l0-storage-primitive
+  canBuildConstructs: false
+
+platformCapabilities:
+  canSelfDeploy: false
+  canSelfUpdate: false
+  canSelfTest: true
+  platformVersion: 1.0.0

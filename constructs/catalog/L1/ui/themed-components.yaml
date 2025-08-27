@@ -1,0 +1,497 @@
+id: platform-l1-themed-components
+name: Themed Components
+level: L1
+version: 1.0.0
+description: Complete UI component library with dark/light themes, CSS variables, and extensive customization. Includes buttons, inputs, cards, and more.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 45
+    builtWith: 
+      - platform-l0-button-primitive
+      - platform-l0-modal-primitive
+      - platform-l0-tab-primitive
+
+categories:
+  - ui
+  - components
+  - theme
+
+tags:
+  - components
+  - theme
+  - dark-mode
+  - light-mode
+  - ui-library
+  - design-system
+  - L1
+  - enhanced
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  theme:
+    type: string
+    description: Active theme name
+    required: false
+    default: dark
+    validation:
+      enum: [light, dark, custom]
+    example: dark
+    
+  customTheme:
+    type: ThemeConfig
+    description: Custom theme configuration
+    required: false
+    example:
+      name: ocean
+      colors:
+        primary: "#0066cc"
+        secondary: "#00aaff"
+        background: "#001122"
+        surface: "#002244"
+        text: "#ffffff"
+    
+  persistTheme:
+    type: boolean
+    description: Persist theme selection to localStorage
+    required: false
+    default: true
+    example: true
+    
+  enableSystemTheme:
+    type: boolean
+    description: Follow system color scheme preference
+    required: false
+    default: false
+    example: true
+    
+  enableTransitions:
+    type: boolean
+    description: Enable smooth theme transitions
+    required: false
+    default: true
+    example: true
+    
+  componentVariants:
+    type: ComponentVariants
+    description: Component style variants configuration
+    required: false
+    example:
+      button:
+        rounded: { borderRadius: "9999px" }
+        outline: { backgroundColor: "transparent", border: "2px solid" }
+    
+  onThemeChange:
+    type: function
+    description: Callback when theme changes
+    required: false
+    example: (theme, config) => console.log('Theme changed to', theme)
+
+outputs:
+  currentTheme:
+    type: string
+    description: Currently active theme
+    
+  themeConfig:
+    type: ThemeConfig
+    description: Active theme configuration
+    
+  isDarkMode:
+    type: boolean
+    description: Whether dark mode is active
+    
+  systemTheme:
+    type: string
+    description: System color scheme preference
+    
+  components:
+    type: ThemedComponentSet
+    description: All themed component instances
+
+types:
+  ThemeConfig:
+    description: Complete theme configuration
+    properties:
+      name:
+        type: string
+        description: Theme name
+      colors:
+        type: object
+        description: Color palette
+        properties:
+          primary: { type: string }
+          secondary: { type: string }
+          success: { type: string }
+          warning: { type: string }
+          danger: { type: string }
+          info: { type: string }
+          background: { type: string }
+          surface: { type: string }
+          text: { type: string }
+          textSecondary: { type: string }
+          border: { type: string }
+          shadow: { type: string }
+      typography:
+        type: object
+        description: Typography settings
+        properties:
+          fontFamily: { type: string }
+          fontSize: { type: object }
+          fontWeight: { type: object }
+      spacing:
+        type: object
+        description: Spacing scale
+      borders:
+        type: object
+        description: Border settings
+        
+  ComponentVariants:
+    description: Custom component style variants
+    properties:
+      button:
+        type: object
+        description: Button variant styles
+      input:
+        type: object
+        description: Input variant styles
+      card:
+        type: object
+        description: Card variant styles
+        
+  ThemedComponentSet:
+    description: Collection of themed components
+    properties:
+      Button:
+        type: ReactComponent
+        description: Themed button component
+      Input:
+        type: ReactComponent
+        description: Themed input component
+      Card:
+        type: ReactComponent
+        description: Themed card component
+      Badge:
+        type: ReactComponent
+        description: Themed badge component
+      Alert:
+        type: ReactComponent
+        description: Themed alert component
+      Switch:
+        type: ReactComponent
+        description: Themed switch component
+      Select:
+        type: ReactComponent
+        description: Themed select component
+      Tooltip:
+        type: ReactComponent
+        description: Themed tooltip component
+
+implementation:
+  ui: frontend/src/constructs/L1/ui/ThemedComponents.tsx
+  
+dependencies:
+  - platform-l0-button-primitive
+  - platform-l0-modal-primitive
+  - platform-l0-tab-primitive
+
+security:
+  - aspect: Theme Injection
+    description: Validates CSS values to prevent injection
+    severity: medium
+    implementation: CSS value sanitization and validation
+    recommendations:
+      - Validate all color values
+      - Sanitize CSS properties
+      - Use CSS-in-JS for scoping
+      - Avoid eval() in theme processing
+      
+  - aspect: Component Isolation
+    description: Components are style-isolated
+    severity: low
+    implementation: CSS-in-JS with scoped styles
+    recommendations:
+      - Use unique class names
+      - Avoid global style pollution
+      - Implement CSP headers
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side only implementation
+    - Minimal bundle size impact
+
+c4:
+  type: Component
+  technology: React + CSS Variables
+  external: false
+  position:
+    x: 700
+    y: 300
+
+examples:
+  - title: Basic Theme Setup
+    description: Initialize themed components with dark mode
+    language: typescript
+    code: |
+      import { ThemedComponents } from '@/constructs/L1/ui/ThemedComponents'
+      
+      const themed = new ThemedComponents()
+      await themed.initialize({
+        theme: 'dark',
+        persistTheme: true,
+        enableSystemTheme: true
+      })
+      
+      // Get components
+      const { Button, Input, Card } = themed.getComponents()
+      
+      // Use in React
+      <div>
+        <Button variant="primary" onClick={handleClick}>
+          Click Me
+        </Button>
+        <Input 
+          label="Username"
+          placeholder="Enter username"
+          onChange={setValue}
+        />
+      </div>
+      
+  - title: Custom Theme
+    description: Create a custom branded theme
+    language: typescript
+    code: |
+      const themed = new ThemedComponents()
+      await themed.initialize({
+        theme: 'custom',
+        customTheme: {
+          name: 'brand',
+          colors: {
+            primary: '#ff6b6b',
+            primaryHover: '#ff5252',
+            secondary: '#4ecdc4',
+            success: '#51cf66',
+            warning: '#ffd43b',
+            danger: '#ff6b6b',
+            info: '#339af0',
+            background: '#0a0e27',
+            surface: '#151932',
+            surfaceHover: '#1e2341',
+            text: '#ffffff',
+            textSecondary: '#a0a9b0',
+            textMuted: '#6c757d',
+            border: '#2a2e5e',
+            shadow: 'rgba(0, 0, 0, 0.5)'
+          },
+          typography: {
+            fontFamily: '"Inter", -apple-system, sans-serif',
+            fontSize: {
+              base: 14,
+              small: 12,
+              large: 16,
+              xlarge: 20
+            }
+          },
+          spacing: {
+            xs: 4,
+            sm: 8,
+            md: 16,
+            lg: 24,
+            xl: 32
+          },
+          borders: {
+            radius: 8,
+            width: 1
+          }
+        }
+      })
+      
+  - title: Theme Toggle Implementation
+    description: Add theme toggle to your app
+    language: typescript
+    code: |
+      const themed = new ThemedComponents()
+      await themed.initialize({
+        persistTheme: true,
+        enableTransitions: true
+      })
+      
+      const { Button, Switch } = themed.getComponents()
+      
+      function ThemeToggle() {
+        const [isDark, setIsDark] = useState(
+          themed.getOutput('isDarkMode')
+        )
+        
+        const handleToggle = () => {
+          themed.toggleTheme()
+          setIsDark(!isDark)
+        }
+        
+        return (
+          <Switch
+            checked={isDark}
+            onChange={handleToggle}
+            label={isDark ? 'Dark Mode' : 'Light Mode'}
+          />
+        )
+      }
+      
+  - title: Component Gallery
+    description: Showcase of all themed components
+    language: typescript
+    code: |
+      const themed = new ThemedComponents()
+      await themed.initialize({})
+      
+      const { 
+        Button, Input, Card, Badge, 
+        Alert, Switch, Select, Tooltip 
+      } = themed.getComponents()
+      
+      function ComponentGallery() {
+        return (
+          <div style={{ display: 'grid', gap: '20px' }}>
+            {/* Buttons */}
+            <Card title="Buttons">
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Button variant="primary">Primary</Button>
+                <Button variant="secondary">Secondary</Button>
+                <Button variant="ghost">Ghost</Button>
+                <Button variant="danger">Danger</Button>
+              </div>
+            </Card>
+            
+            {/* Form Elements */}
+            <Card title="Form Elements">
+              <Input 
+                label="Email"
+                type="email"
+                placeholder="user@example.com"
+              />
+              <Select
+                label="Country"
+                options={[
+                  { value: 'us', label: 'United States' },
+                  { value: 'uk', label: 'United Kingdom' },
+                  { value: 'ca', label: 'Canada' }
+                ]}
+              />
+              <Switch label="Enable notifications" />
+            </Card>
+            
+            {/* Feedback */}
+            <Card title="Feedback">
+              <Alert variant="success" title="Success!">
+                Your changes have been saved.
+              </Alert>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <Badge variant="primary">New</Badge>
+                <Badge variant="success">Active</Badge>
+                <Badge variant="warning">Pending</Badge>
+              </div>
+            </Card>
+          </div>
+        )
+      }
+
+bestPractices:
+  - Use CSS variables for dynamic theming
+  - Provide high contrast ratios for accessibility
+  - Test components in both light and dark modes
+  - Support system theme preferences
+  - Implement smooth theme transitions
+  - Use semantic color names
+  - Consider color blindness in palette selection
+  - Maintain consistent spacing scale
+  - Use proper typography hierarchy
+  - Implement keyboard navigation
+  - Add focus indicators for accessibility
+  - Test with screen readers
+  - Validate custom theme configurations
+  - Provide theme preview functionality
+  - Document color usage guidelines
+
+testing:
+  unit:
+    - Theme initialization and switching
+    - CSS variable application
+    - Theme persistence
+    - System theme detection
+    - Component rendering
+    - Event handling
+    - Custom theme validation
+    
+  integration:
+    - Theme transitions
+    - localStorage persistence
+    - System theme watching
+    - Component interactions
+    - Cross-browser compatibility
+
+performance:
+  - CSS variables for instant theme switching
+  - No re-renders on theme change (CSS only)
+  - Minimal JavaScript overhead
+  - LocalStorage for instant restoration
+  - Lazy component initialization
+
+limitations:
+  - Basic component set (can be extended)
+  - No animation library included
+  - Limited to predefined themes
+  - No theme editor UI (yet)
+  - CSS variable support required
+
+migration:
+  from: platform-l0-button-primitive
+  steps:
+    - Replace individual primitives with ThemedComponents
+    - Initialize theme system
+    - Get components from getComponents()
+    - Update component props to match new API
+    - Add theme toggle UI
+    - Configure persistence settings
+
+roadmap:
+  - Advanced components (DataTable, DatePicker, etc.)
+  - Theme editor UI
+  - Animation presets
+  - Component playground
+  - Figma design tokens sync
+  - Accessibility audit tools
+  - RTL support
+  - Print styles
+  - Email template themes
+  - Integration with L2 patterns
+
+comparison:
+  vs_l0_primitives:
+    added:
+      - Complete theme system
+      - Dark/light mode support
+      - CSS variables
+      - Theme persistence
+      - System theme detection
+      - Smooth transitions
+      - Component library
+      - Custom themes
+    removed:
+      - Nothing (full enhancement)
+    improved:
+      - Visual consistency
+      - Developer experience
+      - Accessibility
+      - Customization

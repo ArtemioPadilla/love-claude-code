@@ -1,0 +1,719 @@
+id: platform-l1-authenticated-websocket
+name: Authenticated WebSocket
+level: L1
+version: 1.0.0
+author: Love Claude Code
+category: infrastructure
+tags:
+  - websocket
+  - authentication
+  - jwt
+  - realtime
+  - presence
+  - auto-reconnect
+  - managed
+  - platform-construct
+
+description: |
+  Production-ready WebSocket connection with JWT authentication, automatic reconnection,
+  message queuing, presence tracking, and comprehensive connection state management.
+  Built upon the L0 WebSocket Server Primitive, this L1 construct adds enterprise-grade
+  features for reliable real-time communication.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: url
+    type: string
+    required: true
+    description: WebSocket server URL (must use wss:// in production)
+    example: wss://api.example.com/ws
+    validation:
+      pattern: '^wss?://[\w.-]+(:[0-9]+)?(/.*)?$'
+
+  - name: authToken
+    type: string
+    required: false
+    description: JWT authentication token
+    sensitive: true
+
+  - name: protocols
+    type: array
+    itemType: string
+    required: false
+    description: WebSocket subprotocols to use
+    example: ['chat', 'json']
+
+  - name: reconnectConfig
+    type: object
+    required: false
+    description: Auto-reconnection configuration
+    default:
+      enabled: true
+      maxAttempts: 10
+      delay: 1000
+      backoffMultiplier: 1.5
+      maxDelay: 30000
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: Enable automatic reconnection
+      maxAttempts:
+        type: number
+        default: 10
+        description: Maximum reconnection attempts
+        validation:
+          min: 0
+          max: 100
+      delay:
+        type: number
+        default: 1000
+        description: Initial reconnection delay in milliseconds
+        validation:
+          min: 100
+          max: 60000
+      backoffMultiplier:
+        type: number
+        default: 1.5
+        description: Exponential backoff multiplier
+        validation:
+          min: 1
+          max: 10
+      maxDelay:
+        type: number
+        default: 30000
+        description: Maximum reconnection delay in milliseconds
+        validation:
+          min: 1000
+          max: 300000
+
+  - name: heartbeatConfig
+    type: object
+    required: false
+    description: Heartbeat/ping configuration for connection health
+    default:
+      enabled: true
+      interval: 30000
+      timeout: 5000
+      message: ping
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: Enable heartbeat mechanism
+      interval:
+        type: number
+        default: 30000
+        description: Heartbeat interval in milliseconds
+        validation:
+          min: 5000
+          max: 300000
+      timeout:
+        type: number
+        default: 5000
+        description: Heartbeat timeout in milliseconds
+        validation:
+          min: 1000
+          max: 30000
+      message:
+        type: string
+        default: ping
+        description: Heartbeat message to send
+
+  - name: messageQueue
+    type: object
+    required: false
+    description: Message queuing configuration for offline resilience
+    default:
+      enabled: true
+      maxSize: 100
+      persistence: false
+    properties:
+      enabled:
+        type: boolean
+        default: true
+        description: Enable message queuing when disconnected
+      maxSize:
+        type: number
+        default: 100
+        description: Maximum queue size
+        validation:
+          min: 1
+          max: 10000
+      persistence:
+        type: boolean
+        default: false
+        description: Persist queue to storage
+
+  - name: presence
+    type: object
+    required: false
+    description: User presence tracking configuration
+    default:
+      enabled: false
+      updateInterval: 60000
+    properties:
+      enabled:
+        type: boolean
+        default: false
+        description: Enable presence tracking
+      updateInterval:
+        type: number
+        default: 60000
+        description: Presence update interval in milliseconds
+        validation:
+          min: 10000
+          max: 600000
+
+  - name: compression
+    type: boolean
+    required: false
+    default: true
+    description: Enable message compression (requires server support)
+
+  - name: binaryType
+    type: string
+    required: false
+    default: arraybuffer
+    description: Binary data type for WebSocket
+    enum: ['blob', 'arraybuffer']
+
+  - name: headers
+    type: object
+    required: false
+    description: Additional headers for WebSocket connection
+    example:
+      X-Client-Version: '1.0.0'
+      X-Request-ID: 'abc123'
+
+  - name: onOpen
+    type: function
+    required: false
+    description: Callback when connection opens
+    signature: (event: Event) => void
+
+  - name: onMessage
+    type: function
+    required: false
+    description: Callback for incoming messages
+    signature: (message: any) => void
+
+  - name: onError
+    type: function
+    required: false
+    description: Callback for connection errors
+    signature: (error: Error) => void
+
+  - name: onClose
+    type: function
+    required: false
+    description: Callback when connection closes
+    signature: (event: CloseEvent) => void
+
+  - name: onReconnect
+    type: function
+    required: false
+    description: Callback when attempting reconnection
+    signature: (attempt: number) => void
+
+  - name: onPresenceUpdate
+    type: function
+    required: false
+    description: Callback for presence updates
+    signature: (presenceList: PresenceInfo[]) => void
+
+outputs:
+  - name: connectionId
+    type: string
+    description: Unique connection identifier
+
+  - name: state
+    type: string
+    description: Current connection state
+    enum: ['disconnected', 'connecting', 'connected', 'reconnecting', 'closing', 'error']
+
+  - name: isAuthenticated
+    type: boolean
+    description: Whether the connection is authenticated
+
+  - name: reconnectAttempts
+    type: number
+    description: Number of reconnection attempts made
+
+  - name: latency
+    type: number
+    description: Connection latency in milliseconds (from heartbeat)
+
+  - name: queueSize
+    type: number
+    description: Number of messages in the queue
+
+  - name: presenceList
+    type: array
+    description: List of users with presence information
+    itemType:
+      type: object
+      properties:
+        userId:
+          type: string
+        status:
+          type: string
+        lastSeen:
+          type: Date
+        customData:
+          type: any
+
+  - name: stats
+    type: object
+    description: Connection statistics
+    properties:
+      messagesSent:
+        type: number
+        description: Total messages sent
+      messagesReceived:
+        type: number
+        description: Total messages received
+      bytessSent:
+        type: number
+        description: Total bytes sent
+      bytesReceived:
+        type: number
+        description: Total bytes received
+      connectTime:
+        type: Date
+        description: Connection start time
+      uptime:
+        type: number
+        description: Connection uptime in milliseconds
+
+methods:
+  - name: send
+    description: Send a message through the WebSocket
+    signature: (data: any) => void
+    parameters:
+      - name: data
+        type: any
+        description: Message data to send (will be JSON stringified if object)
+
+  - name: close
+    description: Close the WebSocket connection
+    signature: (code?: number, reason?: string) => void
+    parameters:
+      - name: code
+        type: number
+        description: Close code (default 1000)
+      - name: reason
+        type: string
+        description: Close reason
+
+  - name: updatePresence
+    description: Update user presence status
+    signature: (data: any) => void
+    parameters:
+      - name: data
+        type: object
+        description: Presence data to send
+
+  - name: getStats
+    description: Get connection statistics
+    signature: () => ConnectionStats
+    returns:
+      type: object
+      description: Current connection statistics
+
+  - name: refreshToken
+    description: Update authentication token
+    signature: (newToken: string) => Promise<void>
+    parameters:
+      - name: newToken
+        type: string
+        description: New JWT token
+
+events:
+  - name: connected
+    description: Connection established successfully
+    payload:
+      connectionId: string
+
+  - name: disconnected
+    description: Connection closed
+    payload:
+      code: number
+      reason: string
+      wasClean: boolean
+
+  - name: message
+    description: Message received
+    payload: any
+
+  - name: messageSent
+    description: Message sent successfully
+    payload:
+      id: string
+      data: any
+
+  - name: messageQueued
+    description: Message added to queue
+    payload:
+      id: string
+      queueSize: number
+
+  - name: messageDropped
+    description: Message dropped from queue (overflow)
+    payload: QueuedMessage
+
+  - name: error
+    description: Connection error occurred
+    payload: Error
+
+  - name: serverError
+    description: Server reported an error
+    payload:
+      type: string
+      error: string
+
+  - name: stateChange
+    description: Connection state changed
+    payload:
+      oldState: string
+      newState: string
+
+  - name: reconnecting
+    description: Attempting to reconnect
+    payload:
+      attempt: number
+      delay: number
+
+  - name: authenticated
+    description: Successfully authenticated
+    payload:
+      userId: string
+
+  - name: authenticationFailed
+    description: Authentication failed
+    payload:
+      reason: string
+
+  - name: presenceUpdate
+    description: Presence list updated
+    payload: PresenceInfo[]
+
+security:
+  - aspect: Authentication
+    description: JWT-based authentication for secure connections
+    implementation: |
+      - Token validation on connection
+      - Automatic token refresh support
+      - Secure token storage recommendations
+      - Connection closure on auth failure
+
+  - aspect: Encryption
+    description: TLS/WSS encryption for data in transit
+    implementation: |
+      - Enforced WSS protocol in production
+      - Certificate validation
+      - Prevents man-in-the-middle attacks
+      - Secure WebSocket handshake
+
+  - aspect: Message Validation
+    description: Input sanitization and validation to prevent XSS
+    implementation: |
+      - Automatic XSS prevention for string fields
+      - JSON schema validation support
+      - Message size limits
+      - Protocol validation
+
+cost:
+  baseCost: 0
+  usage:
+    - name: connection-hours
+      unit: hours
+      costPerUnit: 0.01
+      description: WebSocket connection time
+    - name: messages
+      unit: 1M messages
+      costPerUnit: 0.50
+      description: Messages sent/received
+    - name: bandwidth
+      unit: GB
+      costPerUnit: 0.10
+      description: Data transfer
+
+examples:
+  - title: Basic Authenticated Connection
+    description: Connect to WebSocket with JWT authentication
+    language: typescript
+    code: |
+      const ws = new AuthenticatedWebSocket()
+      
+      await ws.initialize({
+        url: 'wss://api.example.com/ws',
+        authToken: jwtToken,
+        onOpen: () => {
+          console.log('Connected and authenticated!')
+        },
+        onMessage: (message) => {
+          console.log('Received:', message)
+          // Handle different message types
+          switch (message.type) {
+            case 'chat':
+              displayChatMessage(message)
+              break
+            case 'notification':
+              showNotification(message)
+              break
+          }
+        },
+        onError: (error) => {
+          console.error('WebSocket error:', error)
+          showErrorMessage('Connection error')
+        },
+        onClose: (event) => {
+          if (!event.wasClean) {
+            showWarning('Connection lost, attempting to reconnect...')
+          }
+        }
+      })
+      
+      // Send a message
+      ws.send({
+        type: 'chat',
+        room: 'general',
+        text: 'Hello, everyone!'
+      })
+      
+      // Monitor connection health
+      ws.on('stateChange', ({ newState }) => {
+        updateConnectionIndicator(newState)
+      })
+
+  - title: Chat Application with Presence
+    description: Real-time chat with user presence tracking
+    language: typescript
+    code: |
+      const chat = new AuthenticatedWebSocket()
+      
+      await chat.initialize({
+        url: 'wss://chat.example.com/ws',
+        authToken: userToken,
+        presence: {
+          enabled: true,
+          updateInterval: 30000 // 30 seconds
+        },
+        messageQueue: {
+          enabled: true,
+          maxSize: 50 // Keep last 50 messages if disconnected
+        },
+        onPresenceUpdate: (presenceList) => {
+          // Update online users display
+          const onlineUsers = presenceList.filter(u => u.status === 'online')
+          updateOnlineUsersList(onlineUsers)
+          
+          // Show user count
+          updateUserCount(onlineUsers.length)
+        },
+        onMessage: (message) => {
+          if (message.type === 'chat') {
+            addChatMessage({
+              user: message.user,
+              text: message.text,
+              timestamp: message.timestamp
+            })
+          }
+        }
+      })
+      
+      // Update your presence
+      chat.updatePresence({
+        status: 'active',
+        customData: {
+          currentRoom: 'general',
+          typing: false
+        }
+      })
+      
+      // Handle typing indicators
+      let typingTimeout: NodeJS.Timeout
+      inputField.addEventListener('input', () => {
+        chat.updatePresence({
+          status: 'active',
+          customData: { typing: true }
+        })
+        
+        clearTimeout(typingTimeout)
+        typingTimeout = setTimeout(() => {
+          chat.updatePresence({
+            status: 'active',
+            customData: { typing: false }
+          })
+        }, 3000)
+      })
+
+  - title: Resilient Data Sync
+    description: WebSocket with automatic reconnection and message queuing
+    language: typescript
+    code: |
+      const sync = new AuthenticatedWebSocket()
+      
+      await sync.initialize({
+        url: 'wss://sync.example.com/ws',
+        authToken: apiToken,
+        reconnectConfig: {
+          enabled: true,
+          maxAttempts: 20,
+          delay: 2000,
+          backoffMultiplier: 1.5,
+          maxDelay: 60000
+        },
+        heartbeatConfig: {
+          enabled: true,
+          interval: 15000, // 15 seconds
+          timeout: 5000
+        },
+        messageQueue: {
+          enabled: true,
+          maxSize: 1000,
+          persistence: true // Save to localStorage
+        },
+        onReconnect: (attempt) => {
+          console.log(`Reconnection attempt ${attempt}`)
+          showStatus(`Reconnecting... (${attempt})`)
+        }
+      })
+      
+      // Track connection quality
+      sync.on('stateChange', ({ newState }) => {
+        switch (newState) {
+          case 'connected':
+            showStatus('Connected', 'success')
+            break
+          case 'reconnecting':
+            showStatus('Reconnecting...', 'warning')
+            break
+          case 'error':
+            showStatus('Connection error', 'error')
+            break
+        }
+      })
+      
+      // Monitor latency
+      setInterval(() => {
+        const latency = sync.getOutput('latency')
+        updateLatencyIndicator(latency)
+        
+        if (latency > 1000) {
+          console.warn('High latency detected:', latency)
+        }
+      }, 5000)
+      
+      // Handle queued messages
+      sync.on('messageQueued', ({ queueSize }) => {
+        showInfo(`${queueSize} messages queued`)
+      })
+      
+      // Send critical data with queuing
+      function sendUpdate(data: any) {
+        try {
+          sync.send({
+            type: 'update',
+            data,
+            timestamp: Date.now()
+          })
+        } catch (error) {
+          // Message will be queued automatically
+          console.log('Update queued for later delivery')
+        }
+      }
+
+bestPractices:
+  - Always use WSS (WebSocket Secure) in production environments
+  - Implement proper token refresh logic before tokens expire
+  - Handle reconnection gracefully with exponential backoff
+  - Queue critical messages during disconnection
+  - Validate all incoming messages to prevent XSS attacks
+  - Implement heartbeat mechanism to detect stale connections
+  - Use compression for large messages to reduce bandwidth
+  - Monitor connection metrics and latency
+  - Implement presence cleanup on unexpected disconnects
+  - Handle authentication failures with appropriate user feedback
+  - Set reasonable timeout values based on network conditions
+  - Use message IDs for tracking and deduplication
+  - Implement circuit breaker pattern for repeated failures
+  - Log connection events for debugging and monitoring
+  - Test reconnection logic under various network conditions
+
+troubleshooting:
+  - issue: Connection fails immediately
+    solutions:
+      - Verify WebSocket URL is correct and accessible
+      - Check if authentication token is valid
+      - Ensure WSS certificate is valid
+      - Check firewall/proxy settings
+      - Verify CORS headers if connecting cross-origin
+  
+  - issue: Messages not being received
+    solutions:
+      - Check message event handler is registered
+      - Verify message format matches expectations
+      - Look for errors in browser console
+      - Check if messages are being filtered/validated
+  
+  - issue: Frequent disconnections
+    solutions:
+      - Increase heartbeat interval if too aggressive
+      - Check network stability
+      - Verify server timeout settings
+      - Look for memory leaks causing crashes
+      - Check proxy/load balancer timeout settings
+  
+  - issue: High latency
+    solutions:
+      - Check geographic distance to server
+      - Verify message compression is enabled
+      - Reduce message frequency if possible
+      - Consider using regional endpoints
+      - Check for network congestion
+
+deployment:
+  requiredProviders:
+    - websocket
+  optionalProviders:
+    - redis
+    - kafka
+  configuration:
+    nginx:
+      upstreamTimeout: 3600
+      proxyReadTimeout: 3600
+      proxyBuffering: 'off'
+    aws:
+      services:
+        - api-gateway-websocket
+        - elasticache
+        - cloudwatch
+    firebase:
+      services:
+        - realtime-database
+        - cloud-messaging
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-frontend
+    - love-claude-code-chat
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-websocket-server-primitive
+  timeToCreate: 120
+  linesOfCode: 750
+  testCoverage: 92
+  canBuildConstructs: false
+  platformFeatures:
+    - Real-time Claude chat
+    - Live collaboration
+    - Hot reload notifications
+    - Presence tracking

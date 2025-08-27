@@ -1,0 +1,600 @@
+id: grafana-integration
+name: GrafanaIntegration
+level: L1
+category: external
+type: monitoring
+description: Grafana integration for monitoring and observability dashboards
+metadata:
+  version: 1.0.0
+  author: Love Claude Code Team
+  status: stable
+  platform: Love Claude Code
+  vibe: observant
+  vibeCodingPercentage: 90
+  tags:
+    - monitoring
+    - observability
+    - metrics
+    - dashboards
+    - alerts
+    - grafana
+    - prometheus
+    - influxdb
+    - timeseries
+
+dependencies:
+  internal: []
+  external:
+    - grafana
+    - REST API
+
+interface:
+  inputs:
+    - name: config
+      type: GrafanaConfig
+      description: Configuration for Grafana connection
+      required: true
+      properties:
+        - baseUrl: string
+        - apiKey: string (optional)
+        - username: string (optional)
+        - password: string (optional)
+        - orgId: number (optional)
+        - timeout: number (optional)
+    - name: dashboards
+      type: GrafanaDashboard[]
+      description: List of dashboards to manage
+    - name: datasources
+      type: GrafanaDataSource[]
+      description: List of data sources (Prometheus, InfluxDB, etc.)
+    - name: alerts
+      type: GrafanaAlert[]
+      description: Alert rules for monitoring
+
+  outputs:
+    - name: visualizations
+      type: React.Component
+      description: Embedded dashboard visualizations
+    - name: metrics
+      type: object
+      description: Real-time metrics and measurements
+    - name: alerts
+      type: GrafanaAlert[]
+      description: Active alerts and notifications
+
+  methods:
+    # Connection Management
+    - name: connect
+      description: Connect to Grafana instance
+      async: true
+      returns: void
+    
+    - name: disconnect
+      description: Disconnect from Grafana instance
+      async: true
+      returns: void
+
+    # Dashboard Management
+    - name: listDashboards
+      description: List all available dashboards
+      parameters:
+        - query: string (optional)
+        - tag: string[] (optional)
+        - folderIds: number[] (optional)
+      async: true
+      returns: GrafanaDashboard[]
+    
+    - name: getDashboard
+      description: Get dashboard by UID
+      parameters:
+        - uid: string
+      async: true
+      returns: { dashboard: GrafanaDashboard; meta: any }
+    
+    - name: createDashboard
+      description: Create a new dashboard
+      parameters:
+        - dashboard: GrafanaDashboard
+        - folderId: number (optional)
+        - overwrite: boolean (optional)
+      async: true
+      returns: object
+    
+    - name: updateDashboard
+      description: Update existing dashboard
+      parameters:
+        - uid: string
+        - dashboard: GrafanaDashboard
+        - overwrite: boolean (optional)
+      async: true
+      returns: object
+    
+    - name: deleteDashboard
+      description: Delete a dashboard
+      parameters:
+        - uid: string
+      async: true
+      returns: void
+
+    # Data Source Management
+    - name: listDataSources
+      description: List all configured data sources
+      async: true
+      returns: GrafanaDataSource[]
+    
+    - name: getDataSource
+      description: Get data source by ID
+      parameters:
+        - id: number
+      async: true
+      returns: GrafanaDataSource
+    
+    - name: getDataSourceByName
+      description: Get data source by name
+      parameters:
+        - name: string
+      async: true
+      returns: GrafanaDataSource
+    
+    - name: createDataSource
+      description: Create a new data source
+      parameters:
+        - datasource: Partial<GrafanaDataSource>
+      async: true
+      returns: object
+    
+    - name: updateDataSource
+      description: Update existing data source
+      parameters:
+        - id: number
+        - datasource: Partial<GrafanaDataSource>
+      async: true
+      returns: object
+    
+    - name: deleteDataSource
+      description: Delete a data source
+      parameters:
+        - id: number
+      async: true
+      returns: void
+    
+    - name: testDataSource
+      description: Test data source connection
+      parameters:
+        - datasource: Partial<GrafanaDataSource>
+      async: true
+      returns: { status: string; message: string }
+
+    # Alert Management
+    - name: listAlerts
+      description: List all alert rules
+      async: true
+      returns: GrafanaAlert[]
+    
+    - name: getAlert
+      description: Get alert rule by UID
+      parameters:
+        - uid: string
+      async: true
+      returns: GrafanaAlert
+    
+    - name: createAlert
+      description: Create a new alert rule
+      parameters:
+        - alert: GrafanaAlert
+      async: true
+      returns: GrafanaAlert
+    
+    - name: updateAlert
+      description: Update existing alert rule
+      parameters:
+        - uid: string
+        - alert: GrafanaAlert
+      async: true
+      returns: GrafanaAlert
+    
+    - name: deleteAlert
+      description: Delete an alert rule
+      parameters:
+        - uid: string
+      async: true
+      returns: void
+    
+    - name: pauseAlert
+      description: Pause an alert rule
+      parameters:
+        - uid: string
+      async: true
+      returns: void
+    
+    - name: unpauseAlert
+      description: Unpause an alert rule
+      parameters:
+        - uid: string
+      async: true
+      returns: void
+
+    # Folder Management
+    - name: listFolders
+      description: List all folders
+      async: true
+      returns: GrafanaFolder[]
+    
+    - name: getFolder
+      description: Get folder by UID
+      parameters:
+        - uid: string
+      async: true
+      returns: GrafanaFolder
+    
+    - name: createFolder
+      description: Create a new folder
+      parameters:
+        - title: string
+      async: true
+      returns: GrafanaFolder
+    
+    - name: updateFolder
+      description: Update folder title
+      parameters:
+        - uid: string
+        - title: string
+      async: true
+      returns: GrafanaFolder
+    
+    - name: deleteFolder
+      description: Delete a folder
+      parameters:
+        - uid: string
+      async: true
+      returns: void
+
+    # Organization Management
+    - name: getCurrentOrg
+      description: Get current organization
+      async: true
+      returns: GrafanaOrganization
+    
+    - name: updateCurrentOrg
+      description: Update current organization
+      parameters:
+        - name: string
+      async: true
+      returns: { message: string }
+
+    # Annotations
+    - name: createAnnotation
+      description: Create an annotation
+      parameters:
+        - annotation: object
+      async: true
+      returns: { message: string; id: number }
+    
+    - name: listAnnotations
+      description: List annotations
+      parameters:
+        - params: object (optional)
+      async: true
+      returns: any[]
+    
+    - name: deleteAnnotation
+      description: Delete an annotation
+      parameters:
+        - id: number
+      async: true
+      returns: { message: string }
+
+    # Snapshot Management
+    - name: createSnapshot
+      description: Create a dashboard snapshot
+      parameters:
+        - dashboard: GrafanaDashboard
+        - expires: number (optional)
+      async: true
+      returns: GrafanaSnapshot
+    
+    - name: listSnapshots
+      description: List all snapshots
+      async: true
+      returns: GrafanaSnapshot[]
+    
+    - name: getSnapshot
+      description: Get snapshot by key
+      parameters:
+        - key: string
+      async: true
+      returns: GrafanaSnapshot
+    
+    - name: deleteSnapshot
+      description: Delete a snapshot
+      parameters:
+        - key: string
+      async: true
+      returns: void
+
+    # Panel Templates
+    - name: createPrometheusPanel
+      description: Create a Prometheus panel template
+      parameters:
+        - title: string
+        - expr: string
+        - options: Partial<GrafanaPanel> (optional)
+      returns: GrafanaPanel
+    
+    - name: createInfluxDBPanel
+      description: Create an InfluxDB panel template
+      parameters:
+        - title: string
+        - measurement: string
+        - options: Partial<GrafanaPanel> (optional)
+      returns: GrafanaPanel
+
+    # Dashboard Templates
+    - name: createDashboardTemplate
+      description: Create a dashboard template
+      parameters:
+        - title: string
+        - panels: GrafanaPanel[]
+      returns: GrafanaDashboard
+
+    # Embedding
+    - name: getEmbedUrl
+      description: Get embed URL for dashboard
+      parameters:
+        - uid: string
+        - options: object (optional)
+      returns: string
+
+  events:
+    - name: onDashboardLoad
+      description: Fired when dashboard is loaded
+      payload: GrafanaDashboard
+    
+    - name: onAlertTrigger
+      description: Fired when alert is triggered
+      payload: GrafanaAlert
+    
+    - name: onMetricUpdate
+      description: Fired when metrics are updated
+      payload: object
+    
+    - name: onAnnotation
+      description: Fired when annotation is created
+      payload: object
+
+capabilities:
+  - dashboard-management
+  - datasource-management
+  - alert-management
+  - annotation-support
+  - folder-organization
+  - snapshot-creation
+  - embedded-dashboards
+  - multi-tenant
+  - templating
+  - real-time-metrics
+  - panel-templates
+  - variable-support
+  - time-range-selection
+  - dashboard-versioning
+  - permissions-management
+
+configuration:
+  authentication:
+    - api-key
+    - basic-auth
+    - proxy-auth
+  
+  datasources:
+    - prometheus
+    - influxdb
+    - elasticsearch
+    - graphite
+    - postgres
+    - mysql
+    - cloudwatch
+    - azure-monitor
+    - stackdriver
+    - loki
+    - tempo
+    - jaeger
+  
+  visualizationTypes:
+    - graph
+    - singlestat
+    - gauge
+    - bar-gauge
+    - table
+    - text
+    - heatmap
+    - alert-list
+    - dashboard-list
+    - news
+    - logs
+    - stat
+    - pie-chart
+    - histogram
+    - timeseries
+    - state-timeline
+    - candlestick
+    - status-history
+    - traces
+    - node-graph
+    - flame-graph
+    - geomap
+
+  alertChannels:
+    - email
+    - slack
+    - pagerduty
+    - webhook
+    - discord
+    - teams
+    - telegram
+    - opsgenie
+    - victorops
+
+examples:
+  - name: Basic Monitoring Dashboard
+    description: Create a system monitoring dashboard
+    code: |
+      const grafana = new GrafanaIntegration({
+        baseUrl: 'https://grafana.example.com',
+        apiKey: 'your-api-key'
+      });
+      
+      await grafana.connect();
+      
+      // Create data source
+      const prometheus = await grafana.createDataSource({
+        name: 'Prometheus',
+        type: 'prometheus',
+        url: 'http://prometheus:9090',
+        access: 'proxy',
+        isDefault: true
+      });
+      
+      // Create dashboard with panels
+      const dashboard = grafana.createDashboardTemplate(
+        'System Monitoring',
+        [
+          grafana.createPrometheusPanel(
+            'CPU Usage',
+            'rate(node_cpu_seconds_total[5m])',
+            { gridPos: { x: 0, y: 0, w: 12, h: 8 } }
+          ),
+          grafana.createPrometheusPanel(
+            'Memory Usage',
+            'node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes',
+            { gridPos: { x: 12, y: 0, w: 12, h: 8 } }
+          )
+        ]
+      );
+      
+      await grafana.createDashboard(dashboard);
+
+  - name: Alert Configuration
+    description: Set up monitoring alerts
+    code: |
+      const alert = await grafana.createAlert({
+        title: 'High CPU Usage',
+        condition: 'avg()',
+        data: [{
+          refId: 'A',
+          queryType: 'classic',
+          model: {
+            expr: 'rate(node_cpu_seconds_total[5m]) > 0.8',
+            datasource: { uid: 'prometheus-uid' }
+          }
+        }],
+        noDataState: 'NoData',
+        execErrState: 'Alerting',
+        for: '5m',
+        annotations: {
+          description: 'CPU usage is above 80%',
+          runbook_url: 'https://wiki.example.com/runbooks/cpu'
+        },
+        labels: {
+          severity: 'warning',
+          team: 'platform'
+        }
+      });
+
+  - name: Embedded Dashboard
+    description: Embed Grafana dashboard in React app
+    code: |
+      <grafana.EmbeddedDashboard
+        uid="system-monitoring"
+        height="800px"
+        theme="dark"
+        refresh="10s"
+        from="now-6h"
+        to="now"
+        vars={{
+          server: 'production-1',
+          region: 'us-west-2'
+        }}
+        onLoad={() => console.log('Dashboard loaded')}
+      />
+
+  - name: Data Source Testing
+    description: Test and validate data sources
+    code: |
+      const datasources = await grafana.listDataSources();
+      
+      for (const ds of datasources) {
+        const result = await grafana.testDataSource(ds);
+        console.log(`${ds.name}: ${result.status} - ${result.message}`);
+      }
+
+implementation:
+  path: frontend/src/constructs/L1/external/GrafanaIntegration.tsx
+  className: GrafanaIntegration
+  extends: L1ExternalConstruct
+
+testing:
+  unitTests:
+    - test authentication methods
+    - test dashboard CRUD operations
+    - test data source management
+    - test alert rule creation
+    - test panel template generation
+  
+  integrationTests:
+    - test with real Grafana instance
+    - test embedded dashboard loading
+    - test alert triggering
+    - test annotation creation
+    - test snapshot management
+  
+  e2eTests:
+    - test complete monitoring workflow
+    - test dashboard interactions
+    - test alert notifications
+    - test data source connectivity
+
+documentation:
+  setup: |
+    1. Install and configure Grafana instance
+    2. Enable API access and generate API key
+    3. Configure CORS headers for embedding
+    4. Set up data sources (Prometheus, InfluxDB, etc.)
+    5. Configure alert notification channels
+    6. Create organization and users
+  
+  bestPractices:
+    - Use folders to organize dashboards
+    - Implement proper dashboard versioning
+    - Use variables for dynamic dashboards
+    - Set appropriate refresh intervals
+    - Configure alert thresholds carefully
+    - Use annotations for events
+    - Implement dashboard snapshots for sharing
+    - Monitor Grafana performance metrics
+    - Use provisioning for config as code
+  
+  security:
+    - Store API keys securely
+    - Use HTTPS for all communications
+    - Implement proper RBAC
+    - Limit API key permissions
+    - Audit dashboard access
+    - Use viewer-only embeds when possible
+    - Validate all user inputs
+    - Implement rate limiting
+
+monitoring:
+  metrics:
+    - dashboard_load_time
+    - api_request_latency
+    - datasource_query_duration
+    - alert_evaluation_time
+    - annotation_count
+    - active_dashboard_count
+    - failed_queries_count
+  
+  health_checks:
+    - grafana_api_availability
+    - datasource_connectivity
+    - alert_engine_status
+    - dashboard_render_success

@@ -10,8 +10,14 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 
+interface CustomNodeData {
+  label: string
+  color: string
+  description?: string
+}
+
 const nodeTypes = {
-  customNode: ({ data }: { data: any }) => (
+  customNode: ({ data }: { data: CustomNodeData }) => (
     <div className={`px-4 py-3 rounded-lg border-2 ${data.color} min-w-[150px] text-center relative`}>
       <div className="font-semibold text-sm">{data.label}</div>
       {data.description && (

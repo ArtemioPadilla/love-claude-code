@@ -1,0 +1,432 @@
+id: airflow-integration
+name: Apache Airflow Integration
+level: L1
+version: 1.0.0
+description: Workflow orchestration and task scheduling through Apache Airflow REST API. Provides DAG management, monitoring, and execution capabilities for data pipelines and scheduled tasks.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: false
+  selfReferential:
+    developmentMethod: vibe-coded
+    vibeCodingPercentage: 95
+    timeToCreate: 45
+    builtWith:
+      - l1-external-construct
+      - themed-components
+      - construct-types
+
+categories:
+  - external
+  - infrastructure
+  - workflow
+  - orchestration
+  - scheduling
+
+tags:
+  - airflow
+  - workflow
+  - orchestration
+  - scheduling
+  - data-pipeline
+  - etl
+  - dag
+  - task-scheduler
+  - L1
+  - external-service
+
+providers:
+  - local
+  - aws
+  - gcp
+
+inputs:
+  config:
+    type: AirflowConfig
+    description: Airflow integration configuration
+    required: false
+    default: |
+      {
+        baseUrl: 'http://localhost:8080',
+        apiVersion: 'v1',
+        auth: { type: 'basic' },
+        timeout: 30000,
+        pollingInterval: 5000
+      }
+    validation:
+      properties:
+        baseUrl:
+          type: string
+          pattern: '^https?://'
+        apiVersion:
+          type: string
+          enum: ['v1', 'v2']
+        auth:
+          type: object
+          properties:
+            type:
+              enum: ['basic', 'bearer', 'oauth2']
+        timeout:
+          type: number
+          min: 1000
+          max: 300000
+        pollingInterval:
+          type: number
+          min: 0
+          max: 60000
+
+outputs:
+  dags:
+    type: AirflowDAG[]
+    description: List of available DAGs with metadata
+    
+  activeRuns:
+    type: AirflowDAGRun[]
+    description: Currently active DAG runs with status
+    
+  connectionStatus:
+    type: object
+    description: Connection status and health information including metrics
+
+implementation:
+  infrastructure: frontend/src/constructs/L1/external/AirflowIntegration.tsx
+  ui: frontend/src/constructs/L1/external/AirflowIntegration.tsx
+
+dependencies:
+  - constructId: l1-external-construct
+    version: "^1.0.0"
+    optional: false
+  - constructId: themed-components
+    version: "^1.0.0"
+    optional: false
+
+security:
+  - aspect: api-authentication
+    description: Requires secure authentication to Airflow API
+    severity: high
+    recommendations:
+      - Use strong authentication (OAuth2 preferred)
+      - Rotate API tokens regularly
+      - Use HTTPS for all communications
+      - Restrict API access by IP if possible
+      
+  - aspect: dag-execution
+    description: DAGs can execute arbitrary code on the Airflow cluster
+    severity: critical
+    recommendations:
+      - Review all DAG code before deployment
+      - Use role-based access control
+      - Implement DAG validation pipeline
+      - Monitor DAG execution for anomalies
+      - Use separate Airflow instances for dev/prod
+      
+  - aspect: data-access
+    description: Workflows may access sensitive data sources
+    severity: high
+    recommendations:
+      - Implement data access controls
+      - Use connection encryption
+      - Audit data access patterns
+      - Mask sensitive information in logs
+      - Use service accounts with minimal permissions
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: api-calls
+      unit: requests
+      costPerUnit: 0.0001
+      typicalUsage: 10000
+    - name: dag-runs
+      unit: executions
+      costPerUnit: 0.01
+      typicalUsage: 500
+  notes:
+    - No direct costs for the integration itself
+    - API call costs depend on Airflow hosting provider
+    - Consider caching to reduce API usage
+    - DAG execution costs depend on compute resources
+
+c4:
+  type: Component
+  technology: TypeScript/React
+  external: true
+  containerType: WebApp
+  position:
+    x: 800
+    y: 300
+
+relationships:
+  - from: airflow-integration
+    to: apache-airflow
+    description: Connects to Airflow REST API for workflow management
+    technology: HTTPS/REST
+    type: sync
+  - from: airflow-integration
+    to: airflow-scheduler
+    description: Triggers and monitors DAG execution
+    technology: REST API
+    type: async
+  - from: airflow-integration
+    to: airflow-webserver
+    description: Retrieves DAG metadata and run status
+    technology: REST API
+    type: sync
+
+examples:
+  - title: Basic Connection and DAG Listing
+    description: Connect to Airflow and list available DAGs
+    language: typescript
+    code: |
+      import { AirflowIntegration } from '@/constructs/L1/external/AirflowIntegration'
+      
+      const airflow = new AirflowIntegration({
+        config: {
+          baseUrl: 'https://airflow.example.com',
+          auth: {
+            type: 'bearer',
+            token: process.env.AIRFLOW_API_TOKEN
+          }
+        }
+      })
+      
+      await airflow.connect()
+      const dags = await airflow.listDAGs()
+      console.log('Available DAGs:', dags)
+      
+      // Get specific DAG details
+      const etlDag = await airflow.getDAG('etl_pipeline')
+      console.log('ETL Pipeline:', etlDag)
+      
+  - title: Trigger and Monitor DAG Run
+    description: Trigger a DAG run with configuration and monitor progress
+    language: typescript
+    code: |
+      // Trigger a data processing pipeline
+      const runId = await airflow.triggerDAG('data_processing_pipeline', {
+        conf: {
+          date: '2025-01-23',
+          source: 's3://bucket/data/',
+          target: 's3://bucket/processed/',
+          batch_size: 1000
+        }
+      })
+      
+      // Monitor the run
+      let status = await airflow.getDAGRunStatus('data_processing_pipeline', runId)
+      console.log('Initial status:', status.state)
+      
+      // Poll for completion
+      while (status.state === 'running' || status.state === 'queued') {
+        await new Promise(resolve => setTimeout(resolve, 5000))
+        status = await airflow.getDAGRunStatus('data_processing_pipeline', runId)
+        console.log('Current status:', status.state)
+      }
+      
+      if (status.state === 'success') {
+        console.log('Pipeline completed successfully!')
+      } else {
+        console.log('Pipeline failed:', status)
+      }
+      
+  - title: Monitor Task Progress and Logs
+    description: Monitor individual task instances within a DAG run
+    language: typescript
+    code: |
+      // Get all task instances for a run
+      const tasks = await airflow.getTaskInstances('etl_pipeline', 'manual__2025-01-23')
+      
+      // Check task states
+      const taskSummary = tasks.reduce((acc, task) => {
+        acc[task.state] = (acc[task.state] || 0) + 1
+        return acc
+      }, {} as Record<string, number>)
+      
+      console.log('Task summary:', taskSummary)
+      
+      // Check failed tasks
+      const failedTasks = tasks.filter(task => task.state === 'failed')
+      for (const task of failedTasks) {
+        console.log(`Failed task: ${task.taskId}`)
+        
+        // Get task logs
+        const logs = await airflow.getTaskLogs(
+          task.dagId,
+          task.dagRunId,
+          task.taskId,
+          task.tryNumber || 1
+        )
+        console.log('Error logs:', logs)
+      }
+      
+      // Clear failed tasks to retry
+      if (failedTasks.length > 0) {
+        await airflow.clearTaskInstances('etl_pipeline', {
+          onlyFailed: true,
+          taskIds: failedTasks.map(t => t.taskId)
+        })
+      }
+      
+  - title: Workflow Metrics and Health
+    description: Get workflow metrics and monitor Airflow health
+    language: typescript
+    code: |
+      // Get overall workflow metrics
+      const metrics = await airflow.getWorkflowMetrics()
+      console.log('Workflow metrics:', {
+        totalDAGs: metrics.totalDAGs,
+        activeDAGs: metrics.activeDAGs,
+        runningRuns: metrics.runningRuns,
+        successRate: `${metrics.successRate.toFixed(1)}%`
+      })
+      
+      // List recent runs across all DAGs
+      const recentRuns = await airflow.listDAGRuns(undefined, {
+        limit: 50,
+        executionDateGte: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        state: ['failed', 'success']
+      })
+      
+      // Analyze run performance
+      const runsByDag = recentRuns.reduce((acc, run) => {
+        if (!acc[run.dagId]) {
+          acc[run.dagId] = { success: 0, failed: 0, total: 0 }
+        }
+        acc[run.dagId][run.state]++
+        acc[run.dagId].total++
+        return acc
+      }, {} as Record<string, any>)
+      
+      console.log('DAG performance:', runsByDag)
+      
+  - title: Deploy and Manage DAGs
+    description: Deploy new DAGs and manage DAG lifecycle
+    language: typescript
+    code: |
+      // Deploy a new DAG
+      const dagCode = `
+      from airflow import DAG
+      from airflow.operators.python import PythonOperator
+      from datetime import datetime, timedelta
+      
+      default_args = {
+          'owner': 'data-team',
+          'depends_on_past': False,
+          'start_date': datetime(2025, 1, 1),
+          'email_on_failure': True,
+          'email_on_retry': False,
+          'retries': 1,
+          'retry_delay': timedelta(minutes=5)
+      }
+      
+      dag = DAG(
+          'new_data_pipeline',
+          default_args=default_args,
+          description='New data processing pipeline',
+          schedule_interval='@daily',
+          catchup=False
+      )
+      
+      def process_data(**context):
+          # Processing logic here
+          pass
+      
+      process_task = PythonOperator(
+          task_id='process_data',
+          python_callable=process_data,
+          dag=dag
+      )
+      `
+      
+      await airflow.deployDAG('new_data_pipeline', dagCode, {
+        validate: true,
+        overwrite: false
+      })
+      
+      // Wait for DAG to be parsed
+      await new Promise(resolve => setTimeout(resolve, 10000))
+      
+      // Unpause the new DAG
+      await airflow.unpauseDAG('new_data_pipeline')
+      
+      // Trigger first run
+      const runId = await airflow.triggerDAG('new_data_pipeline')
+      console.log('New pipeline triggered:', runId)
+
+bestPractices:
+  - Always use HTTPS for production Airflow instances
+  - Implement proper error handling for network failures
+  - Use connection pooling for high-frequency polling
+  - Cache DAG metadata to reduce API calls
+  - Implement exponential backoff for retries
+  - Monitor API rate limits and implement throttling
+  - Use webhooks when available instead of polling
+  - Validate DAG configurations before deployment
+  - Implement proper logging and monitoring
+  - Use service accounts with minimal required permissions
+  - Store credentials securely (environment variables or secrets manager)
+  - Implement circuit breakers for resilience
+  - Use separate Airflow instances for different environments
+  - Monitor DAG performance and optimize slow-running tasks
+  - Implement proper DAG versioning and rollback procedures
+  - Use Airflow's built-in alerting for critical workflows
+  - Consider using Airflow's experimental REST API for newer features
+  - Implement proper connection management for external systems
+  - Use task groups for better DAG organization
+  - Leverage Airflow's XCom for inter-task communication
+
+testing:
+  unit:
+    - Connection establishment with different auth types
+    - DAG listing and filtering
+    - DAG trigger with various configurations
+    - Task instance retrieval and filtering
+    - Error handling for API failures
+    - Retry logic with exponential backoff
+    - Polling mechanism for status updates
+    - Event emission for state changes
+    
+  integration:
+    - Connect to actual Airflow instance
+    - Trigger and monitor real DAG runs
+    - Handle authentication failures gracefully
+    - Verify task log retrieval
+    - Test concurrent API requests
+    - Validate metrics calculation
+    - Test DAG pause/unpause functionality
+    - Verify task clearing and retry
+
+deployment:
+  requiredProviders: []
+  configSchema:
+    type: object
+    properties:
+      AIRFLOW_BASE_URL:
+        type: string
+        description: Base URL of the Airflow instance
+      AIRFLOW_API_TOKEN:
+        type: string
+        description: API token for authentication
+      AIRFLOW_USERNAME:
+        type: string
+        description: Username for basic auth
+      AIRFLOW_PASSWORD:
+        type: string
+        description: Password for basic auth
+    required: ['AIRFLOW_BASE_URL']
+  environmentVariables:
+    - AIRFLOW_BASE_URL
+    - AIRFLOW_API_TOKEN
+    - AIRFLOW_USERNAME
+    - AIRFLOW_PASSWORD
+  preDeploymentChecks:
+    - Verify Airflow instance is accessible
+    - Check API version compatibility
+    - Validate authentication credentials
+    - Test basic API connectivity
+  postDeploymentChecks:
+    - Verify DAG listing works
+    - Check metric collection
+    - Test event emission

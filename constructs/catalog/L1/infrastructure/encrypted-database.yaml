@@ -1,0 +1,1009 @@
+id: platform-l1-encrypted-database
+name: Encrypted Database
+level: L1
+version: 1.0.0
+author: Love Claude Code
+category: infrastructure
+tags:
+  - database
+  - encryption
+  - security
+  - compliance
+  - backup
+  - audit
+  - managed
+  - platform-construct
+
+description: |
+  Production-ready database with comprehensive security features including at-rest encryption,
+  TLS connections, automated backups, audit logging, compliance modes (HIPAA, PCI, GDPR),
+  field-level encryption, access control, and performance optimization. Built upon the L0
+  Database Table Primitive, this L1 construct provides enterprise-grade data protection
+  and regulatory compliance capabilities.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: connectionString
+    type: string
+    required: true
+    description: Database connection string
+    example: postgresql://user:pass@host:5432/database
+    sensitive: true
+    validation:
+      pattern: '^(postgresql|mysql|mongodb)://.*'
+
+  - name: encryptionConfig
+    type: object
+    required: true
+    description: Encryption configuration
+    properties:
+      enabled:
+        type: boolean
+        required: true
+        default: true
+        description: Enable at-rest encryption
+      algorithm:
+        type: string
+        required: true
+        default: AES-256-GCM
+        enum: ['AES-256-GCM', 'AES-256-CBC', 'ChaCha20-Poly1305']
+        description: Encryption algorithm
+      keyManagement:
+        type: string
+        required: true
+        default: local
+        enum: ['local', 'aws-kms', 'azure-keyvault', 'gcp-kms', 'hashicorp-vault']
+        description: Key management system
+      masterKey:
+        type: string
+        required: false
+        description: Master encryption key (for local KMS)
+        sensitive: true
+      keyRotation:
+        type: object
+        required: false
+        description: Key rotation configuration
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          intervalDays:
+            type: number
+            default: 90
+            validation:
+              min: 1
+              max: 365
+      fieldsToEncrypt:
+        type: array
+        required: false
+        description: Specific fields to encrypt
+        itemType: string
+        example: ['ssn', 'credit_card', 'medical_record']
+
+  - name: tlsConfig
+    type: object
+    required: false
+    description: TLS/SSL configuration
+    default:
+      enabled: true
+      minVersion: TLSv1.2
+      verifyServerCert: true
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      minVersion:
+        type: string
+        default: TLSv1.2
+        enum: ['TLSv1.2', 'TLSv1.3']
+      ca:
+        type: string
+        description: CA certificate
+        sensitive: true
+      cert:
+        type: string
+        description: Client certificate
+        sensitive: true
+      key:
+        type: string
+        description: Client key
+        sensitive: true
+      verifyServerCert:
+        type: boolean
+        default: true
+
+  - name: backupConfig
+    type: object
+    required: false
+    description: Backup configuration
+    default:
+      enabled: true
+      schedule: '0 2 * * *'
+      retention: 30
+      encrypted: true
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      schedule:
+        type: string
+        default: '0 2 * * *'
+        description: Cron schedule for backups
+      retention:
+        type: number
+        default: 30
+        description: Backup retention in days
+        validation:
+          min: 1
+          max: 3650
+      location:
+        type: string
+        description: Backup storage location
+        example: s3://my-backup-bucket/db-backups
+      encrypted:
+        type: boolean
+        default: true
+        description: Encrypt backup files
+      compression:
+        type: string
+        default: gzip
+        enum: ['gzip', 'lz4', 'zstd', 'none']
+
+  - name: auditConfig
+    type: object
+    required: false
+    description: Audit logging configuration
+    default:
+      enabled: true
+      logLevel: all
+      retention: 90
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      logLevel:
+        type: string
+        default: all
+        enum: ['all', 'writes', 'admin', 'errors']
+      retention:
+        type: number
+        default: 90
+        description: Audit log retention in days
+        validation:
+          min: 1
+          max: 2555
+      includeData:
+        type: boolean
+        default: false
+        description: Include actual data in audit logs
+      excludeTables:
+        type: array
+        itemType: string
+        description: Tables to exclude from audit
+
+  - name: complianceConfig
+    type: object
+    required: false
+    description: Compliance configuration
+    properties:
+      mode:
+        type: string
+        enum: ['HIPAA', 'PCI', 'GDPR', 'SOC2', 'custom']
+        description: Compliance mode
+      dataRetention:
+        type: number
+        description: Data retention period in days
+      auditRetention:
+        type: number
+        description: Audit log retention in days
+      encryptCardData:
+        type: boolean
+        description: Encrypt credit card data (PCI)
+      tokenization:
+        type: boolean
+        description: Enable tokenization (PCI)
+      dataSubjectRights:
+        type: boolean
+        description: Enable data subject rights (GDPR)
+      rightToErasure:
+        type: boolean
+        description: Enable right to erasure (GDPR)
+      customRules:
+        type: array
+        itemType: object
+        description: Custom compliance rules
+
+  - name: accessControlConfig
+    type: object
+    required: false
+    description: Access control configuration
+    default:
+      enabled: true
+      defaultDeny: true
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      defaultDeny:
+        type: boolean
+        default: true
+        description: Deny by default
+      roles:
+        type: array
+        itemType:
+          type: object
+          properties:
+            name:
+              type: string
+              required: true
+            permissions:
+              type: array
+              itemType: string
+              description: Permission list
+            tables:
+              type: array
+              itemType: string
+              description: Allowed tables
+      userMapping:
+        type: object
+        description: Map users to roles
+
+  - name: performanceConfig
+    type: object
+    required: false
+    description: Performance optimization
+    default:
+      connectionPooling: true
+      maxConnections: 20
+      queryCache: true
+    properties:
+      connectionPooling:
+        type: boolean
+        default: true
+      maxConnections:
+        type: number
+        default: 20
+        validation:
+          min: 1
+          max: 1000
+      minConnections:
+        type: number
+        default: 2
+        validation:
+          min: 0
+          max: 100
+      queryCache:
+        type: boolean
+        default: true
+      cacheSize:
+        type: number
+        default: 100
+        description: Cache size in MB
+      indexHints:
+        type: boolean
+        default: true
+        description: Enable index optimization hints
+      queryTimeout:
+        type: number
+        default: 30000
+        description: Query timeout in milliseconds
+
+  - name: monitoringConfig
+    type: object
+    required: false
+    description: Database monitoring
+    default:
+      enabled: true
+      metricsInterval: 60
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      metricsInterval:
+        type: number
+        default: 60
+        description: Metrics collection interval in seconds
+      slowQueryThreshold:
+        type: number
+        default: 1000
+        description: Slow query threshold in ms
+      alertThresholds:
+        type: object
+        properties:
+          connectionUsage:
+            type: number
+            default: 80
+            description: Connection pool usage %
+          diskUsage:
+            type: number
+            default: 80
+            description: Disk usage %
+          errorRate:
+            type: number
+            default: 5
+            description: Error rate %
+
+  - name: schemaManagement
+    type: object
+    required: false
+    description: Schema management configuration
+    default:
+      validateSchema: true
+      autoMigrate: false
+    properties:
+      validateSchema:
+        type: boolean
+        default: true
+      autoMigrate:
+        type: boolean
+        default: false
+      migrationPath:
+        type: string
+        description: Path to migration files
+      schemas:
+        type: object
+        description: Table schemas for validation
+
+outputs:
+  - name: databaseId
+    type: string
+    description: Unique database identifier
+
+  - name: status
+    type: string
+    description: Current connection status
+    enum: ['disconnected', 'connecting', 'connected', 'error']
+
+  - name: connectionPool
+    type: object
+    description: Connection pool information
+    properties:
+      active:
+        type: number
+      idle:
+        type: number
+      total:
+        type: number
+      waiting:
+        type: number
+
+  - name: encryptionStatus
+    type: object
+    description: Encryption status
+    properties:
+      enabled:
+        type: boolean
+      algorithm:
+        type: string
+      keyStatus:
+        type: string
+      lastRotation:
+        type: Date
+
+  - name: backupStatus
+    type: object
+    description: Backup status
+    properties:
+      lastBackup:
+        type: Date
+      nextBackup:
+        type: Date
+      backupCount:
+        type: number
+      totalSize:
+        type: number
+
+  - name: compliance
+    type: object
+    description: Compliance status
+    properties:
+      mode:
+        type: string
+      compliant:
+        type: boolean
+      features:
+        type: array
+        itemType: string
+      lastAudit:
+        type: Date
+
+  - name: metrics
+    type: object
+    description: Database performance metrics
+    properties:
+      queryCount:
+        type: number
+      averageQueryTime:
+        type: number
+      cacheHitRate:
+        type: number
+      errorRate:
+        type: number
+      activeConnections:
+        type: number
+      diskUsage:
+        type: number
+      throughput:
+        type: number
+
+  - name: capabilities
+    type: object
+    description: Database capabilities
+    properties:
+      encryption:
+        type: boolean
+      tls:
+        type: boolean
+      backup:
+        type: boolean
+      audit:
+        type: boolean
+      compliance:
+        type: boolean
+      clustering:
+        type: boolean
+
+methods:
+  - name: connect
+    description: Connect to the database
+    signature: () => Promise<void>
+
+  - name: disconnect
+    description: Disconnect from the database
+    signature: () => Promise<void>
+
+  - name: query
+    description: Execute a query with automatic encryption/decryption
+    signature: (sql: string, params?: any[], options?: QueryOptions) => Promise<QueryResult>
+    parameters:
+      - name: sql
+        type: string
+        description: SQL query string
+      - name: params
+        type: array
+        description: Query parameters
+      - name: options
+        type: object
+        description: Query options (user, schema, etc.)
+
+  - name: insert
+    description: Insert data with encryption
+    signature: (table: string, data: object, options?: InsertOptions) => Promise<InsertResult>
+
+  - name: update
+    description: Update data with encryption
+    signature: (table: string, id: string, data: object, options?: UpdateOptions) => Promise<UpdateResult>
+
+  - name: delete
+    description: Delete data with audit trail
+    signature: (table: string, id: string, options?: DeleteOptions) => Promise<DeleteResult>
+
+  - name: transaction
+    description: Execute operations in a transaction
+    signature: (callback: TransactionCallback) => Promise<any>
+
+  - name: backup
+    description: Create an encrypted backup
+    signature: (options?: BackupOptions) => Promise<BackupResult>
+
+  - name: restore
+    description: Restore from backup
+    signature: (backupId: string, options?: RestoreOptions) => Promise<RestoreResult>
+
+  - name: rotateKeys
+    description: Rotate encryption keys
+    signature: () => Promise<KeyRotationResult>
+
+  - name: eraseUserData
+    description: GDPR right to erasure
+    signature: (userId: string) => Promise<EraseResult>
+
+  - name: exportUserData
+    description: GDPR data portability
+    signature: (userId: string) => Promise<ExportResult>
+
+  - name: getMetrics
+    description: Get performance metrics
+    signature: () => Promise<DatabaseMetrics>
+
+  - name: getAuditLog
+    description: Retrieve audit logs
+    signature: (options?: AuditLogOptions) => Promise<AuditLog[]>
+
+events:
+  - name: connected
+    description: Database connected successfully
+    payload:
+      databaseId: string
+      capabilities: object
+
+  - name: disconnected
+    description: Database disconnected
+    payload:
+      databaseId: string
+      reason: string
+
+  - name: error
+    description: Database error occurred
+    payload:
+      error: string
+      query: string
+      severity: string
+
+  - name: slowQuery
+    description: Slow query detected
+    payload:
+      query: string
+      duration: number
+      params: any[]
+
+  - name: audit
+    description: Audit event logged
+    payload:
+      action: string
+      table: string
+      user: string
+      timestamp: Date
+      data: any
+
+  - name: backup
+    description: Backup completed
+    payload:
+      backupId: string
+      size: number
+      duration: number
+
+  - name: keyRotation
+    description: Keys rotated
+    payload:
+      oldKeyId: string
+      newKeyId: string
+      timestamp: Date
+
+  - name: complianceAlert
+    description: Compliance issue detected
+    payload:
+      issue: string
+      severity: string
+      details: object
+
+  - name: performanceAlert
+    description: Performance threshold exceeded
+    payload:
+      metric: string
+      value: number
+      threshold: number
+
+security:
+  - aspect: At-Rest Encryption
+    description: All data encrypted before storage
+    implementation: |
+      - Field-level encryption for sensitive data
+      - Transparent encryption for entire database
+      - Key rotation support
+      - Multiple encryption algorithms
+      - Hardware security module integration
+
+  - aspect: In-Transit Encryption
+    description: TLS/SSL for all connections
+    implementation: |
+      - Minimum TLS 1.2 enforcement
+      - Certificate verification
+      - Mutual TLS support
+      - Perfect forward secrecy
+      - Connection encryption monitoring
+
+  - aspect: Access Control
+    description: Role-based database access
+    implementation: |
+      - Fine-grained permissions
+      - Table and column-level access
+      - Row-level security
+      - Dynamic data masking
+      - Principle of least privilege
+
+  - aspect: Audit Logging
+    description: Comprehensive activity tracking
+    implementation: |
+      - All data access logged
+      - Query execution tracking
+      - Failed authentication attempts
+      - Schema changes recorded
+      - Tamper-proof audit trail
+
+  - aspect: Compliance
+    description: Regulatory compliance features
+    implementation: |
+      - HIPAA compliance mode
+      - PCI DSS compliance
+      - GDPR data protection
+      - SOC2 controls
+      - Custom compliance rules
+
+cost:
+  baseCost: 0
+  usage:
+    - name: storage
+      unit: GB-month
+      costPerUnit: 0.10
+      description: Encrypted storage
+    - name: compute
+      unit: hours
+      costPerUnit: 0.20
+      description: Database compute
+    - name: backup
+      unit: GB-month
+      costPerUnit: 0.03
+      description: Backup storage
+    - name: transfer
+      unit: GB
+      costPerUnit: 0.09
+      description: Data transfer
+
+examples:
+  - title: HIPAA-Compliant Medical Database
+    description: Medical records database with HIPAA compliance
+    language: typescript
+    code: |
+      const medicalDb = new EncryptedDatabase()
+      
+      await medicalDb.initialize({
+        connectionString: process.env.MEDICAL_DB_URL,
+        
+        // Strong encryption for PHI
+        encryptionConfig: {
+          enabled: true,
+          algorithm: 'AES-256-GCM',
+          keyManagement: 'aws-kms',
+          keyRotation: {
+            enabled: true,
+            intervalDays: 30
+          },
+          fieldsToEncrypt: [
+            'patient_ssn',
+            'medical_history',
+            'diagnosis',
+            'prescriptions',
+            'lab_results'
+          ]
+        },
+        
+        // HIPAA compliance mode
+        complianceConfig: {
+          mode: 'HIPAA',
+          dataRetention: 2555, // 7 years
+          auditRetention: 2190  // 6 years
+        },
+        
+        // Comprehensive audit logging
+        auditConfig: {
+          enabled: true,
+          logLevel: 'all',
+          retention: 2190,
+          includeData: false // Don't log PHI in audit
+        },
+        
+        // Access control for medical staff
+        accessControlConfig: {
+          enabled: true,
+          defaultDeny: true,
+          roles: [
+            {
+              name: 'doctor',
+              permissions: ['select', 'insert', 'update'],
+              tables: ['patients', 'diagnoses', 'prescriptions']
+            },
+            {
+              name: 'nurse',
+              permissions: ['select', 'insert'],
+              tables: ['patients', 'vitals']
+            },
+            {
+              name: 'admin',
+              permissions: ['select'],
+              tables: ['audit_logs', 'access_logs']
+            }
+          ]
+        },
+        
+        // Daily encrypted backups
+        backupConfig: {
+          enabled: true,
+          schedule: '0 2 * * *',
+          retention: 90,
+          location: 's3://medical-backups/hipaa/',
+          encrypted: true
+        }
+      })
+      
+      // Handle patient data with automatic encryption
+      await medicalDb.insert('patients', {
+        first_name: 'John',
+        last_name: 'Doe',
+        patient_ssn: '123-45-6789', // Automatically encrypted
+        date_of_birth: '1980-01-01',
+        medical_history: { // Automatically encrypted
+          conditions: ['hypertension', 'diabetes'],
+          medications: ['metformin', 'lisinopril']
+        }
+      })
+      
+      // Query with automatic decryption for authorized users
+      const patients = await medicalDb.query(
+        'SELECT * FROM patients WHERE last_name = $1',
+        ['Doe'],
+        { user: { id: 'dr-smith', roles: ['doctor'] } }
+      )
+      
+      // Monitor compliance
+      medicalDb.on('complianceAlert', (alert) => {
+        if (alert.severity === 'high') {
+          notifyComplianceTeam(alert)
+        }
+      })
+
+  - title: PCI-Compliant Payment Database
+    description: Credit card processing with PCI DSS compliance
+    language: typescript
+    code: |
+      const paymentDb = new EncryptedDatabase()
+      
+      await paymentDb.initialize({
+        connectionString: process.env.PAYMENT_DB_URL,
+        
+        // PCI-required encryption
+        encryptionConfig: {
+          enabled: true,
+          algorithm: 'AES-256-GCM',
+          keyManagement: 'hashicorp-vault',
+          fieldsToEncrypt: [
+            'card_number',
+            'cvv',
+            'cardholder_name'
+          ]
+        },
+        
+        // PCI compliance mode
+        complianceConfig: {
+          mode: 'PCI',
+          encryptCardData: true,
+          tokenization: true,
+          dataRetention: 365 // 1 year for transaction data
+        },
+        
+        // Strict access control
+        accessControlConfig: {
+          enabled: true,
+          defaultDeny: true,
+          roles: [
+            {
+              name: 'payment_processor',
+              permissions: ['insert'],
+              tables: ['transactions']
+            },
+            {
+              name: 'finance',
+              permissions: ['select'],
+              tables: ['transactions', 'settlements']
+            }
+          ]
+        },
+        
+        // Required audit logging
+        auditConfig: {
+          enabled: true,
+          logLevel: 'all',
+          retention: 1095, // 3 years
+          includeData: false
+        }
+      })
+      
+      // Process payment with tokenization
+      const payment = await paymentDb.processPayment({
+        amount: 99.99,
+        currency: 'USD',
+        card_number: '4111111111111111', // Tokenized and encrypted
+        cvv: '123',
+        expiry: '12/25',
+        cardholder_name: 'John Doe'
+      })
+      
+      // Store only tokenized reference
+      await paymentDb.insert('transactions', {
+        transaction_id: payment.id,
+        amount: payment.amount,
+        token: payment.token, // Tokenized card reference
+        status: 'completed',
+        timestamp: new Date()
+      })
+      
+      // Automatic PCI compliance reporting
+      const complianceReport = await paymentDb.generateComplianceReport('PCI')
+      console.log('PCI Compliance Score:', complianceReport.score)
+
+  - title: GDPR-Compliant User Database
+    description: User data with GDPR privacy controls
+    language: typescript
+    code: |
+      const userDb = new EncryptedDatabase()
+      
+      await userDb.initialize({
+        connectionString: process.env.USER_DB_URL,
+        
+        // Encrypt personal data
+        encryptionConfig: {
+          enabled: true,
+          algorithm: 'AES-256-GCM',
+          keyManagement: 'aws-kms',
+          fieldsToEncrypt: [
+            'email',
+            'phone',
+            'address',
+            'ip_address',
+            'device_id'
+          ]
+        },
+        
+        // GDPR compliance
+        complianceConfig: {
+          mode: 'GDPR',
+          dataSubjectRights: true,
+          rightToErasure: true,
+          dataRetention: 1095 // 3 years default
+        },
+        
+        // Privacy-focused audit
+        auditConfig: {
+          enabled: true,
+          logLevel: 'writes',
+          retention: 1095,
+          includeData: false
+        }
+      })
+      
+      // Handle user data with consent tracking
+      await userDb.insert('users', {
+        username: 'johndoe',
+        email: 'john@example.com', // Encrypted
+        phone: '+1234567890', // Encrypted
+        consent: {
+          marketing: true,
+          analytics: false,
+          timestamp: new Date()
+        },
+        created_at: new Date()
+      })
+      
+      // Data portability (GDPR Article 20)
+      const userData = await userDb.exportUserData('user123')
+      // Returns all user data in portable format
+      
+      // Right to erasure (GDPR Article 17)
+      await userDb.eraseUserData('user123')
+      // Permanently deletes all personal data
+      
+      // Consent management
+      await userDb.updateConsent('user123', {
+        marketing: false,
+        timestamp: new Date()
+      })
+      
+      // Privacy dashboard data
+      const privacyMetrics = await userDb.getPrivacyMetrics()
+      console.log('Data subjects:', privacyMetrics.totalUsers)
+      console.log('Erasure requests:', privacyMetrics.erasureRequests)
+      console.log('Export requests:', privacyMetrics.exportRequests)
+
+bestPractices:
+  - Always use encryption for sensitive data (PII, PHI, PCI)
+  - Enable TLS for all database connections in production
+  - Implement regular key rotation (30-90 days)
+  - Use separate encryption keys for different data types
+  - Enable audit logging for all production databases
+  - Regularly test backup and restore procedures
+  - Monitor slow queries and optimize indexes
+  - Use connection pooling for better performance
+  - Implement proper access control with least privilege
+  - Keep compliance configuration up to date
+  - Regular security scans and penetration testing
+  - Document all encrypted fields and retention policies
+  - Use field-level encryption for maximum security
+  - Implement data masking for non-production environments
+  - Monitor encryption/decryption performance impact
+  - Use hardware security modules for key management
+  - Implement database activity monitoring
+  - Regular compliance audits and reporting
+  - Train staff on data protection requirements
+  - Have an incident response plan for breaches
+
+troubleshooting:
+  - issue: Connection timeout errors
+    solutions:
+      - Check network connectivity to database
+      - Verify TLS certificates are valid
+      - Increase connection timeout value
+      - Check firewall rules
+      - Verify connection string format
+
+  - issue: Encryption performance impact
+    solutions:
+      - Use selective field encryption
+      - Optimize encryption algorithm choice
+      - Implement caching for decrypted data
+      - Use hardware acceleration if available
+      - Consider async encryption for bulk operations
+
+  - issue: Key rotation failures
+    solutions:
+      - Verify key management service access
+      - Check permissions for key operations
+      - Ensure old keys are archived properly
+      - Test rotation in staging first
+      - Have rollback procedure ready
+
+  - issue: Backup failures
+    solutions:
+      - Check backup storage permissions
+      - Verify sufficient storage space
+      - Test backup encryption keys
+      - Monitor backup job logs
+      - Validate backup integrity regularly
+
+  - issue: Compliance violations
+    solutions:
+      - Review compliance configuration
+      - Check audit log retention settings
+      - Verify encryption is enabled
+      - Update access controls
+      - Run compliance assessment tools
+
+deployment:
+  requiredProviders:
+    - database
+    - kms
+  optionalProviders:
+    - backup-storage
+    - monitoring
+  configuration:
+    database:
+      type: postgresql
+      version: '13+'
+      extensions:
+        - pgcrypto
+        - pg_audit
+    security:
+      encryptionAtRest: required
+      tlsMinVersion: '1.2'
+      auditLogging: required
+    backup:
+      frequency: daily
+      retention: 30
+      encryption: required
+    monitoring:
+      metrics: enabled
+      alerts: enabled
+      dashboards: included
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-backend
+    - love-claude-code-user-service
+    - love-claude-code-project-storage
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-database-table-primitive
+  timeToCreate: 180
+  linesOfCode: 1250
+  testCoverage: 92
+  canBuildConstructs: false
+  platformFeatures:
+    - Secure data storage
+    - User information protection
+    - Project data encryption
+    - Audit trail storage

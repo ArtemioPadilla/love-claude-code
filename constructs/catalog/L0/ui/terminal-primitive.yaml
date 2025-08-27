@@ -1,0 +1,212 @@
+id: platform-l0-terminal-primitive
+name: Terminal Primitive
+level: L0
+version: 1.0.0
+description: Raw terminal output display with no styling, colors, or advanced features. Just text lines with basic scrolling and optional input.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 20
+    builtWith: []
+
+categories:
+  - ui
+  - terminal
+  - output
+  - primitive
+
+tags:
+  - terminal
+  - console
+  - command-line
+  - L0
+  - primitive
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  lines:
+    type: string[]
+    description: Array of text lines to display
+    required: true
+    example:
+      - "$ npm install"
+      - "added 1234 packages in 45s"
+      - "$ npm run build"
+      - "Build complete!"
+    
+  maxLines:
+    type: number
+    description: Maximum number of lines to keep in buffer
+    required: false
+    default: 1000
+    
+  autoScroll:
+    type: boolean
+    description: Automatically scroll to bottom on new content
+    required: false
+    default: true
+    
+  onInput:
+    type: function
+    description: Callback when user enters input (input) => void
+    required: false
+
+outputs:
+  terminalElement:
+    type: HTMLElement
+    description: The terminal container DOM element
+    
+  lineCount:
+    type: number
+    description: Current number of lines displayed
+    
+  scrollPosition:
+    type: number
+    description: Current scroll position in pixels
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/TerminalPrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: command-injection
+    description: No input sanitization or command validation at L0 level
+    severity: critical
+    recommendations:
+      - Use L1 SecureTerminal for production applications
+      - Never execute user input directly
+      - L0 constructs have no security features by design
+      
+  - aspect: output-injection
+    description: No output sanitization or escape sequences handling
+    severity: high
+    recommendations:
+      - Sanitize all terminal output before display
+      - Handle ANSI escape sequences properly in L1
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 400
+    y: 100
+
+examples:
+  - title: Basic Output Display
+    description: Show command execution output
+    language: typescript
+    code: |
+      import { TerminalPrimitive } from '@/constructs/L0/ui/TerminalPrimitive'
+      
+      const terminal = new TerminalPrimitive()
+      await terminal.initialize({
+        lines: [
+          '$ git status',
+          'On branch main',
+          'Your branch is up to date with \'origin/main\'.',
+          '',
+          'nothing to commit, working tree clean'
+        ]
+      })
+      
+      // Get the React component
+      const component = terminal.render()
+      
+  - title: Interactive Terminal
+    description: Handle user input
+    language: typescript
+    code: |
+      const terminal = new TerminalPrimitive()
+      const outputLines = ['Welcome to the terminal', '$ ']
+      
+      await terminal.initialize({
+        lines: outputLines,
+        onInput: (input) => {
+          // Echo the command
+          terminal.addLine(`$ ${input}`)
+          
+          // Process command
+          if (input === 'clear') {
+            terminal.clear()
+          } else {
+            terminal.addLine(`Command not found: ${input}`)
+          }
+          
+          // Add new prompt
+          terminal.addLine('$ ')
+        }
+      })
+      
+  - title: Streaming Output
+    description: Add lines dynamically
+    language: typescript
+    code: |
+      const terminal = new TerminalPrimitive()
+      await terminal.initialize({
+        lines: ['Starting process...'],
+        maxLines: 500
+      })
+      
+      // Simulate streaming output
+      const interval = setInterval(() => {
+        terminal.addLine(`[${new Date().toISOString()}] Processing...`)
+      }, 1000)
+      
+      // Later: clearInterval(interval)
+
+methods:
+  addLine:
+    description: Add a new line to the terminal output
+    parameters:
+      - name: line
+        type: string
+        description: The text line to add
+    returns: void
+    
+  clear:
+    description: Clear all terminal content
+    parameters: []
+    returns: void
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No ANSI color codes or formatting support
+  - No command history or auto-completion
+  - Basic black background with white text only
+  - Used as a building block for higher-level terminal constructs
+  - Part of the Love Claude Code platform itself
+  - Keep output buffer reasonable to avoid memory issues
+
+testing:
+  unit:
+    - Renders lines correctly
+    - Handles empty lines array
+    - Respects maxLines limit
+    - Auto-scrolls to bottom when enabled
+    - Captures user input
+    - Invokes onInput callback
+    - Tracks scroll position
+    
+  integration:
+    - Used by L1 InteractiveTerminal
+    - Used by L2 IDETerminal
+    - Part of L3 Love Claude Code Platform

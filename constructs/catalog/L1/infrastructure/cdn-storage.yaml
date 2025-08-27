@@ -1,0 +1,1151 @@
+id: platform-l1-cdn-storage
+name: CDN Storage
+level: L1
+version: 1.0.0
+author: Love Claude Code
+category: infrastructure
+tags:
+  - cdn
+  - storage
+  - cache
+  - optimization
+  - global
+  - edge
+  - managed
+  - platform-construct
+
+description: |
+  Production-ready CDN storage with global distribution, edge caching, automatic optimization,
+  and multi-provider support. Built upon the L0 Storage Bucket Primitive, this L1 construct
+  provides enterprise-grade content delivery with features like image optimization, WAF protection,
+  real-time analytics, and intelligent caching strategies for optimal performance worldwide.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+inputs:
+  - name: bucketName
+    type: string
+    required: true
+    description: Storage bucket name for origin content
+    example: my-assets-bucket
+    validation:
+      pattern: '^[a-z0-9][a-z0-9-]*[a-z0-9]$'
+      minLength: 3
+      maxLength: 63
+
+  - name: cdnConfig
+    type: object
+    required: true
+    description: CDN provider and configuration
+    properties:
+      provider:
+        type: string
+        required: true
+        enum: ['cloudfront', 'cloudflare', 'fastly', 'bunny', 'firebase']
+        description: CDN provider to use
+      originUrl:
+        type: string
+        required: true
+        description: Origin server URL
+        example: https://assets.example.com
+      customDomain:
+        type: string
+        required: false
+        description: Custom domain for CDN
+        example: cdn.example.com
+      ssl:
+        type: object
+        required: false
+        description: SSL/TLS configuration
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          certificate:
+            type: string
+            description: SSL certificate (PEM format)
+            sensitive: true
+          key:
+            type: string
+            description: SSL private key
+            sensitive: true
+          mode:
+            type: string
+            default: full
+            enum: ['flexible', 'full', 'strict']
+            description: SSL validation mode
+
+  - name: cacheConfig
+    type: object
+    required: false
+    description: Cache behavior configuration
+    default:
+      enabled: true
+      defaultTTL: 3600
+      maxTTL: 86400
+      compression: true
+      brotli: true
+      queryStringHandling: ignore
+    properties:
+      enabled:
+        type: boolean
+        default: true
+      defaultTTL:
+        type: number
+        default: 3600
+        description: Default cache TTL in seconds
+        validation:
+          min: 0
+          max: 31536000
+      maxTTL:
+        type: number
+        default: 86400
+        description: Maximum cache TTL in seconds
+      rules:
+        type: array
+        description: Cache rules by pattern
+        itemType:
+          type: object
+          properties:
+            pattern:
+              type: string
+              required: true
+              description: File pattern (e.g., *.jpg)
+            ttl:
+              type: number
+              required: true
+              description: TTL for this pattern
+            bypassCache:
+              type: boolean
+              default: false
+            cacheKey:
+              type: array
+              itemType: string
+              description: Cache key elements
+      queryStringHandling:
+        type: string
+        default: ignore
+        enum: ['ignore', 'forward', 'whitelist']
+      queryStringWhitelist:
+        type: array
+        itemType: string
+        description: Query parameters to include in cache key
+      compression:
+        type: boolean
+        default: true
+        description: Enable gzip compression
+      brotli:
+        type: boolean
+        default: true
+        description: Enable Brotli compression
+
+  - name: edgeConfig
+    type: object
+    required: false
+    description: Edge location configuration
+    default:
+      locations: ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+      primaryRegion: us-east-1
+    properties:
+      locations:
+        type: array
+        itemType: string
+        description: Edge location codes
+        example: ['us-east-1', 'eu-west-1', 'ap-southeast-1']
+      primaryRegion:
+        type: string
+        required: true
+        description: Primary region for origin
+      failoverRegions:
+        type: array
+        itemType: string
+        description: Failover regions
+      geoRestrictions:
+        type: object
+        description: Geographic access restrictions
+        properties:
+          type:
+            type: string
+            enum: ['whitelist', 'blacklist']
+          countries:
+            type: array
+            itemType: string
+            description: ISO country codes
+
+  - name: optimizationConfig
+    type: object
+    required: false
+    description: Content optimization settings
+    default:
+      imageOptimization:
+        enabled: true
+        formats: ['webp', 'avif']
+        quality: 85
+        resizing: true
+        lazyLoading: true
+      minification:
+        enabled: true
+        html: true
+        css: true
+        js: true
+      http2Push: true
+      earlyHints: true
+    properties:
+      imageOptimization:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          formats:
+            type: array
+            itemType: string
+            enum: ['webp', 'avif', 'jpg', 'png']
+            description: Auto-convert to these formats
+          quality:
+            type: number
+            default: 85
+            validation:
+              min: 1
+              max: 100
+          resizing:
+            type: boolean
+            default: true
+            description: Enable responsive image resizing
+          lazyLoading:
+            type: boolean
+            default: true
+      minification:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          html:
+            type: boolean
+            default: true
+          css:
+            type: boolean
+            default: true
+          js:
+            type: boolean
+            default: true
+      http2Push:
+        type: boolean
+        default: true
+        description: Enable HTTP/2 server push
+      earlyHints:
+        type: boolean
+        default: true
+        description: Enable 103 Early Hints
+
+  - name: securityConfig
+    type: object
+    required: false
+    description: Security configuration
+    default:
+      waf:
+        enabled: true
+        rulesets: ['OWASP_TOP_10']
+      ddosProtection: true
+      hotlinkProtection:
+        enabled: false
+        allowedDomains: []
+    properties:
+      waf:
+        type: object
+        description: Web Application Firewall
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          rulesets:
+            type: array
+            itemType: string
+            description: WAF rule sets to enable
+            example: ['OWASP_TOP_10', 'KNOWN_BAD_INPUTS']
+          customRules:
+            type: array
+            description: Custom WAF rules
+            itemType:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+                condition:
+                  type: string
+                action:
+                  type: string
+                  enum: ['block', 'challenge', 'allow']
+      ddosProtection:
+        type: boolean
+        default: true
+        description: Enable DDoS protection
+      hotlinkProtection:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: false
+          allowedDomains:
+            type: array
+            itemType: string
+            description: Domains allowed to hotlink
+      tokenAuthentication:
+        type: object
+        description: Token-based access control
+        properties:
+          enabled:
+            type: boolean
+            default: false
+          secret:
+            type: string
+            sensitive: true
+          parameterName:
+            type: string
+            default: token
+
+  - name: monitoringConfig
+    type: object
+    required: false
+    description: Monitoring and analytics
+    default:
+      realTimeAnalytics: true
+      logLevel: basic
+      logRetention: 7
+      alerting:
+        enabled: true
+    properties:
+      realTimeAnalytics:
+        type: boolean
+        default: true
+      logLevel:
+        type: string
+        default: basic
+        enum: ['none', 'basic', 'detailed']
+      logRetention:
+        type: number
+        default: 7
+        description: Log retention in days
+        validation:
+          min: 1
+          max: 365
+      customMetrics:
+        type: array
+        itemType: string
+        description: Custom metrics to track
+      alerting:
+        type: object
+        properties:
+          enabled:
+            type: boolean
+            default: true
+          thresholds:
+            type: object
+            properties:
+              errorRate:
+                type: number
+                description: Error rate percentage
+              latency:
+                type: number
+                description: Latency in milliseconds
+              bandwidth:
+                type: number
+                description: Bandwidth in bytes/second
+
+  - name: uploadConfig
+    type: object
+    required: false
+    description: Direct upload configuration
+    default:
+      directUpload: false
+      maxFileSize: 100
+      allowedTypes: ['*']
+      virusScan: false
+      autoTagging: true
+      metadata: true
+    properties:
+      directUpload:
+        type: boolean
+        default: false
+        description: Enable direct browser uploads
+      maxFileSize:
+        type: number
+        default: 100
+        description: Max file size in MB
+        validation:
+          min: 1
+          max: 5000
+      allowedTypes:
+        type: array
+        itemType: string
+        description: Allowed file extensions
+        example: ['.jpg', '.png', '.pdf', '.mp4']
+      virusScan:
+        type: boolean
+        default: false
+        description: Scan uploads for viruses
+      autoTagging:
+        type: boolean
+        default: true
+        description: Auto-tag uploaded files
+      metadata:
+        type: boolean
+        default: true
+        description: Extract and store metadata
+
+  - name: corsRules
+    type: array
+    required: false
+    description: CORS configuration rules
+    itemType:
+      type: object
+      properties:
+        allowedOrigins:
+          type: array
+          itemType: string
+          required: true
+          description: Allowed origins
+        allowedMethods:
+          type: array
+          itemType: string
+          required: true
+          description: Allowed HTTP methods
+        allowedHeaders:
+          type: array
+          itemType: string
+          required: true
+          description: Allowed headers
+        exposeHeaders:
+          type: array
+          itemType: string
+          description: Headers to expose
+        maxAge:
+          type: number
+          default: 3600
+          description: Preflight cache duration
+
+  - name: lifecycle
+    type: array
+    required: false
+    description: Storage lifecycle rules
+    itemType:
+      type: object
+      properties:
+        id:
+          type: string
+          required: true
+        prefix:
+          type: string
+          description: Object key prefix
+        status:
+          type: string
+          required: true
+          enum: ['enabled', 'disabled']
+        transitions:
+          type: array
+          required: true
+          itemType:
+            type: object
+            properties:
+              days:
+                type: number
+                required: true
+              storageClass:
+                type: string
+                required: true
+        expiration:
+          type: object
+          properties:
+            days:
+              type: number
+              required: true
+
+  - name: replication
+    type: object
+    required: false
+    description: Cross-region replication
+    properties:
+      enabled:
+        type: boolean
+        default: false
+      destinations:
+        type: array
+        itemType:
+          type: object
+          properties:
+            bucket:
+              type: string
+              required: true
+            region:
+              type: string
+              required: true
+            storageClass:
+              type: string
+      deleteMarkerReplication:
+        type: boolean
+        default: true
+
+outputs:
+  - name: cdnId
+    type: string
+    description: CDN distribution identifier
+
+  - name: status
+    type: string
+    description: CDN operational status
+    enum: ['initializing', 'active', 'error', 'suspended']
+
+  - name: endpoints
+    type: object
+    description: CDN endpoint URLs
+    properties:
+      origin:
+        type: string
+        description: Origin server URL
+      cdn:
+        type: string
+        description: CDN distribution URL
+      custom:
+        type: string
+        description: Custom domain URL
+
+  - name: distribution
+    type: object
+    description: CDN distribution details
+    properties:
+      id:
+        type: string
+      domainName:
+        type: string
+      status:
+        type: string
+      locations:
+        type: array
+        itemType: string
+
+  - name: metrics
+    type: object
+    description: CDN performance metrics
+    properties:
+      bandwidth:
+        type: object
+        properties:
+          total:
+            type: number
+          cached:
+            type: number
+          origin:
+            type: number
+      requests:
+        type: object
+        properties:
+          total:
+            type: number
+          cached:
+            type: number
+          errors:
+            type: number
+      performance:
+        type: object
+        properties:
+          avgLatency:
+            type: number
+          cacheHitRate:
+            type: number
+          originResponseTime:
+            type: number
+      storage:
+        type: object
+        properties:
+          totalSize:
+            type: number
+          fileCount:
+            type: number
+          avgFileSize:
+            type: number
+
+  - name: capabilities
+    type: object
+    description: Enabled CDN capabilities
+    properties:
+      upload:
+        type: boolean
+      optimization:
+        type: boolean
+      waf:
+        type: boolean
+      analytics:
+        type: boolean
+      streaming:
+        type: boolean
+
+methods:
+  - name: upload
+    description: Upload file to CDN storage
+    signature: (key: string, content: Buffer | string, options?: UploadOptions) => Promise<CDNFile>
+    parameters:
+      - name: key
+        type: string
+        description: File key/path
+      - name: content
+        type: Buffer | string
+        description: File content
+      - name: options
+        type: object
+        description: Upload options
+
+  - name: get
+    description: Get file information
+    signature: (key: string) => Promise<CDNFile | null>
+
+  - name: delete
+    description: Delete file and invalidate cache
+    signature: (key: string) => Promise<void>
+
+  - name: list
+    description: List files with CDN URLs
+    signature: (prefix?: string, options?: ListOptions) => Promise<CDNFile[]>
+
+  - name: invalidate
+    description: Invalidate cached paths
+    signature: (paths: string[]) => Promise<void>
+
+  - name: purgeAll
+    description: Purge entire cache
+    signature: () => Promise<void>
+
+  - name: preload
+    description: Preload content to edge locations
+    signature: (paths: string[]) => Promise<void>
+
+  - name: getMetrics
+    description: Get CDN performance metrics
+    signature: () => Promise<CDNMetrics>
+
+events:
+  - name: initialized
+    description: CDN initialized successfully
+    payload:
+      cdnId: string
+
+  - name: uploaded
+    description: File uploaded successfully
+    payload:
+      file: CDNFile
+
+  - name: deleted
+    description: File deleted
+    payload:
+      key: string
+
+  - name: invalidated
+    description: Cache invalidated
+    payload:
+      paths: string[]
+
+  - name: purged
+    description: Cache purged
+    payload:
+      scope: string
+
+  - name: preloaded
+    description: Content preloaded to edge
+    payload:
+      paths: string[]
+
+  - name: metrics
+    description: Metrics collected
+    payload: CDNMetrics
+
+  - name: alert
+    description: Threshold alert triggered
+    payload:
+      type: string
+      value: number
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+security:
+  - aspect: WAF Protection
+    description: Web Application Firewall at edge
+    implementation: |
+      - OWASP Top 10 protection
+      - SQL injection prevention
+      - XSS attack blocking
+      - Custom rule support
+      - Real-time threat detection
+
+  - aspect: DDoS Mitigation
+    description: Distributed denial of service protection
+    implementation: |
+      - Automatic attack detection
+      - Traffic filtering at edge
+      - Rate limiting per IP
+      - Geo-blocking capabilities
+      - Always-on protection
+
+  - aspect: Access Control
+    description: Content access restrictions
+    implementation: |
+      - Hotlink protection
+      - Token authentication
+      - Geo-restrictions
+      - IP whitelisting
+      - Signed URLs
+
+  - aspect: SSL/TLS
+    description: End-to-end encryption
+    implementation: |
+      - TLS 1.2+ enforcement
+      - Custom SSL certificates
+      - Automatic certificate renewal
+      - Full SSL validation modes
+      - HSTS support
+
+cost:
+  baseCost: 0
+  usage:
+    - name: bandwidth
+      unit: GB
+      costPerUnit: 0.085
+      description: Data transfer out
+    - name: requests
+      unit: 10K requests
+      costPerUnit: 0.0075
+      description: HTTP/HTTPS requests
+    - name: storage
+      unit: GB-month
+      costPerUnit: 0.023
+      description: Origin storage
+    - name: invalidation
+      unit: paths
+      costPerUnit: 0.005
+      description: Cache invalidation (first 1000 free)
+
+examples:
+  - title: Static Website Hosting
+    description: CDN for static website with optimization
+    language: typescript
+    code: |
+      const websiteCDN = new CDNStorage()
+      
+      await websiteCDN.initialize({
+        bucketName: 'my-website-assets',
+        cdnConfig: {
+          provider: 'cloudfront',
+          originUrl: 'https://s3.amazonaws.com/my-website-assets',
+          customDomain: 'www.example.com',
+          ssl: {
+            enabled: true,
+            mode: 'full'
+          }
+        },
+        
+        // Aggressive caching for static assets
+        cacheConfig: {
+          enabled: true,
+          defaultTTL: 86400, // 1 day
+          maxTTL: 31536000, // 1 year
+          rules: [
+            {
+              pattern: '*.html',
+              ttl: 300 // 5 minutes for HTML
+            },
+            {
+              pattern: '*.css',
+              ttl: 86400 // 1 day for CSS
+            },
+            {
+              pattern: '*.js',
+              ttl: 86400 // 1 day for JS
+            },
+            {
+              pattern: '*.jpg',
+              ttl: 2592000 // 30 days for images
+            }
+          ],
+          compression: true,
+          brotli: true,
+          queryStringHandling: 'ignore'
+        },
+        
+        // Enable all optimizations
+        optimizationConfig: {
+          imageOptimization: {
+            enabled: true,
+            formats: ['webp', 'avif'],
+            quality: 85,
+            resizing: true,
+            lazyLoading: true
+          },
+          minification: {
+            enabled: true,
+            html: true,
+            css: true,
+            js: true
+          },
+          http2Push: true,
+          earlyHints: true
+        },
+        
+        // Security settings
+        securityConfig: {
+          waf: {
+            enabled: true,
+            rulesets: ['OWASP_TOP_10', 'KNOWN_BAD_INPUTS']
+          },
+          ddosProtection: true
+        },
+        
+        // CORS for API calls
+        corsRules: [{
+          allowedOrigins: ['https://www.example.com'],
+          allowedMethods: ['GET', 'HEAD', 'OPTIONS'],
+          allowedHeaders: ['*'],
+          maxAge: 3600
+        }]
+      })
+      
+      // Upload optimized assets
+      await websiteCDN.upload('index.html', htmlContent, {
+        contentType: 'text/html',
+        metadata: { version: '1.0.0' }
+      })
+      
+      // Upload and auto-optimize images
+      await websiteCDN.upload('hero.jpg', imageBuffer, {
+        contentType: 'image/jpeg'
+      })
+      
+      // Preload critical resources
+      await websiteCDN.preload([
+        'css/main.css',
+        'js/app.js',
+        'fonts/main.woff2'
+      ])
+      
+      // Monitor performance
+      websiteCDN.on('metrics', (metrics) => {
+        console.log(`Cache hit rate: ${(metrics.performance.cacheHitRate * 100).toFixed(1)}%`)
+        console.log(`Avg latency: ${metrics.performance.avgLatency}ms`)
+      })
+
+  - title: Media Streaming CDN
+    description: Video streaming with adaptive bitrate
+    language: typescript
+    code: |
+      const streamingCDN = new CDNStorage()
+      
+      await streamingCDN.initialize({
+        bucketName: 'video-content',
+        cdnConfig: {
+          provider: 'cloudfront',
+          originUrl: 'https://origin.videos.example.com',
+          customDomain: 'stream.example.com',
+          ssl: {
+            enabled: true,
+            mode: 'strict'
+          }
+        },
+        
+        // Video-optimized caching
+        cacheConfig: {
+          enabled: true,
+          defaultTTL: 86400,
+          maxTTL: 2592000, // 30 days
+          rules: [
+            {
+              pattern: '*.m3u8',
+              ttl: 60 // 1 minute for playlists
+            },
+            {
+              pattern: '*.ts',
+              ttl: 86400 // 1 day for segments
+            },
+            {
+              pattern: '*.mp4',
+              ttl: 2592000 // 30 days for full videos
+            }
+          ],
+          queryStringHandling: 'forward' // For signed URLs
+        },
+        
+        // Global edge locations for streaming
+        edgeConfig: {
+          locations: [
+            'us-east-1', 'us-west-2', 'eu-west-1', 
+            'eu-central-1', 'ap-southeast-1', 'ap-northeast-1'
+          ],
+          primaryRegion: 'us-east-1',
+          failoverRegions: ['eu-west-1', 'ap-southeast-1']
+        },
+        
+        // Security for premium content
+        securityConfig: {
+          tokenAuthentication: {
+            enabled: true,
+            secret: process.env.CDN_TOKEN_SECRET,
+            parameterName: 'auth'
+          },
+          hotlinkProtection: {
+            enabled: true,
+            allowedDomains: ['example.com', 'app.example.com']
+          }
+        },
+        
+        // Real-time analytics for streaming
+        monitoringConfig: {
+          realTimeAnalytics: true,
+          logLevel: 'detailed',
+          logRetention: 30,
+          customMetrics: ['bitrate', 'buffering', 'quality_switches'],
+          alerting: {
+            enabled: true,
+            thresholds: {
+              errorRate: 1, // 1% error rate
+              latency: 100 // 100ms latency
+            }
+          }
+        }
+      })
+      
+      // Upload video with multiple qualities
+      const qualities = ['1080p', '720p', '480p', '360p']
+      
+      for (const quality of qualities) {
+        await streamingCDN.upload(
+          `videos/movie123/${quality}/index.m3u8`,
+          playlistContent[quality],
+          { contentType: 'application/x-mpegURL' }
+        )
+      }
+      
+      // Generate signed URL for premium content
+      const signedUrl = await streamingCDN.generateSignedUrl(
+        'videos/movie123/1080p/index.m3u8',
+        { expiresIn: 3600 } // 1 hour
+      )
+      
+      // Monitor streaming metrics
+      streamingCDN.on('metrics', (metrics) => {
+        if (metrics.performance.avgLatency > 50) {
+          console.warn('High latency detected:', metrics.performance.avgLatency)
+        }
+      })
+
+  - title: E-commerce Product Images
+    description: Product image CDN with automatic optimization
+    language: typescript
+    code: |
+      const productCDN = new CDNStorage()
+      
+      await productCDN.initialize({
+        bucketName: 'product-images',
+        cdnConfig: {
+          provider: 'cloudflare',
+          originUrl: 'https://images.store.example.com',
+          customDomain: 'img.store.example.com'
+        },
+        
+        // Image-specific optimizations
+        optimizationConfig: {
+          imageOptimization: {
+            enabled: true,
+            formats: ['webp', 'avif', 'jpg'],
+            quality: 90, // Higher quality for products
+            resizing: true,
+            lazyLoading: true
+          },
+          minification: {
+            enabled: false // Not needed for images
+          }
+        },
+        
+        // Product image caching
+        cacheConfig: {
+          enabled: true,
+          defaultTTL: 604800, // 7 days
+          maxTTL: 2592000, // 30 days
+          rules: [
+            {
+              pattern: 'thumbnails/*',
+              ttl: 2592000 // 30 days for thumbnails
+            },
+            {
+              pattern: 'full/*',
+              ttl: 604800 // 7 days for full images
+            }
+          ],
+          compression: true
+        },
+        
+        // Upload configuration
+        uploadConfig: {
+          directUpload: true,
+          maxFileSize: 10, // 10MB max
+          allowedTypes: ['.jpg', '.jpeg', '.png', '.webp'],
+          virusScan: true,
+          autoTagging: true,
+          metadata: true
+        },
+        
+        // Lifecycle for cost optimization
+        lifecycle: [{
+          id: 'archive-old-images',
+          prefix: 'archived/',
+          status: 'enabled',
+          transitions: [{
+            days: 90,
+            storageClass: 'GLACIER'
+          }],
+          expiration: {
+            days: 365
+          }
+        }]
+      })
+      
+      // Upload product image with auto-generation of sizes
+      const uploadProductImage = async (productId: string, image: Buffer) => {
+        const sizes = {
+          thumbnail: { width: 150, height: 150 },
+          small: { width: 300, height: 300 },
+          medium: { width: 600, height: 600 },
+          large: { width: 1200, height: 1200 }
+        }
+        
+        for (const [size, dimensions] of Object.entries(sizes)) {
+          const resized = await resizeImage(image, dimensions)
+          await productCDN.upload(
+            `products/${productId}/${size}.jpg`,
+            resized,
+            {
+              contentType: 'image/jpeg',
+              metadata: {
+                productId,
+                size,
+                width: dimensions.width.toString(),
+                height: dimensions.height.toString()
+              }
+            }
+          )
+        }
+      }
+      
+      // Usage
+      await uploadProductImage('SKU-12345', productImageBuffer)
+      
+      // Get optimized URLs for different contexts
+      const thumbnailUrl = (await productCDN.get('products/SKU-12345/thumbnail.jpg'))?.cdnUrl
+      const largeUrl = (await productCDN.get('products/SKU-12345/large.jpg'))?.cdnUrl
+
+bestPractices:
+  - Use appropriate cache TTLs based on content update frequency
+  - Enable compression for all text-based assets (HTML, CSS, JS)
+  - Implement cache busting strategy for deployments
+  - Use custom domains with SSL for professional appearance
+  - Monitor cache hit rates and adjust rules accordingly
+  - Implement proper CORS policies for cross-origin requests
+  - Use lifecycle policies to move old content to cheaper storage
+  - Enable image optimization for automatic format conversion
+  - Preload critical resources for better performance
+  - Use geo-restrictions only when legally required
+  - Implement proper cache invalidation strategies
+  - Monitor bandwidth usage to control costs
+  - Use signed URLs for premium or time-limited content
+  - Enable WAF for public-facing content
+  - Regular review and optimization of cache rules
+  - Implement proper error pages at CDN level
+  - Use HTTP/2 and HTTP/3 for better performance
+  - Enable real-time analytics for immediate insights
+  - Test CDN failover scenarios regularly
+  - Document cache strategies for team understanding
+
+troubleshooting:
+  - issue: Low cache hit rate
+    solutions:
+      - Review cache rules and TTLs
+      - Check query string handling
+      - Verify cache headers from origin
+      - Look for cache-busting in URLs
+      - Check if content is truly static
+
+  - issue: High bandwidth costs
+    solutions:
+      - Enable compression
+      - Optimize images before upload
+      - Review cache TTLs (increase if possible)
+      - Check for hotlinking
+      - Implement bandwidth alerts
+
+  - issue: Slow content delivery
+    solutions:
+      - Check edge location coverage
+      - Verify origin server performance
+      - Enable HTTP/2 and HTTP/3
+      - Review compression settings
+      - Check for network issues
+
+  - issue: CORS errors
+    solutions:
+      - Verify CORS rules configuration
+      - Check allowed origins match exactly
+      - Include credentials if needed
+      - Check preflight cache duration
+      - Verify allowed headers
+
+  - issue: Cache not updating
+    solutions:
+      - Check invalidation is working
+      - Verify cache headers
+      - Look for browser caching
+      - Check TTL settings
+      - Try purging specific paths
+
+deployment:
+  requiredProviders:
+    - storage
+    - cdn
+  optionalProviders:
+    - waf
+    - monitoring
+  configuration:
+    cdn:
+      provider: cloudfront
+      priceClass: PriceClass_100
+      httpVersion: http2and3
+    storage:
+      redundancy: standard
+      encryption: AES256
+    monitoring:
+      enabled: true
+      detailedMetrics: true
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-frontend
+    - love-claude-code-assets
+    - love-claude-code-documentation
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith:
+    - platform-l0-storage-bucket-primitive
+  timeToCreate: 120
+  linesOfCode: 950
+  testCoverage: 88
+  canBuildConstructs: false
+  platformFeatures:
+    - Static asset delivery
+    - Image optimization
+    - Global content distribution
+    - Performance optimization

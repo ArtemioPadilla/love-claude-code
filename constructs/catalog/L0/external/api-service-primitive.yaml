@@ -1,0 +1,210 @@
+id: platform-l0-api-service-primitive
+name: API Service Primitive
+level: L0
+type: Pattern
+description: External API wrapper supporting REST/GraphQL with auth, rate limiting, and caching
+version: 1.0.0
+author: Love Claude Code
+categories:
+  - external
+  - integration
+  - api
+providers:
+  - local
+  - firebase
+  - aws
+tags:
+  - api
+  - rest
+  - graphql
+  - primitive
+  - http
+  - authentication
+  - caching
+  - rate-limiting
+
+inputs:
+  - name: baseUrl
+    type: string
+    description: Base URL for the API
+    required: true
+    validation:
+      pattern: ^https?://.*
+  - name: authMethod
+    type: string
+    description: Authentication method
+    required: false
+    defaultValue: none
+    validation:
+      enum:
+        - none
+        - api-key
+        - bearer
+        - oauth2
+        - basic
+  - name: authConfig
+    type: object
+    description: Authentication configuration
+    required: false
+    defaultValue: {}
+  - name: cacheConfig
+    type: object
+    description: Cache configuration
+    required: false
+    defaultValue:
+      enabled: true
+      ttl: 300
+      maxSize: 100
+  - name: retryConfig
+    type: object
+    description: Retry configuration
+    required: false
+    defaultValue:
+      maxRetries: 3
+      backoffMultiplier: 2
+      initialDelay: 1000
+
+outputs:
+  - name: client
+    type: object
+    description: API client for making requests
+  - name: state
+    type: object
+    description: Current API service state including metrics
+  - name: rateLimits
+    type: object
+    description: Current rate limit status
+
+security:
+  - aspect: authentication
+    description: Supports multiple authentication methods
+    severity: high
+    recommendations:
+      - Use HTTPS for all API calls
+      - Store credentials securely in environment variables
+      - Rotate API keys regularly
+      - Implement token refresh for OAuth2
+  - aspect: rate-limiting
+    description: Respects API rate limits to prevent service disruption
+    severity: medium
+    recommendations:
+      - Monitor rate limit headers
+      - Implement backoff strategies
+      - Queue requests when rate limited
+      - Use caching to reduce API calls
+
+cost:
+  baseMonthly: 0
+  usageFactors:
+    - name: api-calls
+      unit: 1000 calls
+      costPerUnit: 0.01
+      typicalUsage: 100
+
+c4:
+  type: Component
+  technology: HTTP Client
+
+examples:
+  - title: Basic REST API Usage
+    description: Make authenticated API requests
+    code: |
+      const api = new APIServicePrimitive()
+      await api.initialize({
+        baseUrl: 'https://api.example.com',
+        authMethod: 'bearer',
+        authConfig: {
+          token: 'your-bearer-token'
+        }
+      })
+      
+      const client = api.getOutput('client')
+      const users = await client.get('/users')
+      console.log('Users:', users.data)
+    language: typescript
+
+  - title: GraphQL API Usage
+    description: Make GraphQL queries with caching
+    code: |
+      const api = new APIServicePrimitive()
+      await api.initialize({
+        baseUrl: 'https://graphql.example.com',
+        authMethod: 'api-key',
+        authConfig: {
+          apiKey: 'your-api-key',
+          headerName: 'X-API-Key'
+        }
+      })
+      
+      const client = api.getOutput('client')
+      const response = await client.post('/graphql', {
+        query: `
+          query GetUser($id: ID!) {
+            user(id: $id) {
+              name
+              email
+            }
+          }
+        `,
+        variables: { id: '123' }
+      })
+    language: typescript
+
+  - title: Rate Limit Handling
+    description: Monitor and respond to rate limits
+    code: |
+      const client = api.getOutput('client')
+      
+      try {
+        const response = await client.get('/data')
+        
+        // Check rate limits
+        const rateLimits = client.getRateLimits()
+        console.log(`Remaining requests: ${rateLimits.remaining}/${rateLimits.limit}`)
+        
+        if (rateLimits.remaining < 10) {
+          console.warn('Approaching rate limit!')
+        }
+      } catch (error) {
+        if (error.status === 429) {
+          console.log('Rate limited, retrying after:', error.retryAfter)
+        }
+      }
+    language: typescript
+
+bestPractices:
+  - Always use HTTPS in production environments
+  - Implement comprehensive error handling
+  - Cache responses appropriately to reduce API calls
+  - Monitor API usage and costs
+  - Implement circuit breakers for resilience
+  - Use request queuing for rate-limited APIs
+  - Log all API interactions for debugging
+  - Validate responses before processing
+
+deployment:
+  requiredProviders: []
+  configSchema:
+    type: object
+    properties:
+      maxConcurrentRequests:
+        type: number
+        default: 10
+      requestTimeout:
+        type: number
+        default: 30000
+      enableMetrics:
+        type: boolean
+        default: true
+  environmentVariables:
+    - API_KEY
+    - OAUTH_CLIENT_ID
+    - OAUTH_CLIENT_SECRET
+
+selfReferential:
+  isPlatformConstruct: true
+  developmentMethod: manual
+  vibeCodingPercentage: 0
+  builtWith: []
+  timeToCreate: 45
+  canBuildConstructs: false

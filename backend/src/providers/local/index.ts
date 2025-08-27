@@ -57,7 +57,7 @@ export class LocalProvider implements BackendProvider {
       this.database.initialize?.(),
       this.storage.initialize?.(),
       this.realtime.initialize?.(),
-      this.functions.initialize?.(),
+      // Functions provider initialization not in interface
       this.deployment.initialize?.(),
     ])
     
@@ -74,7 +74,7 @@ export class LocalProvider implements BackendProvider {
       this.database.shutdown?.(),
       this.storage.shutdown?.(),
       this.realtime.shutdown?.(),
-      this.functions.shutdown?.(),
+      // Functions provider shutdown not in interface
       this.deployment?.shutdown?.(),
     ])
     

@@ -9,6 +9,8 @@ import {
 } from 'lucide-react'
 import { ConstructDisplay, CloudProvider, ConstructLevel } from '../types'
 import { formatDistanceToNow } from 'date-fns'
+import { DependencyGraph } from './DependencyGraph'
+import { dependencyResolver } from '../utils/dependencyResolver'
 
 interface ConstructDetailsProps {
   construct: ConstructDisplay
@@ -22,7 +24,7 @@ export const ConstructDetails: React.FC<ConstructDetailsProps> = ({
   construct,
   onClose
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'code' | 'deploy' | 'security' | 'community'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'code' | 'dependencies' | 'deploy' | 'security' | 'community'>('overview')
   const [copied, setCopied] = useState<string | null>(null)
   const [liked, setLiked] = useState(false)
   
@@ -77,6 +79,7 @@ export const ConstructDetails: React.FC<ConstructDetailsProps> = ({
             {[
               { id: 'overview', label: 'Overview', icon: <Eye className="w-4 h-4" /> },
               { id: 'code', label: 'Code & Examples', icon: <Code2 className="w-4 h-4" /> },
+              { id: 'dependencies', label: 'Dependencies', icon: <GitBranch className="w-4 h-4" /> },
               { id: 'deploy', label: 'Deploy', icon: <Play className="w-4 h-4" /> },
               { id: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
               { id: 'community', label: 'Community', icon: <MessageSquare className="w-4 h-4" /> }
@@ -105,6 +108,9 @@ export const ConstructDetails: React.FC<ConstructDetailsProps> = ({
             )}
             {activeTab === 'code' && (
               <CodeTab key="code" construct={construct} onCopy={handleCopy} copied={copied} />
+            )}
+            {activeTab === 'dependencies' && (
+              <DependenciesTab key="dependencies" construct={construct} />
             )}
             {activeTab === 'deploy' && (
               <DeployTab key="deploy" construct={construct} />
@@ -170,7 +176,7 @@ const OverviewTab: React.FC<{ construct: ConstructDisplay }> = ({ construct }) =
       <div>
         <h3 className="text-lg font-semibold mb-3">Key Features</h3>
         <div className="grid md:grid-cols-2 gap-4">
-          {construct.definition.bestPractices.map((practice, index) => (
+          {(construct.definition.bestPractices || []).map((practice, index) => (
             <div key={index} className="flex items-start gap-3">
               <Check className="w-5 h-5 text-green-500 mt-0.5" />
               <span className="text-gray-300">{practice}</span>
@@ -183,52 +189,58 @@ const OverviewTab: React.FC<{ construct: ConstructDisplay }> = ({ construct }) =
       <div>
         <h3 className="text-lg font-semibold mb-3">Supported Providers</h3>
         <div className="flex gap-4">
-          {construct.definition.providers.map(provider => (
+          {Array.isArray(construct.definition.providers) ? construct.definition.providers.map(provider => (
             <div key={provider} className="bg-gray-800 rounded-lg p-4 flex items-center gap-3">
               <span className="text-2xl">{getProviderIcon(provider)}</span>
               <span className="font-medium">{provider}</span>
             </div>
-          ))}
+          )) : (
+            <div className="bg-gray-800 rounded-lg p-4 text-gray-400">
+              No providers specified
+            </div>
+          )}
         </div>
       </div>
       
       {/* Cost Estimate */}
-      <div>
-        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <DollarSign className="w-5 h-5" />
-          Cost Estimate
-        </h3>
-        <div className="bg-gray-800 rounded-lg p-6">
-          <div className="mb-4">
-            <span className="text-3xl font-bold">${construct.definition.cost.baseMonthly}</span>
-            <span className="text-gray-400">/month base cost</span>
+      {construct.definition.cost && (
+        <div>
+          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <DollarSign className="w-5 h-5" />
+            Cost Estimate
+          </h3>
+          <div className="bg-gray-800 rounded-lg p-6">
+            <div className="mb-4">
+              <span className="text-3xl font-bold">${construct.definition.cost?.baseMonthly || 0}</span>
+              <span className="text-gray-400">/month base cost</span>
+            </div>
+            {construct.definition.cost?.usageFactors?.length > 0 && (
+              <>
+                <p className="text-sm text-gray-400 mb-3">Additional usage-based costs:</p>
+                <div className="space-y-2">
+                  {construct.definition.cost.usageFactors.map((factor, index) => (
+                    <div key={index} className="flex justify-between text-sm">
+                      <span className="text-gray-400">{factor.name}</span>
+                      <span>${factor.costPerUnit} per {factor.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
-          {construct.definition.cost.usageFactors.length > 0 && (
-            <>
-              <p className="text-sm text-gray-400 mb-3">Additional usage-based costs:</p>
-              <div className="space-y-2">
-                {construct.definition.cost.usageFactors.map((factor, index) => (
-                  <div key={index} className="flex justify-between text-sm">
-                    <span className="text-gray-400">{factor.name}</span>
-                    <span>${factor.costPerUnit} per {factor.unit}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
         </div>
-      </div>
+      )}
       
       {/* Categories & Tags */}
       <div>
         <h3 className="text-lg font-semibold mb-3">Categories & Tags</h3>
         <div className="flex flex-wrap gap-2">
-          {construct.definition.categories.map(category => (
+          {(construct.definition.categories || []).map(category => (
             <span key={category} className="px-3 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
               {category}
             </span>
           ))}
-          {construct.definition.tags.map(tag => (
+          {(construct.definition.tags || []).map(tag => (
             <span key={tag} className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm">
               #{tag}
             </span>
@@ -276,7 +288,7 @@ const CodeTab: React.FC<{
       <div>
         <h3 className="text-lg font-semibold mb-3">Examples</h3>
         <div className="space-y-4">
-          {construct.definition.examples.map((example, index) => (
+          {(construct.definition.examples || []).map((example, index) => (
             <div key={index} className="bg-gray-800 rounded-lg overflow-hidden">
               <div className="bg-gray-700 px-4 py-2 flex items-center justify-between">
                 <span className="font-medium">{example.title}</span>
@@ -305,11 +317,11 @@ const CodeTab: React.FC<{
         <h3 className="text-lg font-semibold mb-3">API Reference</h3>
         <div className="space-y-4">
           {/* Inputs */}
-          {construct.definition.inputs.length > 0 && (
+          {construct.definition.inputs?.length > 0 && (
             <div className="bg-gray-800 rounded-lg p-4">
               <h4 className="font-medium mb-3">Inputs</h4>
               <div className="space-y-2">
-                {construct.definition.inputs.map((input, index) => (
+                {(construct.definition.inputs || []).map((input, index) => (
                   <div key={index} className="flex items-start gap-2 text-sm">
                     <code className="text-blue-400">{input.name}</code>
                     <span className="text-gray-500">({input.type})</span>
@@ -322,11 +334,11 @@ const CodeTab: React.FC<{
           )}
           
           {/* Outputs */}
-          {construct.definition.outputs.length > 0 && (
+          {construct.definition.outputs?.length > 0 && (
             <div className="bg-gray-800 rounded-lg p-4">
               <h4 className="font-medium mb-3">Outputs</h4>
               <div className="space-y-2">
-                {construct.definition.outputs.map((output, index) => (
+                {(construct.definition.outputs || []).map((output, index) => (
                   <div key={index} className="flex items-start gap-2 text-sm">
                     <code className="text-green-400">{output.name}</code>
                     <span className="text-gray-500">({output.type})</span>
@@ -419,7 +431,7 @@ const SecurityTab: React.FC<{ construct: ConstructDisplay }> = ({ construct }) =
       animate={{ opacity: 1, y: 0 }}
       className="space-y-6"
     >
-      {construct.definition.security.map((item, index) => (
+      {(construct.definition.security || []).map((item, index) => (
         <div key={index} className={`rounded-lg p-4 border ${
           item.severity === 'critical' ? 'bg-red-900/20 border-red-700' :
           item.severity === 'high' ? 'bg-orange-900/20 border-orange-700' :
@@ -540,6 +552,133 @@ const CommunityTab: React.FC<{
             </div>
           ))}
         </div>
+      </div>
+    </motion.div>
+  )
+}
+
+/**
+ * Dependencies tab content
+ */
+const DependenciesTab: React.FC<{ construct: ConstructDisplay }> = ({ construct }) => {
+  const graph = dependencyResolver.resolveDependencies(construct.definition.id)
+  
+  if (!graph) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center py-12 text-gray-400"
+      >
+        <GitBranch className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>No dependency information available</p>
+      </motion.div>
+    )
+  }
+  
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      {/* Direct Dependencies */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Direct Dependencies</h3>
+        {construct.definition.dependencies && construct.definition.dependencies.length > 0 ? (
+          <div className="grid gap-2">
+            {construct.definition.dependencies.map((dep, index) => {
+              const depId = typeof dep === 'string' ? dep : dep.constructId
+              const depConstruct = dependencyResolver.getConstructById(depId)
+              
+              return (
+                <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="font-medium">{depConstruct?.name || depId}</div>
+                      <div className="text-sm text-gray-400">{depConstruct?.description}</div>
+                    </div>
+                  </div>
+                  {depConstruct && (
+                    <span className={`text-xs px-2 py-1 rounded ${getLevelConfig(depConstruct.level).badgeColor}`}>
+                      {depConstruct.level}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="text-gray-400">No direct dependencies</p>
+        )}
+      </div>
+      
+      {/* Dependency Statistics */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Dependency Analysis</h3>
+        <div className="bg-gray-800 rounded-lg p-4 grid grid-cols-2 gap-4">
+          <div>
+            <div className="text-2xl font-bold">{graph.totalDependencies}</div>
+            <div className="text-sm text-gray-400">Total Dependencies</div>
+          </div>
+          <div>
+            <div className="text-2xl font-bold">{graph.maxDepth}</div>
+            <div className="text-sm text-gray-400">Max Depth</div>
+          </div>
+          <div className="col-span-2">
+            <div className="text-sm font-medium mb-2">Dependencies by Level</div>
+            <div className="space-y-1">
+              {Object.entries(graph.dependenciesByLevel).map(([level, count]) => (
+                <div key={level} className="flex items-center justify-between">
+                  <span className={`text-sm ${getLevelConfig(level as ConstructLevel).badgeColor} px-2 py-1 rounded`}>
+                    {level}
+                  </span>
+                  <span className="text-sm">{count} constructs</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Interactive Dependency Graph */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Dependency Graph</h3>
+        <div className="bg-gray-800 rounded-lg p-1">
+          <DependencyGraph 
+            constructId={construct.definition.id}
+            height="500px"
+          />
+        </div>
+      </div>
+      
+      {/* Used By (Dependents) */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Used By</h3>
+        {(() => {
+          const dependents = dependencyResolver.findDependents(construct.definition.id)
+          return dependents.length > 0 ? (
+            <div className="grid gap-2">
+              {dependents.map((dep, index) => (
+                <div key={index} className="bg-gray-800 rounded-lg p-3 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Package className="w-5 h-5 text-gray-400" />
+                    <div>
+                      <div className="font-medium">{dep.name}</div>
+                      <div className="text-sm text-gray-400">{dep.description}</div>
+                    </div>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded ${getLevelConfig(dep.level).badgeColor}`}>
+                    {dep.level}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400">Not used by any other constructs</p>
+          )
+        })()}
       </div>
     </motion.div>
   )

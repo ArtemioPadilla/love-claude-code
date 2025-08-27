@@ -1,0 +1,212 @@
+id: platform-l0-file-tree-primitive
+name: File Tree Primitive
+level: L0
+version: 1.0.0
+description: Raw file tree display with no styling, icons, or interaction features. Just nested lists showing file/folder structure.
+
+metadata:
+  author: Love Claude Code
+  license: MIT
+  repository: https://github.com/loveclaudecode/platform
+  isPlatformConstruct: true
+  selfReferential:
+    developmentMethod: manual
+    vibeCodingPercentage: 0
+    timeToCreate: 25
+    builtWith: []
+
+categories:
+  - ui
+  - navigation
+  - file-system
+  - primitive
+
+tags:
+  - file-tree
+  - folder-structure
+  - L0
+  - primitive
+  - navigation
+
+providers:
+  - local
+  - firebase
+  - aws
+
+inputs:
+  nodes:
+    type: FileNode[]
+    description: Tree structure of files and folders
+    required: true
+    example:
+      - path: src
+        name: src
+        type: folder
+        children:
+          - path: src/index.js
+            name: index.js
+            type: file
+    
+  expandedPaths:
+    type: string[]
+    description: Array of expanded folder paths
+    required: false
+    default: []
+    
+  selectedPath:
+    type: string
+    description: Currently selected file/folder path
+    required: false
+    
+  onToggle:
+    type: function
+    description: Callback when folder is toggled (path) => void
+    required: false
+    
+  onSelect:
+    type: function
+    description: Callback when node is selected (path, type) => void
+    required: false
+
+outputs:
+  treeElement:
+    type: HTMLElement
+    description: The rendered tree DOM element
+    
+  nodeCount:
+    type: number
+    description: Total number of nodes in the tree
+    
+  expandedNodes:
+    type: FileNode[]
+    description: Currently expanded folder nodes
+
+types:
+  FileNode:
+    description: Structure for a file or folder node
+    properties:
+      path:
+        type: string
+        description: Full path to the file/folder
+      name:
+        type: string
+        description: Display name of the file/folder
+      type:
+        type: "'file' | 'folder'"
+        description: Node type
+      children:
+        type: FileNode[]
+        description: Child nodes for folders
+        optional: true
+
+implementation:
+  ui: frontend/src/constructs/L0/ui/FileTreePrimitive.tsx
+  
+dependencies: []
+
+security:
+  - aspect: path-traversal
+    description: No path validation or sanitization at L0 level
+    severity: high
+    recommendations:
+      - Use L1 SecureFileTree for production applications
+      - L0 constructs have no security features by design
+      
+  - aspect: user-input
+    description: No validation of node structure or paths
+    severity: medium
+    recommendations:
+      - Validate file paths before using in production
+      - Never expose system paths directly
+
+cost:
+  baseMonthly: 0
+  usageFactors: []
+  notes:
+    - No infrastructure costs
+    - Client-side component only
+
+c4:
+  type: Component
+  technology: React
+  external: false
+  position:
+    x: 300
+    y: 100
+
+examples:
+  - title: Simple File Tree
+    description: Display a basic project structure
+    language: typescript
+    code: |
+      import { FileTreePrimitive } from '@/constructs/L0/ui/FileTreePrimitive'
+      
+      const tree = new FileTreePrimitive()
+      await tree.initialize({
+        nodes: [
+          {
+            path: 'src',
+            name: 'src',
+            type: 'folder',
+            children: [
+              { path: 'src/components', name: 'components', type: 'folder', children: [] },
+              { path: 'src/index.js', name: 'index.js', type: 'file' },
+              { path: 'src/app.js', name: 'app.js', type: 'file' }
+            ]
+          },
+          { path: 'package.json', name: 'package.json', type: 'file' },
+          { path: 'README.md', name: 'README.md', type: 'file' }
+        ],
+        expandedPaths: ['src']
+      })
+      
+  - title: With Selection Handler
+    description: Handle file selection events
+    language: typescript
+    code: |
+      const tree = new FileTreePrimitive()
+      await tree.initialize({
+        nodes: fileStructure,
+        selectedPath: 'src/index.js',
+        onSelect: (path, type) => {
+          console.log(`Selected ${type}: ${path}`)
+          if (type === 'file') {
+            // Open file in editor
+          }
+        }
+      })
+      
+  - title: Controlled Expansion
+    description: Control which folders are expanded
+    language: typescript
+    code: |
+      const tree = new FileTreePrimitive()
+      await tree.initialize({
+        nodes: projectFiles,
+        expandedPaths: ['src', 'src/components', 'tests'],
+        onToggle: (path) => {
+          console.log(`Toggled folder: ${path}`)
+        }
+      })
+
+bestPractices:
+  - This is a primitive construct - use L1 or higher for production
+  - No icons, indentation is the only visual hierarchy
+  - No drag-drop, rename, or CRUD operations
+  - Used as a building block for higher-level file explorers
+  - Part of the Love Claude Code platform itself
+  - Keep node structure shallow for better performance
+
+testing:
+  unit:
+    - Renders nested file structure correctly
+    - Handles folder expansion/collapse
+    - Tracks selected path
+    - Counts nodes accurately
+    - Invokes callbacks on interaction
+    - Maintains expanded state
+    
+  integration:
+    - Used by L1 InteractiveFileTree
+    - Used by L2 ProjectExplorer
+    - Part of L3 Love Claude Code IDE

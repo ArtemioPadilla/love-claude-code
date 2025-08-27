@@ -1,0 +1,139 @@
+id: platform-l1-mcp-encrypted-websocket
+name: MCP Encrypted WebSocket
+description: Secure WebSocket for MCP communications with TLS 1.3 and AES-256-GCM encryption
+level: L1
+type: infrastructure
+category: mcp
+version: 1.0.0
+status: stable
+author:
+  name: Love Claude Code Platform
+  email: platform@loveclaudecode.com
+
+extends: platform-l1-encrypted-websocket
+
+dependencies:
+  - constructId: platform-l1-encrypted-websocket
+    level: L1
+    optional: false
+  - constructId: platform-l0-mcp-websocket-primitive
+    level: L0
+    optional: false
+
+inputs:
+  - name: mcpConfig
+    type: MCPConfig
+    description: MCP-specific configuration
+    required: false
+    defaultValue:
+      enableMessageValidation: true
+      supportedProtocols:
+        - mcp/1.0
+        - mcp/1.1
+      maxMessageSize: 1048576  # 1MB
+      compressionEnabled: true
+      compressionAlgorithm: zlib
+
+outputs:
+  - name: mcpChannel
+    type: MCPSecureChannel
+    description: Secure MCP communication channel
+  
+  - name: sendMCPMessage
+    type: Function
+    description: Send encrypted MCP message
+
+properties:
+  - name: protocolVersion
+    type: string
+    description: Active MCP protocol version
+    visibility: public
+    modifiable: false
+
+methods:
+  - name: establishMCPSession
+    description: Establish secure MCP session
+    parameters:
+      - name: serverUrl
+        type: string
+        description: MCP server URL
+      - name: credentials
+        type: MCPCredentials
+        description: Authentication credentials
+    returnType: Promise<MCPSession>
+    visibility: public
+  
+  - name: validateMCPMessage
+    description: Validate incoming MCP message format
+    parameters:
+      - name: message
+        type: MCPMessage
+        description: Message to validate
+    returnType: boolean
+    visibility: private
+
+events:
+  - name: mcpSessionEstablished
+    description: Emitted when MCP session is established
+    payload:
+      sessionId: string
+      protocolVersion: string
+      capabilities: string[]
+  
+  - name: mcpMessageReceived
+    description: Emitted when valid MCP message is received
+    payload:
+      type: string
+      id: string
+      method: string
+      params: any
+
+constraints:
+  security:
+    - type: mcp-authentication
+      description: All MCP connections must be authenticated
+      level: required
+    
+    - type: message-validation
+      description: All MCP messages must be validated
+      level: required
+
+exampleUsage: |
+  // Create MCP encrypted WebSocket
+  const mcpWs = new MCPEncryptedWebSocket({
+    url: 'wss://mcp-server.example.com:8443',
+    mcpConfig: {
+      enableMessageValidation: true,
+      supportedProtocols: ['mcp/1.1']
+    }
+  })
+  
+  // Establish MCP session
+  const session = await mcpWs.establishMCPSession(
+    'wss://mcp-server.example.com:8443',
+    { apiKey: process.env.MCP_API_KEY }
+  )
+  
+  // Handle MCP messages
+  mcpWs.on('mcpMessageReceived', (message) => {
+    console.log('MCP message:', message.method)
+  })
+
+metadata:
+  tags:
+    - mcp
+    - websocket
+    - encryption
+    - security
+    - communication
+  
+  selfReferential:
+    developmentMethod: claude-vibe-coding
+    vibePercentage: 90
+    isPlatformConstruct: true
+    usedInDevelopment:
+      - MCP server secure communication
+      - Tool registry secure channel
+      - RPC encrypted transport
+    claudeGenerated: true
+    claudeModel: claude-3-opus-20240229

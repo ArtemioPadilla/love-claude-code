@@ -30,12 +30,26 @@ import { OAuthCallback } from './components/Auth/OAuthCallback'
 import { AuthDebugPanel } from './components/Debug/AuthDebugPanel'
 import { OnboardingFlow } from './components/Onboarding'
 import { UpdateNotification } from './components/UpdateNotification/UpdateNotification'
+import { TDDWorkflowView } from './components/TDD/TDDWorkflowView'
+// import { ConstructProjectView } from './components/ConstructDevelopment/ConstructProjectView' // Removed unused import
+import { ConstructBuilder } from './components/ConstructBuilder/ConstructBuilder'
+import BuiltWithItselfShowcase from './components/Showcase/BuiltWithItselfShowcase'
+import PlatformArchitectureDiagram from './components/Architecture/PlatformArchitectureDiagram'
+import ConstructMarketplace from './components/Marketplace/ConstructMarketplace'
+import { MetricsDashboard } from './components/Monitoring/MetricsDashboard'
+import { VisualConstructComposer } from './components/VisualComposer/VisualConstructComposer'
+import { PlatformDeployment } from './components/SelfHosting/PlatformDeployment'
+import { EnterpriseDashboard } from './components/Enterprise/EnterpriseDashboard'
+import { SSOConfiguration } from './components/Enterprise/SSOConfiguration'
+import { TeamManagement } from './components/Enterprise/TeamManagement'
+import { AuditViewer } from './components/Enterprise/AuditViewer'
 import { useUserPreferencesStore } from './stores/userPreferencesStore'
 import { useProjectStore } from './stores/projectStore'
 import { useNavigationStore } from './components/Navigation'
 import { fileApiService, type FileNode } from './services/fileApi'
 import { analytics } from './services/analytics'
 import { isElectron } from './utils/electronDetection'
+import { Toaster } from 'react-hot-toast'
 
 function App() {
   const { preferences } = useUserPreferencesStore()
@@ -173,6 +187,123 @@ function App() {
     )
   }
   
+  if (navView === 'tdd') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <TDDWorkflowView />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'construct-builder') {
+    return (
+      <ErrorBoundary>
+        <ConstructBuilder />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'showcase') {
+    return (
+      <ErrorBoundary>
+        <BuiltWithItselfShowcase />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'architecture') {
+    return (
+      <ErrorBoundary>
+        <PlatformArchitectureDiagram />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'marketplace') {
+    return (
+      <ErrorBoundary>
+        <ConstructMarketplace />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'metrics') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <MetricsDashboard />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'visual-composer') {
+    return (
+      <ErrorBoundary>
+        <VisualConstructComposer />
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'self-hosting') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <PlatformDeployment />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'enterprise') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <EnterpriseDashboard />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'sso') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <SSOConfiguration />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'teams') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <TeamManagement />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
+  if (navView === 'audit') {
+    return (
+      <ErrorBoundary>
+        <div className="h-screen bg-background">
+          <Header />
+          <AuditViewer />
+        </div>
+      </ErrorBoundary>
+    )
+  }
+  
   if (navView === 'oauth-callback') {
     return (
       <ErrorBoundary>
@@ -198,13 +329,24 @@ function App() {
     )
   }
   
-  // Show editor when a project is selected
+  // Show construct project view for construct projects
+  const currentProject = useProjectStore.getState().getCurrentProject()
+  if (navView === 'project' && currentProject?.isConstructProject) {
+    return (
+      <ErrorBoundary>
+        <ConstructBuilder constructId={currentProject.id} />
+      </ErrorBoundary>
+    )
+  }
+  
+  // Show editor when a regular project is selected
   if (navView === 'project') {
     // Continue to the main editor interface below
   }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
+      <Toaster position="top-right" />
       <Header 
         onSettingsClick={() => setShowSettings(true)} 
         onHelpClick={() => setShowDocumentation(true)}

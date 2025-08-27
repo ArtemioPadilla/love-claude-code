@@ -7,17 +7,25 @@ import {
 } from 'lucide-react'
 import { useNavigationStore } from '../Navigation'
 
+interface FooterLink {
+  label: string
+  icon?: React.ReactNode
+  onClick?: () => void
+  href?: string
+  external?: boolean
+}
+
 const Footer: React.FC = () => {
   const { navigate } = useNavigationStore()
   
   const currentYear = new Date().getFullYear()
   
-  const footerSections = [
+  const footerSections: { title: string; links: FooterLink[] }[] = [
     {
       title: 'Product',
       links: [
         { label: 'Features', icon: <Zap className="w-3 h-3" />, onClick: () => navigate('landing') },
-        { label: 'Providers', icon: <Cloud className="w-3 h-3" />, onClick: () => navigate('docs', { section: 'providers' }) },
+        { label: 'Providers', icon: <Cloud className="w-3 h-3" />, onClick: () => navigate('docs', { docSection: 'providers' }) },
         { label: 'Pricing', icon: <FileText className="w-3 h-3" />, onClick: () => navigate('landing') },
         { label: 'Roadmap', icon: <GitBranch className="w-3 h-3" />, onClick: () => navigate('roadmap') }
       ]
@@ -26,9 +34,9 @@ const Footer: React.FC = () => {
       title: 'Resources',
       links: [
         { label: 'Documentation', icon: <Book className="w-3 h-3" />, onClick: () => navigate('docs') },
-        { label: 'API Reference', icon: <Code2 className="w-3 h-3" />, onClick: () => navigate('docs', { section: 'api' }) },
-        { label: 'Getting Started', icon: <FileText className="w-3 h-3" />, onClick: () => navigate('docs', { section: 'getting-started' }) },
-        { label: 'Security', icon: <Shield className="w-3 h-3" />, onClick: () => navigate('docs', { section: 'security' }) }
+        { label: 'API Reference', icon: <Code2 className="w-3 h-3" />, onClick: () => navigate('docs', { docSection: 'api' }) },
+        { label: 'Getting Started', icon: <FileText className="w-3 h-3" />, onClick: () => navigate('docs', { docSection: 'getting-started' }) },
+        { label: 'Security', icon: <Shield className="w-3 h-3" />, onClick: () => navigate('docs', { docSection: 'security' }) }
       ]
     },
     {

@@ -413,7 +413,7 @@ exports.handler = async (event) => {
         Timeout: config.resources?.timeout || 30,
         MemorySize: config.resources?.memory || 256,
         Environment: {
-          Variables: config.environment || {}
+          Variables: config.environmentVariables || {}
         }
       }))
       
@@ -431,7 +431,7 @@ exports.handler = async (event) => {
           Timeout: config.resources?.timeout || 30,
           MemorySize: config.resources?.memory || 256,
           Environment: {
-            Variables: config.environment || {}
+            Variables: config.environmentVariables || {}
           }
         }))
       } else {

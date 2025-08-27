@@ -1,6 +1,6 @@
 import React from 'react'
 import { motion } from 'framer-motion'
-import { Terminal, Cpu, FileCode, Settings, Zap, Shield, Code2, ArrowRight } from 'lucide-react'
+import { Terminal, Cpu, Settings, Zap, Shield, Code2, ArrowRight } from 'lucide-react'
 
 const MCPGuide: React.FC = () => {
   const mcpTools = {

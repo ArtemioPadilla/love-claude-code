@@ -1,0 +1,68 @@
+/* Custom styles for the architecture diagram */
+.bg-dot-pattern {
+  background-color: hsl(var(--background));
+  background-image: radial-gradient(circle at 1px 1px, hsl(var(--muted-foreground) / 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* ReactFlow custom node styles */
+.react-flow__node {
+  font-family: inherit;
+}
+
+.react-flow__edge-path {
+  stroke-width: 2;
+}
+
+.react-flow__edge.animated path {
+  stroke-dasharray: 5;
+  animation: dashdraw 0.5s linear infinite;
+}
+
+@keyframes dashdraw {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+/* MiniMap styling */
+.react-flow__minimap {
+  background-color: hsl(var(--background) / 0.9) !important;
+  border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Controls styling */
+.react-flow__controls {
+  background-color: hsl(var(--background) / 0.95) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+}
+
+.react-flow__controls-button {
+  background-color: hsl(var(--background)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  fill: hsl(var(--foreground)) !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: hsl(var(--accent)) !important;
+}
+
+/* Custom scrollbar for the diagram */
+.react-flow__viewport::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.react-flow__viewport::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+.react-flow__viewport::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+.react-flow__viewport::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}

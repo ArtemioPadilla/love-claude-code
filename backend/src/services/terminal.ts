@@ -86,15 +86,19 @@ export class TerminalService {
     return true
   }
 
-  resizeTerminal(terminalId: string, cols: number, rows: number): boolean {
+  resizeTerminal(terminalId: string, _cols: number, _rows: number): boolean {
     const terminal = this.terminals.get(terminalId)
     if (!terminal) {
       return false
     }
 
     // Send resize signal if supported
-    if (terminal.process.kill) {
-      process.kill(terminal.process.pid!, 'SIGWINCH')
+    if (terminal.process.pid) {
+      try {
+        process.kill(terminal.process.pid, 'SIGWINCH')
+      } catch (error) {
+        // Ignore if process is already dead
+      }
     }
 
     return true
@@ -140,7 +144,7 @@ export class TerminalService {
 
   cleanup(): void {
     // Kill all terminals on cleanup
-    for (const [id, terminal] of this.terminals) {
+    for (const [_id, terminal] of this.terminals) {
       terminal.process.kill()
     }
     this.terminals.clear()

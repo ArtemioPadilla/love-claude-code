@@ -7,6 +7,8 @@ export interface Settings {
     theme: 'light' | 'dark' | 'system'
     language: string
     autoSave: boolean
+    appName?: string
+    autoSaveInterval?: number
   }
   ai: {
     authMethod: AuthMethod

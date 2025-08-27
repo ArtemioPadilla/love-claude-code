@@ -43,7 +43,10 @@ export function OAuthCallback() {
               accessToken: tokenResponse.access_token,
               refreshToken: tokenResponse.refresh_token,
               expiresAt
-            }
+            },
+            model: 'claude-3-5-sonnet-20241022',
+            temperature: 0.7,
+            maxTokens: 4096
           }
         })
         

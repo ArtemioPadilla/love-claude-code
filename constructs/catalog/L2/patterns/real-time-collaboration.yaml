@@ -1,0 +1,750 @@
+id: platform-l2-real-time-collaboration
+name: Real-Time Collaboration
+level: L2
+version: 1.0.0
+author: Love Claude Code
+category: pattern
+tags:
+  - collaboration
+  - real-time
+  - websocket
+  - sync
+  - multiplayer
+  - pattern
+  - platform-construct
+
+description: |
+  Complete real-time collaboration system with WebSocket synchronization, presence tracking,
+  conflict resolution, and collaborative editing features. This pattern enables multiple users
+  to work together in real-time with features like live cursors, selections, chat, annotations,
+  and automatic conflict resolution. Supports both Operational Transform (OT) and Conflict-free
+  Replicated Data Types (CRDT) for robust synchronization.
+
+providers:
+  - local
+  - aws
+  - firebase
+
+composedOf:
+  - platform-l1-authenticated-websocket
+  - platform-l1-secure-code-editor
+  - platform-l1-encrypted-database
+  - platform-l1-rest-api-service
+  - platform-l1-responsive-layout
+
+inputs:
+  - name: roomId
+    type: string
+    required: true
+    description: Collaboration room identifier
+    example: project-123-edit-session
+    validation:
+      pattern: '^[a-zA-Z0-9-_]+$'
+
+  - name: userId
+    type: string
+    required: true
+    description: User identifier
+    example: user-456
+
+  - name: userName
+    type: string
+    required: false
+    description: Display name for the user
+    example: Alice Developer
+    default: User
+
+  - name: features
+    type: object
+    required: false
+    description: Feature configuration
+    default:
+      cursors: true
+      selections: true
+      presence: true
+      chat: true
+      voice: false
+      video: false
+      annotations: true
+    properties:
+      cursors:
+        type: boolean
+        default: true
+        description: Show other users' cursors
+      selections:
+        type: boolean
+        default: true
+        description: Show other users' selections
+      presence:
+        type: boolean
+        default: true
+        description: Show online/offline status
+      chat:
+        type: boolean
+        default: true
+        description: Enable chat functionality
+      voice:
+        type: boolean
+        default: false
+        description: Enable voice communication
+      video:
+        type: boolean
+        default: false
+        description: Enable video communication
+      annotations:
+        type: boolean
+        default: true
+        description: Enable code annotations
+
+  - name: sync
+    type: object
+    required: false
+    description: Synchronization configuration
+    properties:
+      mode:
+        type: string
+        default: ot
+        enum: ['ot', 'crdt']
+        description: Sync algorithm (Operational Transform or CRDT)
+      conflictResolution:
+        type: string
+        default: auto
+        enum: ['auto', 'manual', 'last-write-wins']
+        description: Conflict resolution strategy
+      debounceMs:
+        type: number
+        default: 100
+        description: Debounce delay for operations
+        validation:
+          min: 0
+          max: 1000
+      maxRetries:
+        type: number
+        default: 3
+        description: Maximum sync retry attempts
+        validation:
+          min: 1
+          max: 10
+
+  - name: permissions
+    type: object
+    required: false
+    description: User permissions
+    properties:
+      canEdit:
+        type: boolean
+        default: true
+        description: Can edit content
+      canComment:
+        type: boolean
+        default: true
+        description: Can add comments
+      canInvite:
+        type: boolean
+        default: false
+        description: Can invite others
+      isHost:
+        type: boolean
+        default: false
+        description: Is session host
+
+  - name: ui
+    type: object
+    required: false
+    description: UI configuration
+    properties:
+      showAvatars:
+        type: boolean
+        default: true
+        description: Show user avatars
+      showCursors:
+        type: boolean
+        default: true
+        description: Show cursor positions
+      cursorLabels:
+        type: boolean
+        default: true
+        description: Show user names on cursors
+      theme:
+        type: string
+        default: dark
+        enum: ['light', 'dark', 'auto']
+        description: UI theme
+
+outputs:
+  - name: sessionId
+    type: string
+    description: Unique session identifier
+
+  - name: status
+    type: string
+    description: Connection status
+    enum: ['connecting', 'connected', 'disconnected', 'error']
+
+  - name: capabilities
+    type: object
+    description: Enabled capabilities
+    properties:
+      cursors:
+        type: boolean
+      selections:
+        type: boolean
+      presence:
+        type: boolean
+      chat:
+        type: boolean
+      voice:
+        type: boolean
+      annotations:
+        type: boolean
+
+  - name: session
+    type: object
+    description: Session information
+    properties:
+      roomId:
+        type: string
+        description: Room identifier
+      collaboratorCount:
+        type: number
+        description: Number of active collaborators
+      isHost:
+        type: boolean
+        description: Whether current user is host
+      documentVersion:
+        type: number
+        description: Current document version
+
+  - name: network
+    type: object
+    description: Network status
+    properties:
+      latency:
+        type: number
+        description: Network latency in ms
+      quality:
+        type: string
+        enum: ['excellent', 'good', 'fair', 'poor']
+        description: Connection quality
+      syncStatus:
+        type: string
+        enum: ['synced', 'syncing', 'conflict']
+        description: Synchronization status
+
+methods:
+  - name: sendChatMessage
+    description: Send a chat message
+    signature: (content: string, type?: string) => Promise<void>
+    parameters:
+      - name: content
+        type: string
+        description: Message content
+      - name: type
+        type: string
+        enum: ['text', 'code', 'file']
+        description: Message type
+
+  - name: addAnnotation
+    description: Add an annotation to a line
+    signature: (line: number, content: string) => Promise<void>
+    parameters:
+      - name: line
+        type: number
+        description: Line number
+      - name: content
+        type: string
+        description: Annotation content
+
+  - name: resolveAnnotation
+    description: Mark an annotation as resolved
+    signature: (annotationId: string) => Promise<void>
+    parameters:
+      - name: annotationId
+        type: string
+        description: Annotation ID
+
+  - name: leaveSession
+    description: Leave the collaboration session
+    signature: () => Promise<void>
+
+  - name: getCollaborators
+    description: Get all collaborators
+    signature: () => Collaborator[]
+    returns:
+      type: array
+      description: List of collaborators
+
+  - name: getOnlineCollaborators
+    description: Get online collaborators
+    signature: () => Collaborator[]
+    returns:
+      type: array
+      description: List of online collaborators
+
+  - name: getChatHistory
+    description: Get chat message history
+    signature: () => ChatMessage[]
+    returns:
+      type: array
+      description: Chat messages
+
+  - name: getAnnotations
+    description: Get annotations, optionally filtered by line
+    signature: (line?: number) => Annotation[]
+    parameters:
+      - name: line
+        type: number
+        description: Optional line number filter
+    returns:
+      type: array
+      description: Annotations
+
+  - name: getNetworkStatus
+    description: Get current network status
+    signature: () => NetworkStatus
+    returns:
+      type: object
+      description: Network status information
+
+events:
+  - name: initialized
+    description: System initialized successfully
+    payload:
+      sessionId: string
+
+  - name: connected
+    description: WebSocket connected
+    payload: {}
+
+  - name: disconnected
+    description: WebSocket disconnected
+    payload: {}
+
+  - name: reconnected
+    description: WebSocket reconnected
+    payload: {}
+
+  - name: sessionJoined
+    description: Joined collaboration session
+    payload:
+      roomId: string
+      session: object
+
+  - name: sessionLeft
+    description: Left collaboration session
+    payload: {}
+
+  - name: collaboratorJoined
+    description: New collaborator joined
+    payload:
+      userId: string
+      userName: string
+      color: string
+
+  - name: collaboratorLeft
+    description: Collaborator left
+    payload:
+      userId: string
+
+  - name: collaboratorStatusChanged
+    description: Collaborator status changed
+    payload:
+      userId: string
+      status: string
+
+  - name: operationApplied
+    description: Local operation applied
+    payload:
+      operation: object
+
+  - name: remoteOperationApplied
+    description: Remote operation applied
+    payload:
+      operation: object
+
+  - name: cursorUpdated
+    description: Cursor position updated
+    payload:
+      userId: string
+      position: object
+
+  - name: selectionUpdated
+    description: Selection updated
+    payload:
+      userId: string
+      selection: object
+
+  - name: chatMessageSent
+    description: Chat message sent
+    payload:
+      message: object
+
+  - name: chatMessageReceived
+    description: Chat message received
+    payload:
+      message: object
+
+  - name: annotationAdded
+    description: Annotation added
+    payload:
+      annotation: object
+
+  - name: annotationResolved
+    description: Annotation resolved
+    payload:
+      annotation: object
+
+  - name: conflictsDetected
+    description: Conflicts detected
+    payload:
+      conflicts: array
+
+  - name: syncCompleted
+    description: Synchronization completed
+    payload: {}
+
+  - name: offlineModeStarted
+    description: Offline mode started
+    payload: {}
+
+  - name: error
+    description: Error occurred
+    payload:
+      operation: string
+      error: string
+
+patterns:
+  - name: Operational Transform
+    description: |
+      Uses operational transformation to handle concurrent edits by transforming
+      operations against each other to maintain consistency.
+
+  - name: CRDT Support
+    description: |
+      Supports Conflict-free Replicated Data Types for automatic conflict
+      resolution without coordination.
+
+  - name: Presence Awareness
+    description: |
+      Real-time tracking of user presence including online status, cursor
+      positions, and selections.
+
+  - name: Offline Support
+    description: |
+      Continues to capture local changes while offline and syncs them when
+      connection is restored.
+
+  - name: Intelligent Conflict Resolution
+    description: |
+      Multiple strategies for handling conflicts including automatic resolution,
+      manual intervention, and last-write-wins.
+
+examples:
+  - title: Basic Collaborative Editing
+    description: Simple real-time collaboration setup
+    language: typescript
+    code: |
+      const collab = new RealTimeCollaboration()
+      
+      await collab.initialize({
+        roomId: 'project-123',
+        userId: 'user-456',
+        userName: 'Alice',
+        features: {
+          cursors: true,
+          presence: true,
+          chat: true
+        }
+      })
+      
+      // Listen for collaborator events
+      collab.on('collaboratorJoined', ({ userName }) => {
+        console.log(`${userName} joined the session`)
+      })
+      
+      collab.on('cursorUpdated', ({ userId, position }) => {
+        console.log(`User ${userId} cursor at line ${position.line}`)
+      })
+      
+      // Send a chat message
+      await collab.sendChatMessage('Hey team, ready to code?')
+
+  - title: Advanced Collaboration with CRDT
+    description: Using CRDT for conflict-free collaboration
+    language: typescript
+    code: |
+      const collab = new RealTimeCollaboration()
+      
+      await collab.initialize({
+        roomId: 'design-doc-789',
+        userId: 'designer-001',
+        userName: 'Bob Designer',
+        sync: {
+          mode: 'crdt',
+          conflictResolution: 'auto',
+          debounceMs: 50
+        },
+        features: {
+          cursors: true,
+          selections: true,
+          annotations: true
+        }
+      })
+      
+      // Add annotations for code review
+      collab.on('remoteOperationApplied', async ({ operation }) => {
+        if (operation.type === 'insert' && operation.content.includes('TODO')) {
+          const line = getLineFromPosition(operation.position)
+          await collab.addAnnotation(line, 'Found a TODO - needs attention')
+        }
+      })
+      
+      // Handle annotations
+      collab.on('annotationAdded', ({ annotation }) => {
+        console.log(`New annotation on line ${annotation.line}: ${annotation.content}`)
+      })
+
+  - title: Team Code Review Session
+    description: Collaborative code review with annotations
+    language: typescript
+    code: |
+      const collab = new RealTimeCollaboration()
+      
+      await collab.initialize({
+        roomId: 'code-review-pr-123',
+        userId: 'reviewer-456',
+        userName: 'Senior Dev',
+        features: {
+          cursors: true,
+          selections: true,
+          annotations: true,
+          chat: true
+        },
+        permissions: {
+          canEdit: false, // Read-only for reviewers
+          canComment: true,
+          canInvite: true
+        }
+      })
+      
+      // Highlight code sections for discussion
+      collab.on('selectionUpdated', ({ userId, selection }) => {
+        const user = collab.getCollaborators().find(c => c.userId === userId)
+        console.log(`${user?.userName} highlighted lines ${selection.start.line}-${selection.end.line}`)
+      })
+      
+      // Add review comments
+      async function addReviewComment(line: number, comment: string) {
+        await collab.addAnnotation(line, comment)
+        await collab.sendChatMessage(`Added comment on line ${line}`)
+      }
+      
+      // Track review progress
+      const annotations = collab.getAnnotations()
+      const unresolvedCount = annotations.filter(a => !a.resolved).length
+      console.log(`${unresolvedCount} unresolved comments`)
+
+  - title: Pair Programming Session
+    description: Real-time pair programming with voice
+    language: typescript
+    code: |
+      const collab = new RealTimeCollaboration()
+      
+      await collab.initialize({
+        roomId: 'pair-programming-session',
+        userId: 'dev-123',
+        userName: 'Alice',
+        features: {
+          cursors: true,
+          selections: true,
+          presence: true,
+          chat: true,
+          voice: true // Enable voice for pair programming
+        },
+        ui: {
+          showCursors: true,
+          cursorLabels: true,
+          showAvatars: true
+        }
+      })
+      
+      // Switch driver/navigator roles
+      let isDriver = true
+      
+      async function switchRoles() {
+        isDriver = !isDriver
+        await collab.updatePermissions({
+          canEdit: isDriver
+        })
+        
+        await collab.sendChatMessage(
+          isDriver ? "I'm driving now" : "You're driving, I'm navigating"
+        )
+      }
+      
+      // Monitor typing patterns
+      let lastTypeTime = Date.now()
+      collab.on('operationApplied', () => {
+        const now = Date.now()
+        const idleTime = now - lastTypeTime
+        
+        if (idleTime > 30000 && isDriver) {
+          collab.sendChatMessage("Need help? You've been idle for a bit")
+        }
+        
+        lastTypeTime = now
+      })
+
+  - title: Workshop or Training Session
+    description: Instructor-led collaborative coding
+    language: typescript
+    code: |
+      const collab = new RealTimeCollaboration()
+      
+      await collab.initialize({
+        roomId: 'react-workshop-2024',
+        userId: 'instructor-001',
+        userName: 'React Instructor',
+        permissions: {
+          canEdit: true,
+          canComment: true,
+          canInvite: true,
+          isHost: true
+        },
+        features: {
+          cursors: true,
+          selections: true,
+          presence: true,
+          chat: true,
+          annotations: true
+        }
+      })
+      
+      // Broadcast instructor's cursor for students to follow
+      collab.on('cursorMove', async (position) => {
+        if (collab.getOutputs().session.isHost) {
+          await collab.broadcastEvent('instructorCursor', position)
+        }
+      })
+      
+      // Monitor student questions in chat
+      collab.on('chatMessageReceived', async ({ userName, content }) => {
+        if (content.includes('?')) {
+          // Highlight question for instructor
+          console.log(`QUESTION from ${userName}: ${content}`)
+          
+          // Add annotation at current line for follow-up
+          const currentLine = getCurrentEditorLine()
+          await collab.addAnnotation(
+            currentLine,
+            `Question from ${userName}: ${content}`
+          )
+        }
+      })
+      
+      // Track student presence
+      const updateAttendance = () => {
+        const online = collab.getOnlineCollaborators()
+        console.log(`${online.length} students online`)
+      }
+      
+      collab.on('collaboratorJoined', updateAttendance)
+      collab.on('collaboratorLeft', updateAttendance)
+
+bestPractices:
+  - Use CRDTs for better conflict resolution in high-concurrency scenarios
+  - Implement proper access control and permissions
+  - Optimize WebSocket message size to reduce bandwidth
+  - Handle network disconnections gracefully with offline support
+  - Implement presence timeouts to detect inactive users
+  - Use debouncing for cursor and selection updates
+  - Batch operations to reduce message frequency
+  - Implement heartbeat for connection monitoring
+  - Use compression for large documents
+  - Clean up old sessions and data regularly
+  - Monitor and limit concurrent collaborators
+  - Implement rate limiting for chat messages
+  - Use server-side validation for all operations
+  - Encrypt sensitive content in transit
+  - Implement audit logging for compliance
+
+troubleshooting:
+  - issue: Cursor positions not syncing
+    solutions:
+      - Check WebSocket connection status
+      - Verify cursor feature is enabled
+      - Check for JavaScript errors
+      - Ensure proper event handling
+
+  - issue: Operations not applying
+    solutions:
+      - Check operation transformation logic
+      - Verify document versions match
+      - Look for conflict queue buildup
+      - Check network latency
+
+  - issue: High latency or lag
+    solutions:
+      - Reduce operation frequency with debouncing
+      - Check network connection quality
+      - Optimize message payload size
+      - Consider regional servers
+
+  - issue: Conflicts not resolving
+    solutions:
+      - Check conflict resolution mode
+      - Verify sync engine initialization
+      - Review operation history
+      - Consider switching to CRDT
+
+  - issue: Users appearing offline
+    solutions:
+      - Check heartbeat configuration
+      - Verify presence timeout settings
+      - Check WebSocket reconnection
+      - Review authentication tokens
+
+deployment:
+  requiredProviders:
+    - websocket-server
+    - auth-service
+    - database
+  optionalProviders:
+    - redis
+    - media-server
+  configuration:
+    websocket:
+      port: 8080
+      path: /collaborate
+      pingInterval: 30000
+      pingTimeout: 5000
+    scaling:
+      maxRoomsPerServer: 1000
+      maxUsersPerRoom: 50
+    security:
+      requireAuth: true
+      encryptMessages: true
+      rateLimit: 100/minute
+
+selfReferential:
+  isPlatformConstruct: true
+  usedBy:
+    - love-claude-code-frontend
+    - construct-development-mode
+    - ide-workspace
+  developmentMethod: manual
+  vibeCodingPercentage: 20
+  builtWith:
+    - platform-l1-authenticated-websocket
+    - platform-l1-secure-code-editor
+    - platform-l1-encrypted-database
+  timeToCreate: 420
+  linesOfCode: 1200
+  testCoverage: 85
+  canBuildConstructs: false
+  platformFeatures:
+    - Real-time synchronization
+    - Presence tracking
+    - Conflict resolution
+    - Chat and annotations
+    - Offline support

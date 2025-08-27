@@ -1,0 +1,165 @@
+id: platform-l1-secure-mcp-server
+name: Secure MCP Server
+type: infrastructure
+level: L1
+description: MCP server with JWT/OAuth2 authentication, rate limiting, and encryption
+version: 1.0.0
+author: Love Claude Code Team
+
+category: networking
+subcategory: mcp
+
+capabilities:
+  - mcp-server
+  - jwt-auth
+  - oauth2-auth
+  - rate-limiting
+  - tls-encryption
+  - connection-pooling
+  - metrics
+  - audit-logging
+
+dependencies:
+  - platform-l0-websocket-primitive
+  - platform-l0-rpc-primitive
+  - platform-l0-tool-registry-primitive
+
+inputs:
+  - name: config
+    type: SecureMCPServerConfig
+    description: Server configuration including auth, security, and monitoring settings
+    required: true
+    example:
+      endpoint:
+        host: "localhost"
+        port: 8443
+        path: "/mcp"
+        secure: true
+      auth:
+        type: "both"
+        jwtSecret: "your-secret-key"
+        jwtExpiry: "24h"
+        oauth2:
+          provider: "github"
+          clientId: "your-client-id"
+          clientSecret: "your-client-secret"
+          redirectUri: "https://localhost:8443/auth/callback"
+          scopes: ["read:user", "repo"]
+      security:
+        tlsRequired: true
+        encryptMessages: true
+        rateLimiting:
+          enabled: true
+          maxRequestsPerMinute: 60
+          maxConnectionsPerIP: 10
+      connection:
+        maxConnections: 1000
+        connectionTimeout: 30000
+        pingInterval: 30000
+        reconnectAttempts: 3
+      monitoring:
+        enabled: true
+        logLevel: "info"
+        metricsEnabled: true
+        auditLogging: true
+
+outputs:
+  - name: connections
+    type: Connection[]
+    description: Array of active connections with auth info
+  - name: metrics
+    type: ServerMetrics
+    description: Real-time server metrics
+  - name: status
+    type: string
+    description: Current server status (stopped/starting/running/stopping)
+
+events:
+  - name: onConnectionEstablished
+    description: Fired when a new authenticated connection is established
+    payload:
+      connectionId: string
+      auth: AuthInfo
+  - name: onConnectionClosed
+    description: Fired when a connection is closed
+    payload:
+      connectionId: string
+      reason: string
+  - name: onAuthFailure
+    description: Fired when authentication fails
+    payload: AuthError
+  - name: onSecurityEvent
+    description: Fired when a security event occurs
+    payload: SecurityEvent
+  - name: onMetricsUpdate
+    description: Fired periodically with updated metrics
+    payload: ServerMetrics
+
+security:
+  - jwt-authentication
+  - oauth2-authentication
+  - tls-encryption
+  - rate-limiting
+  - ip-filtering
+  - audit-logging
+
+methods:
+  - name: onInitialize
+    description: Initialize the server with configuration
+    async: true
+  - name: onValidate
+    description: Validate server configuration and dependencies
+    async: true
+  - name: onDeploy
+    description: Deploy the server and start accepting connections
+    async: true
+  - name: onDestroy
+    description: Gracefully shut down the server
+    async: true
+  - name: healthCheck
+    description: Check server health status
+    async: true
+  - name: getMetrics
+    description: Get current server metrics
+    async: true
+  - name: getSecurityConfig
+    description: Get active security configuration
+
+metadata:
+  tags:
+    - mcp
+    - security
+    - authentication
+    - websocket
+    - rate-limiting
+  selfReferential:
+    usedToBuildItself: true
+    vibecodingLevel: 15
+    dependencies:
+      - "WebSocket communication for real-time MCP"
+      - "RPC handling for method invocation"
+      - "Tool registry for capability management"
+  documentation:
+    url: "/docs/constructs/l1/infrastructure/secure-mcp-server"
+    examples:
+      - title: "Basic JWT Authentication"
+        description: "Set up server with JWT authentication only"
+        code: |
+          const config = {
+            endpoint: { host: 'localhost', port: 8443, path: '/mcp', secure: true },
+            auth: { type: 'jwt', jwtSecret: 'secret', jwtExpiry: '24h' },
+            security: { tlsRequired: true, encryptMessages: true, rateLimiting: { enabled: true, maxRequestsPerMinute: 60 } }
+          }
+      - title: "OAuth2 with GitHub"
+        description: "Configure OAuth2 authentication with GitHub provider"
+        code: |
+          const config = {
+            auth: { 
+              type: 'oauth2',
+              oauth2: {
+                provider: 'github',
+                clientId: process.env.GITHUB_CLIENT_ID,
+                clientSecret: process.env.GITHUB_CLIENT_SECRET
+              }
+            }
+          }
